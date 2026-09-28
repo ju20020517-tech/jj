@@ -202,7 +202,18 @@
       for (const h of raycaster.intersectObjects(G.interior.group.children, true)) { if (h.object.userData.furnIdx !== undefined) return h.object.userData.furnIdx; if (h.object.userData.entity) continue; }
       return null;
     };
+    // 휴대폰: 두 손가락으로 벌리고 오므려서 확대/축소
+    const touches = new Map(); let pinchD = 0;
+    cv.addEventListener('pointerdown', e => { touches.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (touches.size === 2) { const [a, b] = [...touches.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y); drag = null; } });
+    window.addEventListener('pointermove', e => {
+      if (!touches.has(e.pointerId)) return;
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (touches.size === 2 && pinchD) { const [a, b] = [...touches.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); camDist = Math.max(4, Math.min(G.view === 'island' ? 90 : 20, camDist * pinchD / Math.max(20, d))); pinchD = d; }
+    });
+    const tEnd = e => { touches.delete(e.pointerId); if (touches.size < 2) pinchD = 0; };
+    window.addEventListener('pointerup', tEnd); window.addEventListener('pointercancel', tEnd);
     cv.addEventListener('pointerdown', e => {
+      if (touches.size >= 2) return;
       drag = { x: e.clientX, y: e.clientY, moved: false, id: e.pointerId };
       const idx = furnAt(e);
       if (idx !== null) { drag.furn = idx; FM.UI.selectFurn(idx); cv.style.cursor = 'grabbing'; }
