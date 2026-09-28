@@ -248,42 +248,56 @@
 
   // ---------- 얼굴 ----------
   // 얼굴은 머리 앞쪽 일부를 덮는 구면 조각에 입히는 투명 텍스처
-  T.face = (v, blink) => canvasTex('face-' + v.id + (blink ? '-b' : ''), 256, 192, (g, w, h) => {
+  T.face = (v, blink) => canvasTex('face-' + v.id + (blink ? '-b' : ''), 512, 384, (g, w, h) => {
     g.clearRect(0, 0, w, h);
-    const ink = '#2e2320';
-    const ex = [w * 0.33, w * 0.67], ey = h * 0.42;
+    const ink = '#2b201c';
+    const ex = [w * 0.32, w * 0.68], ey = h * 0.47;
     // 고양이 이마 줄무늬
     if (v.species === 'cat' && v.stripe) {
-      g.strokeStyle = hex(v.stripe); g.lineWidth = 7; g.lineCap = 'round';
-      for (const x of [w * 0.44, w * 0.5, w * 0.56]) { g.beginPath(); g.moveTo(x, 4); g.lineTo(x, 34); g.stroke(); }
+      g.strokeStyle = hex(v.stripe); g.lineWidth = 16; g.lineCap = 'round';
+      for (const x of [w * 0.43, w * 0.5, w * 0.57]) { g.beginPath(); g.moveTo(x, 10); g.lineTo(x, 62); g.stroke(); }
     }
+    // 볼터치 (가장자리가 부드러운 원)
+    const cheek = (x, y) => {
+      const grd = g.createRadialGradient(x, y, 0, x, y, 46);
+      const c = v.blush ? hex(v.blush) : '#ff7a95';
+      grd.addColorStop(0, c + 'cc'); grd.addColorStop(0.6, c + '66'); grd.addColorStop(1, c + '00');
+      g.fillStyle = grd; ellipse(g, x, y, 46, 32);
+    };
+    cheek(w * 0.17, h * 0.66); cheek(w * 0.83, h * 0.66);
     // 눈
-    g.fillStyle = ink; g.strokeStyle = ink; g.lineCap = 'round';
+    g.strokeStyle = ink; g.lineCap = 'round';
     for (const x of ex) {
-      if (blink) { g.lineWidth = 6; g.beginPath(); g.moveTo(x - 14, ey + 2); g.quadraticCurveTo(x, ey + 8, x + 14, ey + 2); g.stroke(); continue; }
-      if (v.eyes === 'happy' || v.eyes === 'smile') {
-        g.lineWidth = 7; g.beginPath(); g.moveTo(x - 15, ey + 6); g.quadraticCurveTo(x, ey - 14, x + 15, ey + 6); g.stroke();
-      } else if (v.eyes === 'sparkle') {
-        ellipse(g, x, ey, 17, 21);
-        g.fillStyle = '#fff'; circle(g, x - 6, ey - 8, 6); circle(g, x + 6, ey + 7, 3); g.fillStyle = ink;
-      } else {
-        ellipse(g, x, ey, 12, 16);
-        g.fillStyle = '#fff'; circle(g, x - 4, ey - 6, 4.5); g.fillStyle = ink;
+      if (blink) {
+        g.lineWidth = 12; g.beginPath(); g.moveTo(x - 28, ey + 4); g.quadraticCurveTo(x, ey + 18, x + 28, ey + 4); g.stroke();
+        continue;
       }
+      if (v.eyes === 'happy' || v.eyes === 'smile') {
+        g.lineWidth = 14; g.beginPath(); g.moveTo(x - 30, ey + 10); g.quadraticCurveTo(x, ey - 26, x + 30, ey + 10); g.stroke();
+        continue;
+      }
+      const big = v.eyes === 'sparkle';
+      const rx = big ? 38 : 32, ry = big ? 46 : 41;
+      const grd = g.createLinearGradient(0, ey - ry, 0, ey + ry);
+      grd.addColorStop(0, '#1d1512'); grd.addColorStop(0.7, '#3a2a24'); grd.addColorStop(1, big ? '#7a4a6a' : '#5a3a2e');
+      g.fillStyle = grd; ellipse(g, x, ey, rx, ry);
+      g.fillStyle = '#fff';
+      ellipse(g, x - rx * 0.35, ey - ry * 0.38, rx * 0.36, ry * 0.3);
+      circle(g, x + rx * 0.35, ey + ry * 0.4, rx * 0.16);
+      if (big) { g.fillStyle = 'rgba(255,255,255,.7)'; circle(g, x + rx * 0.1, ey - ry * 0.65, 4); }
     }
-    // 볼터치
-    g.fillStyle = v.blush ? hex(v.blush) + 'aa' : 'rgba(255,120,140,.55)';
-    ellipse(g, w * 0.17, h * 0.6, 20, 12); ellipse(g, w * 0.83, h * 0.6, 20, 12);
     // 입
-    g.lineWidth = 5; g.strokeStyle = '#6a3a2e';
-    const mx = w * 0.5, my = h * 0.66;
+    g.lineWidth = 10; g.strokeStyle = '#6a3a2e'; g.lineJoin = 'round';
+    const mx = w * 0.5, my = h * 0.71;
     if (v.mouth === 'w') {
-      g.beginPath(); g.moveTo(mx - 16, my - 4); g.quadraticCurveTo(mx - 8, my + 10, mx, my - 2); g.quadraticCurveTo(mx + 8, my + 10, mx + 16, my - 4); g.stroke();
+      g.beginPath(); g.moveTo(mx - 30, my - 8); g.quadraticCurveTo(mx - 15, my + 18, mx, my - 4); g.quadraticCurveTo(mx + 15, my + 18, mx + 30, my - 8); g.stroke();
     } else if (v.mouth === 'smile') {
-      g.beginPath(); g.moveTo(mx - 12, my - 4); g.quadraticCurveTo(mx, my + 12, mx + 12, my - 4); g.stroke();
+      g.fillStyle = '#b8454a';
+      g.beginPath(); g.moveTo(mx - 20, my - 6); g.quadraticCurveTo(mx, my + 26, mx + 20, my - 6); g.closePath(); g.fill();
+      g.fillStyle = '#ff8a8a'; ellipse(g, mx, my + 8, 8, 5);
     } else if (v.mouth === 'tooth') {
-      g.fillStyle = '#7a2f2f'; ellipse(g, mx, my, 10, 8);
-      g.fillStyle = '#fff'; g.fillRect(mx - 7, my - 8, 6, 8); g.fillRect(mx + 1, my - 8, 6, 8);
+      g.fillStyle = '#8a2f36'; ellipse(g, mx, my + 2, 20, 16);
+      g.fillStyle = '#fff'; g.fillRect(mx - 13, my - 14, 12, 14); g.fillRect(mx + 1, my - 14, 12, 14);
     }
   });
 

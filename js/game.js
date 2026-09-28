@@ -142,7 +142,7 @@
   const canvas = $('game');
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.VSMShadowMap;
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 250);
   let aspect = 1;
   let camZoom = 1;
@@ -158,8 +158,9 @@
   const shadowSize = isTouch() ? 1024 : 2048;
   sun.shadow.mapSize.set(shadowSize, shadowSize);
   Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -15, near: 1, far: 70 });
-  sun.shadow.bias = -0.0006;
-  sun.shadow.normalBias = 0.03;
+  sun.shadow.bias = -0.0004;
+  sun.shadow.radius = 6;
+  sun.shadow.blurSamples = 12;
   islandScene.add(hemi, sun, sun.target, ambient);
 
   const objGroup = new THREE.Group();
@@ -176,7 +177,9 @@
   roomSun.castShadow = true;
   roomSun.shadow.mapSize.set(1024, 1024);
   Object.assign(roomSun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 30 });
-  roomSun.shadow.bias = -0.0008;
+  roomSun.shadow.bias = -0.0004;
+  roomSun.shadow.radius = 6;
+  roomSun.shadow.blurSamples = 12;
   const roomLamp = new THREE.PointLight(0xffd9a0, 0.45, 14);
   roomLamp.position.set(5, 3, 4);
   houseScene.add(roomHemi, roomSun, roomSun.target, roomLamp, new THREE.AmbientLight(0xffffff, 0.12));
@@ -630,7 +633,7 @@
   function describeTarget() {
     if (mode !== 'island') return null;
     const v = villagerInFront();
-    if (v) return { kind: 'npc', v, label: `${josa(v.spec.name, '와', '과')} 대화하기` };
+    if (v) return { kind: 'npc', v, label: `${josa(v.spec.name, '과', '와')} 대화하기` };
     const [fx, fz] = facingTile();
     if (world.isShop(fx, fz)) return { kind: 'shop', label: '물건 팔기' };
     if (world.isDoor(fx, fz)) return { kind: 'door', label: '집에 들어가기' };

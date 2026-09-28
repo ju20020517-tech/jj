@@ -197,6 +197,44 @@
       group.add(m);
     }
 
+    // 둥근 가장자리: 아래로 턱이 지는 모서리마다 캡슐을 눕혀서 모서리를 동글게
+    const lipKinds = {
+      [TILE.GRASS]: { color: 0x8fd46a, list: [] },
+      [TILE.SAND]: { color: 0xf2dea0, list: [] },
+      [TILE.PATH]: { color: 0xdcc090, list: [] },
+    };
+    const LIP_R = 0.1;
+    for (let z = 0; z < H; z++) for (let x = 0; x < W; x++) {
+      const t = world.tileAt(x, z);
+      const kind = lipKinds[t];
+      if (!kind) continue;
+      const top = topOf(x, z);
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nt = world.tileAt(x + dx, z + dz);
+        if (nt === TILE.RAMP || nt === TILE.BRIDGE) continue;
+        if (top - topOf(x + dx, z + dz) < 0.3) continue;
+        kind.list.push({
+          x: x + 0.5 + dx * (0.5 - LIP_R * 0.8), z: z + 0.5 + dz * (0.5 - LIP_R * 0.8),
+          y: top - LIP_R, alongX: dz !== 0,
+        });
+      }
+    }
+    const lipGeo = new THREE.CapsuleGeometry(LIP_R, 1 - LIP_R * 2 + 0.02, 4, 10);
+    for (const kind of Object.values(lipKinds)) {
+      if (!kind.list.length) continue;
+      const im = new THREE.InstancedMesh(lipGeo, new THREE.MeshLambertMaterial({ color: kind.color }), kind.list.length);
+      kind.list.forEach((l, i) => {
+        dummy.position.set(l.x, l.y, l.z);
+        dummy.rotation.set(l.alongX ? 0 : Math.PI / 2, 0, l.alongX ? Math.PI / 2 : 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        im.setMatrixAt(i, dummy.matrix);
+      });
+      im.receiveShadow = true;
+      group.add(im);
+    }
+    dummy.rotation.set(0, 0, 0);
+
     // 비탈길 (쐐기 모양)
     const shape = new THREE.Shape();
     shape.moveTo(0, 0); shape.lineTo(1, 0); shape.lineTo(0, 1); shape.closePath();

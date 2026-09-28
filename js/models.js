@@ -1,28 +1,91 @@
-/* 3D 모델: 캐릭터, 나무, 꽃, 소품, 집, 가구 — 전부 기본 도형을 조합해서 만듦 */
+/* 3D 모델: 캐릭터, 나무, 꽃, 소품, 집, 가구
+ * 둥글둥글한 느낌을 위해 모서리가 둥근 상자, 캡슐, 회전체(lathe), 매끈한 구를 주로 사용하고
+ * 모든 재질에 부드러운 림 라이트(펠트 같은 질감)를 더함 */
 (() => {
   'use strict';
   const ISLE = window.ISLE;
   const TEX = ISLE.TEX;
   const M = {};
 
-  // ---------- 재질 / 도형 캐시 ----------
+  // =========================================================
+  // 재질: 램버트 + 부드러운 림 라이트
+  // =========================================================
+  const RIM_CHUNK = `
+    {
+      vec3 vd = normalize( vViewPosition );
+      float rim = 1.0 - clamp( dot( vd, normal ), 0.0, 1.0 );
+      outgoingLight += diffuseColor.rgb * pow( rim, 2.2 ) * SOFT_RIM;
+      outgoingLight += vec3( 1.0 ) * pow( rim, 5.0 ) * 0.06;
+    }
+    #include <output_fragment>`;
+  function soften(m, strength = 0.38) {
+    m.onBeforeCompile = shader => {
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <output_fragment>', RIM_CHUNK)
+        .replace('#include <common>', `#include <common>\n#define SOFT_RIM ${strength.toFixed(2)}`);
+    };
+    m.customProgramCacheKey = () => 'soft' + strength;
+    return m;
+  }
+  M.soften = soften;
+
   const matCache = new Map();
   function mat(color, opts = {}) {
     const k = color + JSON.stringify(opts);
     if (matCache.has(k)) return matCache.get(k);
-    const m = new THREE.MeshLambertMaterial(Object.assign({ color }, opts));
+    const m = soften(new THREE.MeshLambertMaterial(Object.assign({ color }, opts)));
     matCache.set(k, m);
     return m;
   }
+
+  // =========================================================
+  // 도형
+  // =========================================================
   const geoCache = new Map();
   function geo(key, make) {
     if (!geoCache.has(key)) geoCache.set(key, make());
     return geoCache.get(key);
   }
-  const sphere = r => geo('s' + r, () => new THREE.SphereGeometry(r, 20, 14));
-  const box = (w, h, d) => geo(`b${w},${h},${d}`, () => new THREE.BoxGeometry(w, h, d));
-  const cyl = (rt, rb, h, seg = 14) => geo(`c${rt},${rb},${h},${seg}`, () => new THREE.CylinderGeometry(rt, rb, h, seg));
-  const ico = (r, d = 1) => geo(`i${r},${d}`, () => new THREE.IcosahedronGeometry(r, d));
+
+  // 모서리가 둥근 상자 (three.js RoundedBoxGeometry 와 같은 방식)
+  function roundedBoxGeo(w, h, d, r, s = 2) {
+    const seg = s * 2 + 1;
+    r = Math.max(0.001, Math.min(r, w / 2, h / 2, d / 2));
+    const g = new THREE.BoxGeometry(1, 1, 1, seg, seg, seg);
+    const pos = g.attributes.position, nor = g.attributes.normal;
+    const half = 0.5 / seg;
+    const bx = w / 2 - r, by = h / 2 - r, bz = d / 2 - r;
+    const v = new THREE.Vector3(), n = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      n.copy(v);
+      n.x -= Math.sign(n.x) * half; n.y -= Math.sign(n.y) * half; n.z -= Math.sign(n.z) * half;
+      n.normalize();
+      pos.setXYZ(i, bx * Math.sign(v.x) + n.x * r, by * Math.sign(v.y) + n.y * r, bz * Math.sign(v.z) + n.z * r);
+      nor.setXYZ(i, n.x, n.y, n.z);
+    }
+    return g;
+  }
+  M.roundedBoxGeo = roundedBoxGeo;
+
+  const sphere = (r, ws = 28, hs = 20) => geo(`s${r},${ws}`, () => new THREE.SphereGeometry(r, ws, hs));
+  // 기본 상자는 전부 살짝 둥글게
+  const box = (w, h, d, r) => geo(`rb${w},${h},${d},${r}`, () =>
+    roundedBoxGeo(w, h, d, r !== undefined ? r : Math.min(0.07, Math.min(w, h, d) * 0.3)));
+  const cyl = (rt, rb, h, seg = 22) => geo(`c${rt},${rb},${h},${seg}`, () => new THREE.CylinderGeometry(rt, rb, h, seg));
+  const capsule = (r, len) => geo(`cap${r},${len}`, () => new THREE.CapsuleGeometry(r, len, 8, 16));
+  // 부드러운 곡선으로 회전체 만들기
+  function lathe(key, pts, seg = 28) {
+    return geo('l' + key, () => {
+      const curve = new THREE.SplineCurve(pts.map(([x, y]) => new THREE.Vector2(x, y)));
+      const p = curve.getPoints(24).map(v => new THREE.Vector2(Math.max(0.0001, v.x), v.y));
+      return new THREE.LatheGeometry(p, seg);
+    });
+  }
+  // 끝이 둥근 원뿔 (고양이 귀 등)
+  const roundCone = (rb, h) => lathe(`rc${rb},${h}`, [[0.0001, 0], [rb, 0.01], [rb * 0.92, h * 0.3], [rb * 0.6, h * 0.68], [rb * 0.28, h * 0.92], [0.0001, h]]);
+  // 둥근 테두리의 원판 (테이블 상판 등)
+  const puck = (r, h) => lathe(`pk${r},${h}`, [[0.0001, 0], [r - h * 0.5, 0], [r, h * 0.5], [r - h * 0.5, h], [0.0001, h]], 32);
 
   function mesh(g, m, x = 0, y = 0, z = 0, shadow = true) {
     const o = new THREE.Mesh(g, m);
@@ -35,52 +98,57 @@
   M.mesh = mesh;
 
   // =========================================================
-  // 캐릭터
+  // 캐릭터 (머리가 크고 몸이 콩 모양인 2등신)
   // =========================================================
   // look: { species, fur, fur2, shirt, pattern, pants, hair, hat, ear, beak, eyes, mouth, stripe, blush, backpack }
+  const HEAD_R = 0.43;
   M.character = (look) => {
     const human = look.species === 'human';
-    const skin = human ? 0xffe0c4 : look.fur;
-    const skin2 = human ? 0xffe0c4 : (look.fur2 || look.fur);
+    const skin = human ? 0xffe2c8 : look.fur;
+    const skin2 = human ? 0xffe2c8 : (look.fur2 || look.fur);
     const root = new THREE.Group();
     const body = new THREE.Group();
     root.add(body);
 
-    // 다리
+    // 다리 + 동글한 발
     const legMat = mat(human ? (look.pants || 0x5b6b9a) : skin);
-    const shoeMat = mat(human ? 0xffffff : (look.species === 'duck' ? 0xff8a2a : skin2));
+    const footMat = mat(human ? 0xffffff : (look.species === 'duck' ? 0xff9a3a : skin2));
     const makeLeg = side => {
       const pivot = new THREE.Group();
-      pivot.position.set(side * 0.1, 0.27, 0);
-      pivot.add(mesh(cyl(0.075, 0.085, 0.22), legMat, 0, -0.11, 0));
-      const shoe = mesh(sphere(0.1), shoeMat, 0, -0.23, 0.03);
-      shoe.scale.set(1, 0.55, 1.35);
-      pivot.add(shoe);
+      pivot.position.set(side * 0.1, 0.2, 0);
+      pivot.add(mesh(capsule(0.075, 0.06), legMat, 0, -0.07, 0));
+      const foot = mesh(sphere(0.1), footMat, 0, -0.15, 0.035);
+      foot.scale.set(1, 0.62, 1.3);
+      pivot.add(foot);
       body.add(pivot);
       return pivot;
     };
     const legL = makeLeg(-1), legR = makeLeg(1);
+
+    // 콩 모양 몸통
+    let shirtMat;
+    if (look.pattern) shirtMat = soften(new THREE.MeshLambertMaterial({ map: TEX.shirt(look.pattern, look.shirt) }));
+    else shirtMat = mat(look.shirt);
+    const torsoGeo = lathe('torso', [[0.0001, 0], [0.2, 0.005], [0.265, 0.07], [0.275, 0.16], [0.245, 0.27], [0.19, 0.35], [0.1, 0.39], [0.0001, 0.395]]);
+    const torso = mesh(torsoGeo, shirtMat, 0, 0.12, 0);
+    body.add(torso);
     if (human) {
-      // 반바지
-      const shorts = mesh(cyl(0.22, 0.24, 0.12), mat(look.pants || 0x5b6b9a), 0, 0.28, 0);
+      const shorts = mesh(lathe('shorts', [[0.0001, 0], [0.22, 0.0], [0.27, 0.06], [0.275, 0.12], [0.0001, 0.12]]), mat(look.pants || 0x5b6b9a), 0, 0.1, 0);
       body.add(shorts);
+      // 둥근 옷깃
+      const collar = mesh(geo('collar', () => new THREE.TorusGeometry(0.15, 0.035, 10, 24)), mat(0xffffff), 0, 0.49, 0.02);
+      collar.rotation.x = Math.PI / 2 - 0.2;
+      body.add(collar);
     }
 
-    // 몸통
-    let shirtMat;
-    if (look.pattern) shirtMat = new THREE.MeshLambertMaterial({ map: TEX.shirt(look.pattern, look.shirt) });
-    else shirtMat = new THREE.MeshLambertMaterial({ color: look.shirt });
-    const torso = mesh(cyl(0.2, 0.25, 0.36, 18), shirtMat, 0, 0.47, 0);
-    body.add(torso);
-
-    // 팔
+    // 팔 (짧고 동글)
     const makeArm = side => {
       const pivot = new THREE.Group();
-      pivot.position.set(side * 0.23, 0.6, 0);
-      const arm = mesh(cyl(0.06, 0.065, 0.24), shirtMat, side * 0.03, -0.11, 0);
-      arm.rotation.z = side * 0.25;
+      pivot.position.set(side * 0.22, 0.44, 0);
+      const arm = mesh(capsule(0.065, 0.09), shirtMat, side * 0.035, -0.08, 0);
+      arm.rotation.z = side * 0.35;
       pivot.add(arm);
-      pivot.add(mesh(sphere(0.075), mat(skin2 === skin ? skin : skin2), side * 0.07, -0.25, 0));
+      pivot.add(mesh(sphere(0.078), mat(skin2), side * 0.075, -0.18, 0.01));
       body.add(pivot);
       return pivot;
     };
@@ -88,129 +156,167 @@
 
     // 머리
     const head = new THREE.Group();
-    head.position.y = 0.98;
+    head.position.y = 0.9;
     body.add(head);
-    const skull = mesh(sphere(0.36), mat(skin), 0, 0, 0);
-    if (!human) skull.scale.set(1.08, 0.98, 1);
+    const skull = mesh(sphere(HEAD_R, 36, 28), mat(skin), 0, 0, 0);
+    const headScale = human ? [1.02, 0.96, 1] : [1.1, 0.95, 1.02];
+    skull.scale.set(...headScale);
     head.add(skull);
 
     // 얼굴 (머리 앞쪽을 덮는 구면 조각 + 투명 텍스처)
-    const faceGeo = geo('face', () => new THREE.SphereGeometry(0.363, 24, 16, Math.PI / 2 - 0.95, 1.9, Math.PI * 0.3, Math.PI * 0.45));
+    const faceGeo = geo('face', () => new THREE.SphereGeometry(HEAD_R + 0.004, 32, 20, Math.PI / 2 - 1.0, 2.0, Math.PI * 0.3, Math.PI * 0.46));
     const faceTex = TEX.face(look, false), blinkTex = TEX.face(look, true);
     const faceMat = new THREE.MeshLambertMaterial({ map: faceTex, transparent: true, depthWrite: false });
     const face = new THREE.Mesh(faceGeo, faceMat);
-    if (!human) face.scale.set(1.08, 0.98, 1);
+    face.scale.set(...headScale);
     face.renderOrder = 2;
     head.add(face);
 
     const s = look.species;
+    const F = HEAD_R * headScale[2];   // 얼굴 앞면 z
     if (human) {
       const hairMat = mat(look.hair);
-      const cap = mesh(geo('hair', () => new THREE.SphereGeometry(0.378, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.55)), hairMat);
+      const cap = mesh(geo('hair', () => new THREE.SphereGeometry(HEAD_R + 0.025, 32, 18, 0, Math.PI * 2, 0, Math.PI * 0.56)), hairMat);
       cap.rotation.x = -0.5;
+      cap.scale.set(1.03, 0.98, 1.02);
       head.add(cap);
-      // 앞머리
-      for (const [x, y, r] of [[-0.14, 0.2, 0.13], [0.02, 0.23, 0.14], [0.16, 0.19, 0.12]]) {
-        const b = mesh(sphere(r), hairMat, x, y, 0.25);
-        b.scale.set(1, 0.7, 0.6);
+      // 동글동글 앞머리
+      for (const [x, y, r] of [[-0.19, 0.2, 0.14], [-0.05, 0.25, 0.15], [0.1, 0.24, 0.15], [0.22, 0.17, 0.12]]) {
+        const b = mesh(sphere(r), hairMat, x, y, 0.28);
+        b.scale.set(1, 0.75, 0.62);
         head.add(b);
       }
-      // 머리 위 잎사귀
-      const leaf = mesh(sphere(0.07), mat(0x7cc864), 0.05, 0.42, 0);
-      leaf.scale.set(0.8, 1.6, 0.4); leaf.rotation.z = -0.5;
-      head.add(leaf);
+      // 옆머리
+      for (const side of [-1, 1]) {
+        const b = mesh(sphere(0.13), hairMat, side * 0.38, -0.02, 0.02);
+        b.scale.set(0.55, 1.1, 0.9);
+        head.add(b);
+      }
+      // 코
+      head.add(mesh(sphere(0.035), mat(0xf5c7a8), 0, -0.07, F + 0.01, false));
+      // 머리 위 새싹 잎
+      const sprout = new THREE.Group();
+      sprout.position.set(0.02, HEAD_R + 0.05, -0.02);
+      sprout.add(mesh(capsule(0.012, 0.06), mat(0x5a9e3a), 0, 0.02, 0, false));
+      for (const side of [-1, 1]) {
+        const l = mesh(sphere(0.06), mat(0x7cc864), side * 0.05, 0.08, 0, false);
+        l.scale.set(1, 0.45, 0.6); l.rotation.z = side * 0.5;
+        sprout.add(l);
+      }
+      head.add(sprout);
       if (look.hat) {
+        // 동글한 벙거지 모자
         const hat = new THREE.Group();
-        hat.add(mesh(cyl(0.3, 0.37, 0.22, 20), mat(look.hat), 0, 0.12, 0));
-        hat.add(mesh(cyl(0.44, 0.44, 0.03, 24), mat(look.hat), 0, 0.01, 0.02));
-        hat.add(mesh(cyl(0.372, 0.372, 0.05, 20), mat(0xffffff), 0, 0.05, 0));
-        hat.position.set(0, 0.26, -0.04);
+        const dome = mesh(geo('hatDome', () => new THREE.SphereGeometry(0.4, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2)), mat(look.hat), 0, 0, 0);
+        dome.scale.set(1.03, 0.78, 1.03);
+        hat.add(dome);
+        const brim = mesh(geo('hatBrim', () => new THREE.TorusGeometry(0.43, 0.065, 12, 36)), mat(look.hat), 0, 0.02, 0);
+        brim.rotation.x = Math.PI / 2;
+        brim.scale.set(1, 1, 0.55);
+        hat.add(brim);
+        hat.add(mesh(geo('hatBand', () => new THREE.TorusGeometry(0.405, 0.03, 8, 36)), mat(0xffffff), 0, 0.07, 0).rotateX(Math.PI / 2));
+        hat.position.set(0, 0.17, -0.03);
         hat.rotation.x = -0.22;
         head.add(hat);
-        leaf.visible = false;
+        sprout.visible = false;
       }
       if (look.backpack !== false) {
-        const bp = mesh(box(0.3, 0.3, 0.14), mat(0xe8433b), 0, 0.5, -0.27);
+        const bp = mesh(box(0.3, 0.3, 0.16, 0.07), mat(0xef5a4f), 0, 0.3, -0.25);
         body.add(bp);
-        body.add(mesh(box(0.22, 0.1, 0.06), mat(0xc9302a), 0, 0.42, -0.35));
+        body.add(mesh(box(0.2, 0.1, 0.06, 0.03), mat(0xd9443b), 0, 0.23, -0.34));
       }
     } else if (s === 'cat') {
       for (const side of [-1, 1]) {
-        const ear = mesh(geo('catEar', () => new THREE.ConeGeometry(0.13, 0.28, 4)), mat(look.fur), side * 0.22, 0.32, 0);
-        ear.rotation.set(0, Math.PI / 4, -side * 0.35);
+        const ear = mesh(roundCone(0.14, 0.3), mat(look.fur), side * 0.26, 0.28, -0.02);
+        ear.scale.set(1, 1, 0.6);
+        ear.rotation.z = -side * 0.38;
         head.add(ear);
-        const inner = mesh(geo('catEarIn', () => new THREE.ConeGeometry(0.07, 0.18, 4)), mat(look.ear || 0xffa0b4), side * 0.215, 0.3, 0.05);
-        inner.rotation.set(0, Math.PI / 4, -side * 0.35);
+        const inner = mesh(roundCone(0.08, 0.19), mat(look.ear || 0xffa0b4), side * 0.255, 0.3, 0.04);
+        inner.scale.set(1, 1, 0.35);
+        inner.rotation.z = -side * 0.38;
         head.add(inner);
       }
-      const muzzle = mesh(sphere(0.1), mat(look.fur2), 0, -0.1, 0.3);
-      muzzle.scale.set(1.3, 0.75, 0.7);
-      head.add(muzzle);
-      head.add(mesh(sphere(0.035), mat(0xff8fa3), 0, -0.05, 0.37));
+      // ω 모양 주둥이
+      for (const side of [-1, 1]) {
+        const m = mesh(sphere(0.075), mat(look.fur2), side * 0.055, -0.13, F - 0.04);
+        m.scale.set(1, 0.8, 0.7);
+        head.add(m);
+      }
+      head.add(mesh(sphere(0.035), mat(0xff8fa3), 0, -0.085, F + 0.015));
     } else if (s === 'bear') {
       for (const side of [-1, 1]) {
-        const ear = mesh(sphere(0.12), mat(look.fur), side * 0.26, 0.26, -0.02);
-        ear.scale.set(1, 1, 0.55);
+        const ear = mesh(sphere(0.13), mat(look.fur), side * 0.3, 0.28, -0.03);
+        ear.scale.set(1, 1, 0.6);
         head.add(ear);
-        const inner = mesh(sphere(0.065), mat(look.ear || 0x8a5a33), side * 0.26, 0.26, 0.04);
+        const inner = mesh(sphere(0.075), mat(look.ear || 0x8a5a33), side * 0.3, 0.28, 0.03);
         inner.scale.set(1, 1, 0.4);
         head.add(inner);
       }
-      const muzzle = mesh(sphere(0.15), mat(look.fur2), 0, -0.1, 0.27);
-      muzzle.scale.set(1.2, 0.8, 0.75);
+      const muzzle = mesh(sphere(0.16), mat(look.fur2), 0, -0.13, F - 0.08);
+      muzzle.scale.set(1.25, 0.82, 0.78);
       head.add(muzzle);
-      head.add(mesh(sphere(0.05), mat(0x3a2520), 0, -0.05, 0.38));
+      const nose = mesh(sphere(0.055), mat(0x3a2520), 0, -0.07, F + 0.04);
+      nose.scale.set(1.3, 0.9, 0.9);
+      head.add(nose);
     } else if (s === 'duck') {
-      const bill = mesh(sphere(0.16), mat(look.beak), 0, -0.1, 0.3);
-      bill.scale.set(1.25, 0.38, 1.1);
+      const bill = mesh(sphere(0.18), mat(look.beak), 0, -0.1, F - 0.02);
+      bill.scale.set(1.25, 0.36, 1.05);
       head.add(bill);
       if (look.hat) {
         const hat = new THREE.Group();
-        hat.add(mesh(cyl(0.32, 0.38, 0.2, 20), mat(look.hat), 0, 0.1, 0));
-        hat.add(mesh(cyl(0.5, 0.5, 0.03, 24), mat(look.hat), 0, 0.0, 0));
-        for (let i = 0; i < 6; i++) {
-          const a = i / 6 * Math.PI * 2;
-          hat.add(mesh(sphere(0.04), mat(0xd9c25a), Math.cos(a) * 0.33, 0.1, Math.sin(a) * 0.33, false));
+        const dome = mesh(geo('hatDome', () => new THREE.SphereGeometry(0.4, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2)), mat(look.hat), 0, 0, 0);
+        dome.scale.set(1.08, 0.75, 1.08);
+        hat.add(dome);
+        const brim = mesh(geo('hatBrim', () => new THREE.TorusGeometry(0.43, 0.065, 12, 36)), mat(look.hat), 0, 0.02, 0);
+        brim.rotation.x = Math.PI / 2;
+        brim.scale.set(1.08, 1.08, 0.55);
+        hat.add(brim);
+        for (let i = 0; i < 8; i++) {
+          const a = i / 8 * Math.PI * 2;
+          hat.add(mesh(sphere(0.045), mat(0xd9c25a), Math.cos(a) * 0.3, 0.18, Math.sin(a) * 0.3, false));
         }
-        hat.position.set(0, 0.25, 0);
-        hat.rotation.x = -0.1;
+        hat.position.set(0, 0.2, 0);
+        hat.rotation.x = -0.12;
         head.add(hat);
       }
     } else if (s === 'hamster') {
       for (const side of [-1, 1]) {
-        const ear = mesh(sphere(0.11), mat(look.fur), side * 0.24, 0.3, -0.02);
-        ear.scale.set(1, 1, 0.5);
+        const ear = mesh(sphere(0.12), mat(look.fur), side * 0.27, 0.32, -0.03);
+        ear.scale.set(1, 1, 0.55);
         head.add(ear);
-        const inner = mesh(sphere(0.07), mat(look.ear), side * 0.24, 0.3, 0.03);
+        const inner = mesh(sphere(0.075), mat(look.ear), side * 0.27, 0.32, 0.02);
         inner.scale.set(1, 1, 0.4);
         head.add(inner);
-        const cheek = mesh(sphere(0.12), mat(look.fur2), side * 0.25, -0.12, 0.17);
+        const cheek = mesh(sphere(0.13), mat(look.fur2), side * 0.27, -0.14, 0.2);
         head.add(cheek);
       }
     } else if (s === 'dog') {
       for (const side of [-1, 1]) {
-        const ear = mesh(sphere(0.13), mat(look.ear), side * 0.35, 0.02, -0.02);
-        ear.scale.set(0.55, 1.35, 0.9);
-        ear.rotation.z = side * 0.3;
+        const ear = mesh(sphere(0.15), mat(look.ear), side * 0.42, 0.0, -0.02);
+        ear.scale.set(0.5, 1.3, 0.85);
+        ear.rotation.z = side * 0.28;
         head.add(ear);
       }
-      const muzzle = mesh(sphere(0.12), mat(look.fur2), 0, -0.12, 0.28);
-      muzzle.scale.set(1.2, 0.8, 0.8);
+      const muzzle = mesh(sphere(0.13), mat(look.fur2), 0, -0.14, F - 0.05);
+      muzzle.scale.set(1.25, 0.8, 0.8);
       head.add(muzzle);
-      head.add(mesh(sphere(0.055), mat(0x3a2a40), 0, -0.07, 0.38));
+      const nose = mesh(sphere(0.06), mat(0x3a2a40), 0, -0.09, F + 0.05);
+      nose.scale.set(1.3, 0.9, 0.9);
+      head.add(nose);
     }
 
     // 꼬리
     if (!human) {
       if (s === 'cat') {
         const curve = new THREE.CatmullRomCurve3([
-          new THREE.Vector3(0, 0.35, -0.22), new THREE.Vector3(0, 0.3, -0.4),
-          new THREE.Vector3(0.05, 0.5, -0.5), new THREE.Vector3(0.1, 0.65, -0.42),
+          new THREE.Vector3(0, 0.2, -0.24), new THREE.Vector3(0, 0.16, -0.42),
+          new THREE.Vector3(0.05, 0.36, -0.52), new THREE.Vector3(0.1, 0.52, -0.44),
         ]);
-        body.add(mesh(new THREE.TubeGeometry(curve, 12, 0.04, 8), mat(look.stripe || look.fur)));
+        body.add(mesh(new THREE.TubeGeometry(curve, 16, 0.045, 10), mat(look.stripe || look.fur)));
+        body.add(mesh(sphere(0.05), mat(look.stripe || look.fur), 0.1, 0.52, -0.44));
       } else {
-        const tail = mesh(sphere(0.09), mat(look.fur2 || look.fur), 0, 0.32, -0.26);
-        if (s === 'duck') tail.scale.set(1.2, 0.5, 1);
+        const tail = mesh(sphere(0.1), mat(look.fur2 || look.fur), 0, 0.2, -0.27);
+        if (s === 'duck') tail.scale.set(1.3, 0.55, 1);
         body.add(tail);
       }
     }
@@ -220,36 +326,54 @@
     return {
       root, body, head, legL, legR, armL, armR, face, faceTex, blinkTex,
       phase: 0, blinkT: 2 + Math.random() * 3, actionT: 0, idleT: Math.random() * 10,
+      lastRot: 0, headYaw: 0, hopT: 0,
     };
   };
 
-  // 걷기/대기/행동 애니메이션
+  // 걷기/대기/행동 애니메이션 (통통 튀는 느낌)
   M.animate = (c, dt, moveAmount) => {
     c.idleT += dt;
     const m = Math.min(1, moveAmount);
-    if (m > 0.01) c.phase += dt * (6 + m * 7);
+    if (m > 0.01) c.phase += dt * (7 + m * 7);
     const sw = Math.sin(c.phase) * m;
-    c.legL.rotation.x = sw * 0.75;
-    c.legR.rotation.x = -sw * 0.75;
-    c.armL.rotation.x = -sw * 0.7;
-    c.armR.rotation.x = sw * 0.7;
-    c.body.position.y = Math.abs(Math.sin(c.phase)) * 0.06 * m;
-    c.body.rotation.z = Math.sin(c.phase) * 0.04 * m;
-    c.head.rotation.z = m < 0.05 ? Math.sin(c.idleT * 1.3) * 0.05 : 0;
-    c.body.scale.y = 1 + Math.sin(c.idleT * 2.4) * 0.012 * (1 - m);
+    const bounce = Math.abs(Math.sin(c.phase)) * m;
+    c.legL.rotation.x = sw * 0.8;
+    c.legR.rotation.x = -sw * 0.8;
+    c.armL.rotation.x = -sw * 0.8;
+    c.armR.rotation.x = sw * 0.8;
+    // 스쿼시 & 스트레치
+    const breath = Math.sin(c.idleT * 2.4) * 0.015 * (1 - m);
+    const squash = (bounce - 0.5) * 0.08 * m;
+    c.body.position.y = bounce * 0.07;
+    c.body.scale.set(1 - squash * 0.5 - breath * 0.5, 1 + squash + breath, 1 - squash * 0.5 - breath * 0.5);
+    c.body.rotation.z = Math.sin(c.phase) * 0.05 * m;
+
+    // 방향을 바꿀 때 머리가 살짝 늦게 따라옴
+    const rot = c.root.rotation.y;
+    let dr = rot - c.lastRot;
+    dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+    c.lastRot = rot;
+    const target = Math.max(-0.35, Math.min(0.35, -dr / Math.max(dt, 0.001) * 0.05));
+    c.headYaw += (target - c.headYaw) * Math.min(1, dt * 10);
+    c.head.rotation.y = c.headYaw;
+    c.head.rotation.z = m < 0.05 ? Math.sin(c.idleT * 1.3) * 0.06 : Math.sin(c.phase) * 0.04;
 
     if (c.actionT > 0) {
       c.actionT -= dt;
       const k = Math.sin(Math.min(1, c.actionT / 0.5) * Math.PI);
-      c.armL.rotation.x = -2.3 * k;
-      c.armR.rotation.x = -2.3 * k;
+      c.armL.rotation.x = -2.4 * k;
+      c.armR.rotation.x = -2.4 * k;
     }
     if (c.talkT > 0) {
       c.talkT -= dt;
+      // 말할 때 깡충
+      const hop = Math.max(0, Math.sin(c.talkT * 9)) * 0.08;
+      c.body.position.y += hop;
       c.head.rotation.x = Math.sin(c.talkT * 14) * 0.08;
-      c.armR.rotation.z = Math.sin(c.talkT * 8) * 0.3 + 0.3;
+      c.armR.rotation.z = Math.sin(c.talkT * 8) * 0.3 + 0.4;
+      c.armL.rotation.z = -Math.sin(c.talkT * 8) * 0.3 - 0.4;
     } else {
-      c.head.rotation.x = 0; c.armR.rotation.z = 0;
+      c.head.rotation.x = 0; c.armR.rotation.z = 0; c.armL.rotation.z = 0;
     }
     // 눈 깜빡임
     c.blinkT -= dt;
@@ -260,26 +384,30 @@
   };
 
   // =========================================================
-  // 자연물
+  // 자연물 (몽글몽글)
   // =========================================================
-  const LEAF = [0x3f9a45, 0x4fb04f, 0x62c25c];
+  const LEAF = [0x4fae4a, 0x62c257, 0x7ad26a];
+  const BLOB = () => sphere(1, 24, 18);
   M.tree = (fruitType) => {
     const g = new THREE.Group();
-    const trunk = mesh(cyl(0.13, 0.22, 1.1, 9), mat(0x9b6a3f), 0, 0.55, 0);
+    const trunk = mesh(lathe('trunk', [[0.0001, 0], [0.3, 0], [0.2, 0.12], [0.15, 0.5], [0.13, 1.0], [0.15, 1.2], [0.0001, 1.22]], 16), mat(0xa3703f), 0, 0, 0);
     g.add(trunk);
     const canopy = new THREE.Group();
-    canopy.position.y = 1.55;
-    const blobs = [[0, 0.15, 0, 0.82, 1], [-0.5, -0.12, 0.05, 0.6, 0], [0.5, -0.08, -0.05, 0.62, 2],
-      [0.05, -0.2, 0.45, 0.62, 2], [0.1, 0.55, -0.05, 0.55, 2], [-0.1, -0.12, -0.48, 0.62, 0]];
+    canopy.position.y = 1.62;
+    const blobs = [
+      [0, 0.1, 0, 0.78, 1], [-0.5, -0.12, 0.08, 0.55, 0], [0.5, -0.1, -0.02, 0.57, 1],
+      [0.05, -0.18, 0.46, 0.56, 1], [-0.08, -0.12, -0.46, 0.56, 0], [0.12, 0.5, 0.05, 0.5, 2],
+      [-0.32, 0.32, 0.22, 0.4, 2], [0.36, 0.3, 0.25, 0.4, 2],
+    ];
     for (const [x, y, z, r, c] of blobs) {
-      const b = mesh(ico(1, 1), mat(LEAF[c], { flatShading: true }), x, y, z);
-      b.scale.setScalar(r);
+      const b = mesh(BLOB(), mat(LEAF[c]), x, y, z);
+      b.scale.set(r, r * 0.92, r);
       canopy.add(b);
     }
     g.add(canopy);
     const fruits = [];
-    for (const [x, y, z] of [[-0.42, -0.1, 0.55], [0.4, 0.0, 0.58], [0.0, 0.35, 0.72]]) {
-      const f = M.fruit(fruitType, 1.15);
+    for (const [x, y, z] of [[-0.44, -0.12, 0.6], [0.42, -0.02, 0.6], [0.02, 0.32, 0.72]]) {
+      const f = M.fruit(fruitType, 1.2);
       f.position.set(x, y, z);
       canopy.add(f);
       fruits.push(f);
@@ -292,15 +420,23 @@
   M.fruit = (type, s = 1) => {
     const g = new THREE.Group();
     const col = ISLE.FRUIT_COLOR[type];
+    const shine = mat(0xffffff);
     if (type === 'cherry') {
-      g.add(mesh(sphere(0.08), mat(col), -0.06, 0, 0));
-      g.add(mesh(sphere(0.08), mat(col), 0.06, -0.02, 0.02));
+      for (const [x, y] of [[-0.065, 0], [0.065, -0.02]]) {
+        g.add(mesh(sphere(0.085), mat(col), x, y, 0));
+        g.add(mesh(sphere(0.022), shine, x - 0.03, y + 0.035, 0.06, false));
+      }
+      const stem = mesh(capsule(0.01, 0.1), mat(0x5a8a2e), 0, 0.1, 0, false);
+      g.add(stem);
     } else {
-      const f = mesh(sphere(0.13), mat(col), 0, 0, 0);
+      const f = mesh(sphere(0.14), mat(col), 0, 0, 0);
       if (type === 'pear') f.scale.set(0.9, 1.15, 0.9);
+      else f.scale.set(1, 0.93, 1);
       g.add(f);
-      const leaf = mesh(sphere(0.05), mat(0x4f9e3f), 0.04, 0.13, 0);
-      leaf.scale.set(1.4, 0.5, 0.8);
+      g.add(mesh(sphere(0.035), shine, -0.05, 0.05, 0.1, false));
+      const leaf = mesh(sphere(0.055), mat(0x5aa84a), 0.05, 0.14, 0);
+      leaf.scale.set(1.4, 0.45, 0.8);
+      leaf.rotation.z = -0.3;
       g.add(leaf);
     }
     g.scale.setScalar(s);
@@ -312,25 +448,38 @@
     const col = ISLE.ITEMS[itemId].color;
     const spots = [[-0.18, 0.1], [0.16, -0.08], [0.02, 0.2]];
     spots.forEach(([x, z], i) => {
-      const h = 0.28 + i * 0.05;
-      const stem = mesh(cyl(0.015, 0.02, h, 5), mat(0x4f9e3f), x, h / 2, z, false);
-      g.add(stem);
-      const leaf = mesh(sphere(0.06), mat(0x6cc15a), x + 0.05, 0.08, z);
-      leaf.scale.set(1.3, 0.35, 0.6);
-      g.add(leaf);
-      let head;
-      if (itemId === 'tulip') {
-        head = mesh(sphere(0.08), mat(col), x, h + 0.04, z);
-        head.scale.set(0.9, 1.25, 0.9);
-      } else {
-        head = new THREE.Group();
-        head.position.set(x, h + 0.02, z);
-        const petals = mesh(ico(0.12, 1), mat(col, { flatShading: true }));
-        petals.scale.set(1, itemId === 'mum' ? 0.75 : 0.45, 1);
-        head.add(petals);
-        head.add(mesh(sphere(0.045), mat(itemId === 'mum' ? 0xd98a1a : 0xfff0a0), 0, 0.05, 0, false));
+      const h = 0.26 + i * 0.05;
+      g.add(mesh(capsule(0.018, h), mat(0x4f9e3f), x, h / 2, z, false));
+      for (const side of [-1, 1]) {
+        const leaf = mesh(sphere(0.06), mat(0x6cc15a), x + side * 0.055, 0.08, z, false);
+        leaf.scale.set(1.3, 0.4, 0.7);
+        leaf.rotation.z = side * 0.4;
+        g.add(leaf);
       }
-      head.castShadow = true;
+      const head = new THREE.Group();
+      head.position.set(x, h + 0.03, z);
+      if (itemId === 'tulip') {
+        const cup = mesh(sphere(0.085), mat(col), 0, 0.02, 0, false);
+        cup.scale.set(0.9, 1.2, 0.9);
+        head.add(cup);
+        for (let k = 0; k < 3; k++) {
+          const a = k / 3 * Math.PI * 2;
+          const p = mesh(sphere(0.04), mat(col), Math.cos(a) * 0.05, 0.1, Math.sin(a) * 0.05, false);
+          head.add(p);
+        }
+      } else {
+        const n = itemId === 'mum' ? 10 : 6;
+        const pr = itemId === 'mum' ? 0.05 : 0.06;
+        for (let k = 0; k < n; k++) {
+          const a = k / n * Math.PI * 2;
+          const p = mesh(sphere(pr), mat(col), Math.cos(a) * 0.075, 0, Math.sin(a) * 0.075, false);
+          p.scale.set(1, 0.55, 1);
+          head.add(p);
+        }
+        if (itemId === 'mum') head.add(mesh(sphere(0.06), mat(col), 0, 0.03, 0, false));
+        head.add(mesh(sphere(0.04), mat(itemId === 'mum' ? 0xe8a020 : 0xfff0a0), 0, 0.05, 0, false));
+      }
+      head.rotation.x = -0.25;
       g.add(head);
     });
     return g;
@@ -340,28 +489,43 @@
     const g = new THREE.Group();
     for (let i = 0; i < 6; i++) {
       const a = i / 6 * Math.PI * 2;
-      const b = mesh(geo('weedBlade', () => new THREE.ConeGeometry(0.05, 0.32, 4)), mat(0x4c9a3c), Math.cos(a) * 0.08, 0.14, Math.sin(a) * 0.08, false);
-      b.rotation.set(Math.sin(a) * 0.5, 0, -Math.cos(a) * 0.5);
+      const b = mesh(sphere(0.06), mat(0x4c9a3c), Math.cos(a) * 0.07, 0.12, Math.sin(a) * 0.07, false);
+      b.scale.set(0.55, 2.2, 0.35);
+      b.rotation.set(Math.sin(a) * 0.5, -a, -Math.cos(a) * 0.5);
       g.add(b);
     }
     return g;
   };
 
+  // 매끈하게 울퉁불퉁한 돌
+  const rockGeo = (key, r, seed) => geo(key, () => {
+    const g = new THREE.SphereGeometry(r, 22, 16);
+    const p = g.attributes.position, v = new THREE.Vector3();
+    for (let i = 0; i < p.count; i++) {
+      v.fromBufferAttribute(p, i);
+      const n = 1 + Math.sin(v.x * 7 + seed) * 0.06 + Math.cos(v.z * 6 + seed * 2) * 0.06 + Math.sin(v.y * 5) * 0.04;
+      v.multiplyScalar(n);
+      p.setXYZ(i, v.x, v.y, v.z);
+    }
+    g.computeVertexNormals();
+    return g;
+  });
   M.rock = () => {
     const g = new THREE.Group();
-    const r = mesh(geo('rock', () => new THREE.DodecahedronGeometry(0.42, 0)), mat(0x9aa1ad, { flatShading: true }), 0, 0.3, 0);
-    r.scale.set(1.1, 0.85, 1);
+    const r = mesh(rockGeo('rockA', 0.42, 1), mat(0xa6adbb), 0, 0.26, 0);
+    r.scale.set(1.1, 0.75, 1);
     g.add(r);
-    const r2 = mesh(geo('rock2', () => new THREE.DodecahedronGeometry(0.2, 0)), mat(0xb8bfca, { flatShading: true }), 0.3, 0.12, 0.25);
+    const r2 = mesh(rockGeo('rockB', 0.2, 4), mat(0xbcc3cf), 0.32, 0.1, 0.25);
+    r2.scale.set(1, 0.7, 1);
     g.add(r2);
     return g;
   };
 
   M.bush = () => {
     const g = new THREE.Group();
-    for (const [x, y, z, r] of [[0, 0.3, 0, 0.42], [-0.3, 0.22, 0.1, 0.3], [0.3, 0.2, 0.05, 0.32]]) {
-      const b = mesh(ico(1, 1), mat(0x3f8f3e, { flatShading: true }), x, y, z);
-      b.scale.setScalar(r);
+    for (const [x, y, z, r, c] of [[0, 0.3, 0, 0.42, 0], [-0.3, 0.2, 0.1, 0.3, 1], [0.3, 0.2, 0.05, 0.32, 1], [0.05, 0.5, 0.1, 0.25, 2]]) {
+      const b = mesh(BLOB(), mat([0x3f8f3e, 0x4ea449, 0x62b85a][c]), x, y, z);
+      b.scale.set(r, r * 0.9, r);
       g.add(b);
     }
     return g;
@@ -369,13 +533,13 @@
 
   M.sapling = () => {
     const g = new THREE.Group();
-    const dirt = mesh(cyl(0.22, 0.26, 0.05, 12), mat(0xa47b4f), 0, 0.02, 0, false);
+    const dirt = mesh(puck(0.24, 0.06), mat(0xa47b4f), 0, 0, 0, false);
     g.add(dirt);
-    g.add(mesh(cyl(0.02, 0.03, 0.35, 6), mat(0x6a9c3a), 0, 0.18, 0));
+    g.add(mesh(capsule(0.022, 0.3), mat(0x6a9c3a), 0, 0.2, 0));
     for (const side of [-1, 1]) {
-      const l = mesh(sphere(0.08), mat(0x7ccf5c), side * 0.08, 0.34, 0);
-      l.scale.set(1.4, 0.4, 0.7);
-      l.rotation.z = side * 0.4;
+      const l = mesh(sphere(0.09), mat(0x7ccf5c), side * 0.09, 0.36, 0);
+      l.scale.set(1.4, 0.45, 0.75);
+      l.rotation.z = side * 0.45;
       g.add(l);
     }
     return g;
@@ -383,20 +547,22 @@
 
   M.item = (id) => {
     const it = ISLE.ITEMS[id];
-    if (it.kind === 'fruit') { const f = M.fruit(id, 1.3); f.position.y = 0.16; return f; }
+    if (it.kind === 'fruit') { const f = M.fruit(id, 1.3); f.position.y = 0.17; return f; }
     if (it.kind === 'flower') { const f = M.flower(id); f.scale.setScalar(0.7); return f; }
     const g = new THREE.Group();
     if (id === 'shell') {
-      const s = mesh(sphere(0.14), mat(0xffd6d0), 0, 0.05, 0);
-      s.scale.set(1, 0.4, 0.85);
+      const s = mesh(sphere(0.15), mat(0xffd6d0), 0, 0.04, 0);
+      s.scale.set(1, 0.38, 0.85);
       g.add(s);
       for (let i = -2; i <= 2; i++) {
-        const rib = mesh(box(0.02, 0.02, 0.2), mat(0xf2a8a0), i * 0.045, 0.1, 0, false);
-        rib.rotation.y = i * 0.25;
+        const rib = mesh(capsule(0.012, 0.18), mat(0xf2a8a0), i * 0.045, 0.085, 0, false);
+        rib.rotation.set(Math.PI / 2, 0, i * 0.25);
         g.add(rib);
       }
     } else if (id === 'stone') {
-      g.add(mesh(geo('stone', () => new THREE.DodecahedronGeometry(0.14, 0)), mat(0x9aa1ad, { flatShading: true }), 0, 0.1, 0));
+      const s = mesh(rockGeo('stone', 0.15, 7), mat(0xa6adbb), 0, 0.09, 0);
+      s.scale.set(1, 0.75, 1);
+      g.add(s);
     } else if (id === 'weed') {
       const w = M.weed(); w.scale.setScalar(0.7); g.add(w);
     }
@@ -409,35 +575,41 @@
   M.house = (name) => {
     const g = new THREE.Group();
     const W = 3.5, D = 2.5, H = 1.8;
-    const walls = mesh(box(W, H, D), mat(0xfff4dc), 0, H / 2, 0);
-    g.add(walls);
-    // 지붕 (삼각기둥)
+    g.add(mesh(box(W, H, D, 0.22), mat(0xfff4dc), 0, H / 2, 0));
+    // 통통한 지붕 (둥근 모서리 삼각기둥)
     const shape = new THREE.Shape();
-    shape.moveTo(-W / 2 - 0.3, 0); shape.lineTo(0, 1.25); shape.lineTo(W / 2 + 0.3, 0); shape.closePath();
-    const roofGeo = new THREE.ExtrudeGeometry(shape, { depth: D + 0.5, bevelEnabled: false });
-    roofGeo.translate(0, 0, -(D + 0.5) / 2);
-    const roof = mesh(roofGeo, mat(0xec7a62), 0, H, 0);
-    g.add(roof);
-    g.add(mesh(box(W + 0.7, 0.14, D + 0.56), mat(0xd65f49), 0, H + 0.02, 0));
-    g.add(mesh(box(0.35, 0.8, 0.35), mat(0xc96b56), 0.9, H + 0.8, -0.3));
-    // 문
-    const door = mesh(box(0.7, 1.1, 0.08), mat(0xb98553), 0, 0.55, D / 2 + 0.02);
-    g.add(door);
-    g.add(mesh(sphere(0.05), mat(0xffd84a), 0.22, 0.55, D / 2 + 0.08, false));
-    g.add(mesh(box(1.1, 0.1, 0.5), mat(0xd9c2a0), 0, 0.05, D / 2 + 0.25));
-    // 창문
-    const winMat = new THREE.MeshLambertMaterial({ color: 0xbfe8ff, emissive: 0x000000 });
+    shape.moveTo(-W / 2 - 0.15, 0); shape.lineTo(0, 1.15); shape.lineTo(W / 2 + 0.15, 0); shape.closePath();
+    const roofGeo = new THREE.ExtrudeGeometry(shape, { depth: D + 0.2, bevelEnabled: true, bevelThickness: 0.18, bevelSize: 0.18, bevelSegments: 6, curveSegments: 4 });
+    roofGeo.translate(0, 0, -(D + 0.2) / 2);
+    g.add(mesh(roofGeo, mat(0xf07f68), 0, H - 0.05, 0));
+    g.add(mesh(box(0.42, 0.8, 0.42, 0.14), mat(0xd9735d), 0.9, H + 0.75, -0.3));
+    g.add(mesh(box(0.52, 0.12, 0.52, 0.06), mat(0xc4604b), 0.9, H + 1.15, -0.3));
+    // 둥근 문
+    const doorShape = new THREE.Shape();
+    doorShape.moveTo(-0.36, 0); doorShape.lineTo(-0.36, 0.72); doorShape.absarc(0, 0.72, 0.36, Math.PI, 0, true); doorShape.lineTo(0.36, 0); doorShape.closePath();
+    const doorGeo = new THREE.ExtrudeGeometry(doorShape, { depth: 0.06, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3 });
+    g.add(mesh(doorGeo, mat(0xb98553), 0, 0.02, D / 2 - 0.02));
+    g.add(mesh(sphere(0.055), mat(0xffd84a), 0.22, 0.55, D / 2 + 0.1, false));
+    g.add(mesh(box(1.2, 0.12, 0.55, 0.06), mat(0xd9c2a0), 0, 0.06, D / 2 + 0.28));
+    // 동그란 창문
+    const winMat = soften(new THREE.MeshLambertMaterial({ color: 0xbfe8ff, emissive: 0x000000 }));
     for (const x of [-1.1, 1.1]) {
-      g.add(mesh(box(0.72, 0.62, 0.06), mat(0xb98553), x, 1.05, D / 2 + 0.01));
-      g.add(mesh(box(0.6, 0.5, 0.08), winMat, x, 1.05, D / 2 + 0.02, false));
-      g.add(mesh(box(0.04, 0.5, 0.1), mat(0xb98553), x, 1.05, D / 2 + 0.03, false));
+      const frame = mesh(geo('winFrame', () => new THREE.TorusGeometry(0.3, 0.06, 12, 32)), mat(0xb98553), x, 1.05, D / 2 + 0.02);
+      g.add(frame);
+      const glass = mesh(geo('winGlass', () => new THREE.CircleGeometry(0.3, 32)), winMat, x, 1.05, D / 2 + 0.01, false);
+      g.add(glass);
+      g.add(mesh(box(0.04, 0.56, 0.04, 0.02), mat(0xb98553), x, 1.05, D / 2 + 0.03, false));
+      g.add(mesh(box(0.56, 0.04, 0.04, 0.02), mat(0xb98553), x, 1.05, D / 2 + 0.03, false));
+      // 화분 받침
+      g.add(mesh(box(0.7, 0.1, 0.18, 0.05), mat(0xb98553), x, 0.68, D / 2 + 0.1));
+      for (let i = -1; i <= 1; i++) g.add(mesh(sphere(0.07), mat([0xff7aa8, 0xffd84a, 0xff9a3d][i + 1]), x + i * 0.2, 0.78, D / 2 + 0.12, false));
     }
     // 문패
     const c = document.createElement('canvas');
     c.width = 256; c.height = 64;
     const nameTex = new THREE.CanvasTexture(c);
-    const plate = mesh(new THREE.PlaneGeometry(0.9, 0.24), new THREE.MeshLambertMaterial({ map: nameTex }), 0, 1.5, D / 2 + 0.02, false);
-    g.add(plate);
+    g.add(mesh(box(0.98, 0.3, 0.05, 0.08), mat(0xb98553), 0, 1.58, D / 2 + 0.02, false));
+    g.add(mesh(new THREE.PlaneGeometry(0.9, 0.24), new THREE.MeshLambertMaterial({ map: nameTex }), 0, 1.58, D / 2 + 0.05, false));
     g.userData = { winMat, setName: (n) => {
       const x = c.getContext('2d');
       x.fillStyle = '#fffaf0'; x.fillRect(0, 0, 256, 64);
@@ -451,53 +623,62 @@
 
   M.shopBox = () => {
     const g = new THREE.Group();
-    g.add(mesh(box(0.8, 0.55, 0.7), mat(0xc98f55), 0, 0.28, 0));
-    g.add(mesh(box(0.86, 0.08, 0.76), mat(0x8c5d33), 0, 0.58, 0));
-    for (const y of [0.15, 0.35]) g.add(mesh(box(0.82, 0.04, 0.72), mat(0xa8713c), 0, y, 0, false));
-    g.add(mesh(cyl(0.03, 0.03, 0.6, 6), mat(0x8c5d33), 0, 0.9, -0.2));
+    g.add(mesh(box(0.82, 0.55, 0.72, 0.1), mat(0xc98f55), 0, 0.28, 0));
+    g.add(mesh(box(0.9, 0.1, 0.8, 0.05), mat(0x8c5d33), 0, 0.58, 0));
+    for (const y of [0.17, 0.36]) g.add(mesh(box(0.84, 0.035, 0.74, 0.015), mat(0xa8713c), 0, y, 0, false));
+    g.add(mesh(capsule(0.03, 0.5), mat(0x8c5d33), 0, 0.9, -0.2));
     const c = document.createElement('canvas');
     c.width = 128; c.height = 64;
     const x = c.getContext('2d');
     x.fillStyle = '#fffaf0'; x.fillRect(0, 0, 128, 64);
     x.fillStyle = '#b7862a'; x.font = '30px Jua, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
     x.fillText('💰 판매', 64, 34);
-    g.add(mesh(new THREE.PlaneGeometry(0.6, 0.3), new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(c) }), 0, 1.15, -0.18, false));
+    g.add(mesh(box(0.68, 0.36, 0.05, 0.08), mat(0x8c5d33), 0, 1.15, -0.2, false));
+    g.add(mesh(new THREE.PlaneGeometry(0.6, 0.3), new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(c) }), 0, 1.15, -0.17, false));
     return g;
   };
 
   M.lamp = () => {
     const g = new THREE.Group();
-    g.add(mesh(cyl(0.05, 0.07, 1.8, 8), mat(0x4a4a52), 0, 0.9, 0));
-    g.add(mesh(cyl(0.15, 0.18, 0.1, 10), mat(0x4a4a52), 0, 0.05, 0));
+    g.add(mesh(capsule(0.05, 1.7), mat(0x4a4a52), 0, 0.9, 0));
+    g.add(mesh(puck(0.18, 0.1), mat(0x4a4a52), 0, 0, 0));
     const bulbMat = new THREE.MeshLambertMaterial({ color: 0xfff6d0, emissive: 0x000000 });
-    g.add(mesh(sphere(0.17), bulbMat, 0, 1.92, 0));
-    g.add(mesh(cyl(0.2, 0.12, 0.08, 10), mat(0x4a4a52), 0, 2.1, 0));
+    g.add(mesh(sphere(0.19), bulbMat, 0, 1.92, 0));
+    const hat = mesh(geo('lampHat', () => new THREE.SphereGeometry(0.22, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2)), mat(0x4a4a52), 0, 2.02, 0);
+    hat.scale.y = 0.5;
+    g.add(hat);
+    g.add(mesh(sphere(0.05), mat(0x4a4a52), 0, 2.14, 0));
     g.userData = { bulbMat };
     return g;
   };
 
   M.signpost = () => {
     const g = new THREE.Group();
-    g.add(mesh(cyl(0.05, 0.05, 1.2, 6), mat(0x8c5d33), 0, 0.6, 0));
+    g.add(mesh(capsule(0.05, 1.1), mat(0x8c5d33), 0, 0.6, 0));
     const c = document.createElement('canvas');
     c.width = 128; c.height = 64;
     const x = c.getContext('2d');
     x.fillStyle = '#6fa8dc'; x.fillRect(0, 0, 128, 64);
     x.fillStyle = '#fff'; x.beginPath(); x.moveTo(14, 32); x.lineTo(44, 10); x.lineTo(44, 22); x.lineTo(112, 22); x.lineTo(112, 42); x.lineTo(44, 42); x.lineTo(44, 54); x.closePath(); x.fill();
-    g.add(mesh(box(0.7, 0.36, 0.06), mat(0x8c5d33), 0, 1.05, 0));
-    g.add(mesh(new THREE.PlaneGeometry(0.62, 0.3), new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(c) }), 0, 1.05, 0.035, false));
+    g.add(mesh(box(0.72, 0.38, 0.07, 0.08), mat(0x8c5d33), 0, 1.05, 0));
+    g.add(mesh(new THREE.PlaneGeometry(0.62, 0.3), new THREE.MeshLambertMaterial({ map: new THREE.CanvasTexture(c) }), 0, 1.05, 0.04, false));
     return g;
   };
 
   M.bridge = () => {
     const g = new THREE.Group();
     const wood = mat(0xb98553), dark = mat(0x8c5d33);
-    for (let i = 0; i < 7; i++) g.add(mesh(box(0.42, 0.1, 1.2), i % 2 ? wood : mat(0xc49262), -1.3 + i * 0.43, 0.05, 0));
+    for (let i = 0; i < 7; i++) g.add(mesh(box(0.4, 0.12, 1.2, 0.05), i % 2 ? wood : mat(0xc49262), -1.3 + i * 0.43, 0.05, 0));
     for (const z of [-0.58, 0.58]) {
-      g.add(mesh(box(3.1, 0.08, 0.08), dark, 0, 0.45, z));
-      for (const x of [-1.5, 0, 1.5]) g.add(mesh(cyl(0.07, 0.07, 0.6, 8), dark, x, 0.25, z));
+      const rail = mesh(capsule(0.05, 3.0), dark, 0, 0.48, z);
+      rail.rotation.z = Math.PI / 2;
+      g.add(rail);
+      for (const x of [-1.5, 0, 1.5]) {
+        g.add(mesh(capsule(0.07, 0.45), dark, x, 0.28, z));
+        g.add(mesh(sphere(0.085), dark, x, 0.56, z));
+      }
     }
-    g.add(mesh(box(3.0, 0.14, 0.14), dark, 0, -0.08, 0));
+    g.add(mesh(box(3.0, 0.14, 0.16, 0.06), dark, 0, -0.08, 0));
     return g;
   };
 
@@ -507,19 +688,21 @@
   const WOOD = 0x8a5a36, WOOD_D = 0x5c3a22, TEAL = 0x8fd3cc, TEAL_D = 0x5fb3ac;
   function legs(g, w, d, h, color = WOOD_D, r = 0.035) {
     for (const [x, z] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]])
-      g.add(mesh(cyl(r, r * 0.7, h, 6), mat(color), x, h / 2, z));
+      g.add(mesh(capsule(r, Math.max(0.01, h - r * 2)), mat(color), x, h / 2, z));
   }
+  // 몽실몽실한 소파
   function sofa(g, width, fabric) {
     const f = fabric;
-    g.add(mesh(box(width, 0.26, 0.78), f, 0, 0.28, 0.02));
-    g.add(mesh(box(width, 0.55, 0.22), f, 0, 0.55, -0.3));
-    for (const s of [-1, 1]) g.add(mesh(box(0.2, 0.42, 0.8), f, s * (width / 2 - 0.1), 0.38, 0.01));
+    g.add(mesh(box(width, 0.28, 0.8, 0.12), f, 0, 0.3, 0.02));
+    g.add(mesh(box(width - 0.1, 0.58, 0.26, 0.13), f, 0, 0.58, -0.28));
+    for (const s of [-1, 1]) g.add(mesh(box(0.24, 0.46, 0.82, 0.11), f, s * (width / 2 - 0.12), 0.42, 0.01));
     const n = Math.round(width);
+    const cw = (width - 0.44) / n;
     for (let i = 0; i < n; i++) {
-      const cw = (width - 0.4) / n;
-      g.add(mesh(box(cw - 0.04, 0.1, 0.62), f, -width / 2 + 0.2 + cw * (i + 0.5), 0.45, 0.06));
+      g.add(mesh(box(cw - 0.02, 0.16, 0.62, 0.08), f, -width / 2 + 0.22 + cw * (i + 0.5), 0.5, 0.06));
+      g.add(mesh(box(cw - 0.06, 0.38, 0.16, 0.08), f, -width / 2 + 0.22 + cw * (i + 0.5), 0.68, -0.12));
     }
-    legs(g, width - 0.15, 0.6, 0.15);
+    legs(g, width - 0.2, 0.6, 0.16);
   }
 
   const FURN = {
@@ -557,11 +740,12 @@
       g.add(mesh(box(0.46, 0.14, 0.04), mat(WOOD_D), 0, 0.9, -0.22));
     },
     lamp_table: g => {
-      g.add(mesh(cyl(0.38, 0.38, 0.05, 20), mat(WOOD), 0, 0.55, 0));
-      g.add(mesh(cyl(0.3, 0.3, 0.01, 20), mat(0xffffff), 0, 0.58, 0, false));
+      g.add(mesh(puck(0.4, 0.07), mat(WOOD), 0, 0.52, 0));
+      g.add(mesh(puck(0.32, 0.015), mat(0xffffff), 0, 0.59, 0, false));
       g.add(mesh(cyl(0.05, 0.08, 0.52, 8), mat(WOOD_D), 0, 0.27, 0));
-      g.add(mesh(cyl(0.2, 0.22, 0.04, 12), mat(WOOD_D), 0, 0.02, 0));
-      g.add(mesh(cyl(0.02, 0.06, 0.35, 8), mat(0x7a4a2a), 0, 0.76, 0));
+      g.add(mesh(puck(0.22, 0.05), mat(WOOD_D), 0, 0, 0));
+      g.add(mesh(sphere(0.1), mat(0x7a4a2a), 0, 0.68, 0));
+      g.add(mesh(capsule(0.025, 0.2), mat(0x7a4a2a), 0, 0.8, 0));
       const shade = mesh(geo('shade', () => new THREE.CylinderGeometry(0.13, 0.27, 0.3, 16, 1, true)),
         new THREE.MeshLambertMaterial({ color: 0xaef0e6, emissive: 0x5fd0c0, emissiveIntensity: 0.7, side: THREE.DoubleSide }), 0, 1.02, 0, false);
       g.add(shade);
