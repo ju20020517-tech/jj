@@ -128,10 +128,13 @@
 
   // ---------------- 5. 벽걸이 & 소품 ----------------
   def('clock', '벽시계', 'wall', 500, 0.6, 0.1, [['c', 0.28, 0.06, 0, 0, 1.9, 0, 0xfff4d6, 'rx90m'], ['t', 0.28, 0.03, 0, 0, 1.9, 0.02, WD]], { wall: true });
-  def('frame', '액자', 'wall', 400, 0.7, 0.1, [['b', 0.7, 0.55, 0.05, 0, 1.6, 0, 0xd9b44a, 'm'], ['p', 0.58, 0.44, 0, 0, 1.6, 0.03, 0x8fd3ff, 'pic']], { wall: true, tags: ['frame'] });
+  def('frame', '액자', 'wall', 400, 0.7, 0.1, [['b', 0.7, 0.55, 0.05, 0, 1.6, 0, 0xd9b44a, 'm'], ['p', 0.58, 0.44, 0, 0, 1.6, 0.03, 0x8fd3ff, 'pic']], { wall: true, photo: true, tags: ['frame'] });
   def('photo_crush', '짝사랑 대상의 사진', 'wall', 0, 0.6, 0.1, [['b', 0.55, 0.65, 0.05, 0, 1.55, 0, 0xff8fb1, 'm'], ['p', 0.45, 0.55, 0, 0, 1.55, 0.03, 0xffe0ec, 'face']],
     { wall: true, tags: ['frame', 'crush'], use: [{ pose: 'stare', dx: 0, dz: 1, face: 180, act: 'stare_photo' }] });
-  def('poster', '포스터', 'wall', 300, 0.7, 0.1, [['p', 0.6, 0.85, 0, 0, 1.5, 0, 0xffd84a, 'pic']], { wall: true });
+  def('poster', '포스터', 'wall', 300, 0.7, 0.1, [['p', 0.6, 0.85, 0, 0, 1.5, 0, 0xffd84a, 'pic']], { wall: true, photo: true });
+  def('poster_wide', '가로 포스터', 'wall', 450, 1.3, 0.1, [['b', 1.24, 0.84, 0.03, 0, 1.6, 0, 0xffffff, 'm'], ['p', 1.16, 0.76, 0, 0, 1.6, 0.02, 0x8fd3ff, 'pic']], { wall: true, photo: true, tags: ['frame'] });
+  def('canvas_big', '대형 캔버스 액자', 'wall', 900, 1.6, 0.1, [['b', 1.62, 1.12, 0.06, 0, 1.55, 0, 0x8a5a3b, 'm'], ['p', 1.5, 1.0, 0, 0, 1.55, 0.035, 0xfff4d6, 'pic']], { wall: true, photo: true, tags: ['frame', 'art'] });
+  def('photo_stand', '탁상 사진 액자', 'wall', 250, 0.4, 0.3, [['b', 0.5, 0.5, 0.2, 0, 0.25, 0, 0xffffff, 'm'], ['b', 0.34, 0.26, 0.03, 0, 0.64, 0, 0xd9b44a, 'm'], ['p', 0.28, 0.2, 0, 0, 0.64, 0.018, 0x8fd3ff, 'pic']], { photo: true, tags: ['frame'] });
   def('plant_monstera', '몬스테라 식물', 'wall', 600, 0.8, 0.8, [['c', 0.25, 0.4, 0, 0, 0.2, 0, 0xf1eee8, 'm'], ['s', 0.35, 1.1, 0, 0, 0.8, 0, 0x3f9a4a], ['s', 0.25, 1.3, 0, 0.2, 1.05, 0.1, 0x4fae4a]],
     { tags: ['plant', 'flowers'], use: [{ pose: 'water', dx: 0, dz: 0.8, face: 180, act: 'water_plant', prop: 'wateringCan' }] });
   def('vase_flowers', '꽃병', 'wall', 500, 0.5, 0.5, [['c', 0.14, 0.4, 0, 0, 0.2, 0, 0x8fd3ff, 'mg'], ['s', 0.1, 1, 0, -0.06, 0.5, 0, 0xff4d6d], ['s', 0.1, 1, 0, 0.07, 0.52, 0.04, 0xffd84a], ['s', 0.09, 1, 0, 0, 0.56, -0.06, 0xff8fb1]], { tags: ['flowers', 'romance'] });

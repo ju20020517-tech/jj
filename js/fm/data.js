@@ -471,6 +471,8 @@
     feather:     { name: '청혼의 깃털', icon: '🪶', price: 5000, tags: ['romance'], shop: 'workshop', special: 'propose' },
     apology_gift:{ name: '화해의 선물', icon: '🎁', price: 400, tags: ['romance', 'food'], shop: 'mall', special: 'apology' },
     apology_letter:{ name: '사과 편지', icon: '💌', price: 30, tags: [], shop: 'conv', special: 'apology' },
+    claw_plush: { name: '뽑기 인형', icon: '🧸', price: 120, tags: ['cute', 'romance'] },
+    claw_plush_rare: { name: '레어 유니콘 인형', icon: '🦄', price: 400, tags: ['cute', 'romance', 'luxury'] },
     special_gift:{ name: '특별한 선물', icon: '💝', price: 700, tags: ['romance', 'luxury'], shop: 'mall', special: 'special' },
     love_letter: { name: '러브레터', icon: '💌', price: 0, tags: ['romance'], quest: true },
     poem_secret: { name: '비밀 시집', icon: '📗', price: 0, tags: ['romance', 'poem'], quest: true },

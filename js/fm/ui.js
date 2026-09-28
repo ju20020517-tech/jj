@@ -80,6 +80,7 @@
     $('#mBug').onclick = () => G().playerAction('bug');
     $('#mSit').onclick = () => G().playerAction('sit');
     $('#hintBtn').onclick = () => G().interact();
+    $('#hint').onclick = () => UI.actionMenu();
     // 이모티콘
     $('#emotes').innerHTML = D.EMOTES.map(e => `<button data-e="${e}">${e}</button>`).join('');
     $('#emotes').onclick = e => { const b = e.target.closest('button'); if (!b) return; const p = st().player; p.emote = { e: b.dataset.e, until: st().realT + 2.5 }; Ev.onPlayerAction('emote:' + b.dataset.e); };
@@ -133,7 +134,7 @@
     void toastT;
   };
   UI.notify = function (n) { UI.toast('❗ ' + n.text); FM.Audio.sfx('pop'); };
-  UI.hint = function (t) { const h = $('#hint'); h.textContent = t; };
+  UI.hint = function (t) { const h = $('#hint'); h.textContent = t; h._k = null; };
   UI.marker = function () {};
   // 중요한 장면 배너 (고백/결혼식/이별 …)
   let bannerScene = null;
@@ -297,6 +298,15 @@
   UI.modalOpen = () => !$('#modal').hidden || !$('#dialog').hidden || !!dreamGame;
   UI.paused = () => !!dreamGame;
   UI.escape = () => { if (!$('#map').hidden) $('#map').hidden = true; else if (!$('#dialog').hidden) closeDialog(); else if (!$('#modal').hidden) closeModal(); else if (G().view === 'observe') G().endObserve(); else if (UI.editing) UI.closeEditor(); };
+  // 주변에서 할 수 있는 행동 전체 목록 (R)
+  UI.actionMenu = function () {
+    const list = G().interactables(); if (!list.length) return;
+    modal('✋ 여기서 할 수 있는 일', `<div class="act-list">${list.map((x, i) => `<button data-i="${i}"><b>${i < 9 ? i + 1 : ''}</b> ${esc(J(x.label))}</button>`).join('')}</div><p class="muted">숫자 키로도 고를 수 있어요</p>`, b => {
+      b.querySelectorAll('[data-i]').forEach(x => x.onclick = () => { closeModal(); list[+x.dataset.i].fn(); });
+      const key = e => { if ($('#modal').hidden) return document.removeEventListener('keydown', key, true); const n = +e.key; if (n >= 1 && n <= list.length) { e.preventDefault(); e.stopPropagation(); document.removeEventListener('keydown', key, true); closeModal(); list[n - 1].fn(); } };
+      document.addEventListener('keydown', key, true);
+    });
+  };
   UI.dialogList = (title, lines) => modal(title, `<ul class="list">${lines.map(l => `<li>${esc(J(l))}</li>`).join('')}</ul>`);
 
   // =========================================================
@@ -825,9 +835,74 @@
     const room = st().rooms[edIid]; if (!room || edSel === null) return;
     const { w, d } = Sim.interiorSize(edIid);
     const f = room.furn[edSel];
-    f.x = Math.round(Math.max(-w / 2 + 0.4, Math.min(w / 2 - 0.4, x)) * 2) / 2; f.z = Math.round(Math.max(-d / 2 + 0.4, Math.min(d / 2 - 0.4, z)) * 2) / 2;   // 0.5m 그리드 스냅
+    f.x = Math.round(Math.max(-w / 2 + 0.3, Math.min(w / 2 - 0.3, x)) * 4) / 4; f.z = Math.round(Math.max(-d / 2 + 0.3, Math.min(d / 2 - 0.3, z)) * 4) / 4;   // 0.25m 그리드 스냅
+    if ((FM.FURN[f.type] || {}).wall) { const ws = wallSnap(x, z, w, d); f.x = ws.x; f.z = ws.z; f.rot = ws.rot; }
     room.edited = true; UI.placing = null;
     G().rebuildInterior(); paintEditor();
+  };
+  // 이미지 파일 고르기 → 가구 그림 비율에 맞춰 잘라서 JPEG로 저장 (저장 공간 절약)
+  UI.pickImage = function (type, cb) {
+    const F = FM.FURN[type]; const pic = F && F.parts.find(q => (q[8] || '').includes('pic'));
+    const aspect = pic ? pic[1] / pic[2] : 0.7;
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = () => {
+      const file = inp.files && inp.files[0]; if (!file) return;
+      if (!/^image\//.test(file.type)) return UI.toast('이미지 파일만 붙일 수 있어요');
+      const rd = new FileReader();
+      rd.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const H = 384, W = Math.round(H * aspect);
+          const c = document.createElement('canvas'); c.width = W; c.height = H;
+          const g = c.getContext('2d');
+          const s = Math.max(W / img.width, H / img.height);   // 꽉 채우기 (가운데 기준 자르기)
+          const dw = img.width * s, dh = img.height * s;
+          g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+          g.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+          let url = c.toDataURL('image/jpeg', 0.82);
+          if (url.length > 140000) url = c.toDataURL('image/jpeg', 0.6);
+          const total = Object.values(st().rooms).reduce((n, r) => n + (r.furn || []).filter(q => q.img).length, 0);
+          if (total >= 30) return UI.toast('사진은 섬 전체에 30장까지 붙일 수 있어요 (저장 공간)');
+          cb(url);
+        };
+        img.onerror = () => UI.toast('이미지를 읽지 못했어요');
+        img.src = rd.result;
+      };
+      rd.readAsDataURL(file);
+    };
+    inp.click();
+  };
+  // 끌어서 옮기기: 미리보기(가구 메쉬만 이동) → 놓으면 확정
+  function wallSnap(x, z, w, d) {
+    const dl = x + w / 2, dr = w / 2 - x, db = z + d / 2;
+    const m = Math.min(dl, dr, db);
+    if (m === db) return { x: Math.max(-w / 2 + 0.4, Math.min(w / 2 - 0.4, x)), z: -d / 2 + 0.06, rot: 0 };
+    if (m === dl) return { x: -w / 2 + 0.06, z: Math.max(-d / 2 + 0.4, Math.min(d / 2 - 0.4, z)), rot: 90 };
+    return { x: w / 2 - 0.06, z: Math.max(-d / 2 + 0.4, Math.min(d / 2 - 0.4, z)), rot: -90 };
+  }
+  UI.dragFurn = function (idx, x, z, commit) {
+    const room = st().rooms[edIid]; if (!room || !room.furn[idx]) return;
+    const f = room.furn[idx], F = FM.FURN[f.type] || {};
+    const { w, d } = Sim.interiorSize(edIid);
+    let nx, nz, rot = f.rot || 0;
+    if (F.wall) { const ws = wallSnap(x, z, w, d); nx = ws.x; nz = ws.z; rot = ws.rot; }
+    else { nx = Math.round(Math.max(-w / 2 + 0.3, Math.min(w / 2 - 0.3, x)) * 4) / 4; nz = Math.round(Math.max(-d / 2 + 0.3, Math.min(d / 2 - 0.3, z)) * 4) / 4; }
+    const g = G().interior;
+    const o = g && g.furnObjs.find(q => q.userData.furnIdx === idx);
+    if (!commit) { if (o) { o.position.set(nx, 0.05, nz); o.rotation.y = rot * Math.PI / 180; } return; }
+    f.x = nx; f.z = nz; f.rot = rot; room.edited = true; UI.placing = null;
+    FM.Audio.sfx('pop');
+    G().rebuildInterior(); paintEditor();
+  };
+  // 편집 중 키보드: Q/R 회전, 방향키 0.25m 이동, Delete 회수
+  UI.editKey = function (e) {
+    if (edSel === null || !$('#edRot')) return false;
+    const room = st().rooms[edIid]; const f = room && room.furn[edSel]; if (!f) return false;
+    const mv = { ArrowLeft: [-0.25, 0], ArrowRight: [0.25, 0], ArrowUp: [0, -0.25], ArrowDown: [0, 0.25] }[e.code];
+    if (mv) { UI.dragFurn(edSel, f.x + mv[0], f.z + mv[1], true); return true; }
+    if (e.code === 'KeyQ' || e.code === 'KeyR') { f.rot = ((f.rot || 0) + (e.code === 'KeyQ' ? -45 : 45) + 360) % 360; room.edited = true; G().rebuildInterior(); return true; }
+    if (e.code === 'Delete' || e.code === 'Backspace') { $('#edDel').click(); return true; }
+    return false;
   };
   function paintEditor() {
     const e = $('#editor');
@@ -845,12 +920,14 @@
         ${f ? `<div class="ed-sec sel"><b>선택: ${esc(F.name)}</b> <small>(${FM.FURN_LAYERS[F.layer]})</small>
           <div class="chips"><button id="edMove" class="${UI.placing !== null ? 'on' : ''}">✥ 옮기기 (바닥 클릭)</button><button id="edRot">↻ 회전</button><button id="edDel">🗑️ 회수</button></div>
           <div class="chips">${Object.entries(D.MATERIALS).map(([k, m]) => `<button data-mat="${k}" class="${f.mat === k ? 'on' : ''}" style="--c:${FM.PM.css(m.color)}">${m.name}</button>`).join('')}<button data-mat="">기본</button></div>
-          <label>색 <input type="color" id="edCol" value="${f.color ? FM.PM.css(f.color) : '#ffffff'}"></label> <button id="edColClear" class="small">색 초기화</button></div>` : '<p class="muted">방 안의 가구를 누르면 선택돼요. 선택 후 [옮기기] → 바닥을 누르면 0.5m 그리드로 배치!</p>'}
+          <label>색 <input type="color" id="edCol" value="${f.color ? FM.PM.css(f.color) : '#ffffff'}"></label> <button id="edColClear" class="small">색 초기화</button>
+          ${F.photo ? `<div class="chips photo-chips"><button id="edImg" class="main">🖼️ 내 이미지 붙이기</button>${f.img ? '<button id="edImgX">✖ 이미지 떼기</button>' : ''}</div>${f.img ? `<img class="ed-thumb" src="${f.img}" alt="">` : '<small class="muted">내 사진이나 그림 파일을 골라서 붙일 수 있어요</small>'}` : ''}</div>` : '<p class="muted">🖐️ 방 안의 가구를 <b>잡고 끌면</b> 옮겨져요 (벽걸이는 벽에 착 붙어요).<br>선택 후 <b>Q/R</b> 회전 · <b>방향키</b> 미세 이동 · <b>Delete</b> 회수</p>'}
         <details open><summary>1. 벽면 & 바닥</summary>
           <label>벽지 색 <input type="color" id="edWall" value="${FM.PM.css(room.wall || 0xf4efe6)}"></label>
           <label>바닥재 <select id="edFloor">${floorKinds.map(k => `<option ${room.floor === k ? 'selected' : ''} value="${k}">${k} (${D.FLOOR_SOUND[k] || ''})</option>`).join('')}</select></label>
           <label>바닥 색 <input type="color" id="edFloorC" value="${FM.PM.css(room.floorColor || 0xd9b88a)}"></label>
           <button id="edPattern">🎨 DIY 패브릭 & 도트 에디터</button></details>
+        <div class="ed-sec"><b>🖼️ 내 이미지로 꾸미기</b><div class="chips photo-chips"><button data-photo="poster">포스터 (300🪙)</button><button data-photo="poster_wide">가로 포스터 (450🪙)</button><button data-photo="canvas_big">대형 캔버스 (900🪙)</button><button data-photo="frame">액자 (400🪙)</button><button data-photo="photo_stand">탁상 액자 (250🪙)</button></div><small class="muted">파일을 고르면 벽에 바로 걸려요. 끌어서 위치를 옮길 수 있어요.</small></div>
         <details><summary>2~6. 가구 추가 (${isOwn ? '구입' : '선물'})</summary>
           ${cats.map(c => `<h5>${FM.FURN_LAYERS[c]}</h5><div class="furn-list">${Object.values(FM.FURN).filter(x => x.layer === c && x.price > 0).map(x => `<button data-add="${x.id}">${esc(x.name)}<small>${x.price}🪙</small></button>`).join('')}</div>`).join('')}</details>
         <details><summary>🎫 테마 & 공유</summary>
@@ -867,7 +944,23 @@
       e.querySelectorAll('[data-mat]').forEach(b => b.onclick = () => { f.mat = b.dataset.mat || undefined; rebuild(); paintEditor(); });
       $('#edCol').oninput = ev => { f.color = parseInt(ev.target.value.slice(1), 16); rebuild(); };
       $('#edColClear').onclick = () => { delete f.color; rebuild(); };
+      if ($('#edImg')) $('#edImg').onclick = () => UI.pickImage(f.type, url => { f.img = url; rebuild(); paintEditor(); UI.toast('🖼️ 이미지를 붙였어요!'); });
+      if ($('#edImgX')) $('#edImgX').onclick = () => { delete f.img; rebuild(); paintEditor(); };
     }
+    e.querySelectorAll('[data-photo]').forEach(b => b.onclick = () => {
+      const F2 = FM.FURN[b.dataset.photo], p = st().player;
+      if (p.coins < F2.price) return UI.toast('코인이 부족해요');
+      UI.pickImage(F2.id, url => {
+        p.coins -= F2.price;
+        const { w, d } = Sim.interiorSize(edIid);
+        const used = room.furn.filter(q => FM.FURN[q.type] && FM.FURN[q.type].wall).map(q => q.x);
+        const winX = -w / 4;   // 뒷벽 창문 피하기
+        let x = w / 4; for (const c of [w / 4, w / 4 + 1.4, w / 4 - 1.2, 0.6, w / 2 - 1, -w / 2 + 0.9]) if (Math.abs(c - winX) > 1.4 && !used.some(u => Math.abs(u - c) < 0.9)) { x = c; break; }
+        const item = F2.wall ? { type: F2.id, x: Math.max(-w / 2 + 0.8, Math.min(w / 2 - 0.8, x)), z: -d / 2 + 0.06, rot: 0, img: url } : { type: F2.id, x: 0, z: 0, rot: 0, img: url };
+        room.furn.push(item); edSel = room.furn.length - 1;
+        rebuild(); paintEditor(); UI.toast(`🖼️ ${F2.name}에 내 이미지를 붙였어요! 끌어서 옮겨보세요`);
+      });
+    });
     $('#edWall').oninput = ev => { room.wall = parseInt(ev.target.value.slice(1), 16); rebuild(); };
     $('#edFloor').onchange = ev => { room.floor = ev.target.value; rebuild(); };
     $('#edFloorC').oninput = ev => { room.floorColor = parseInt(ev.target.value.slice(1), 16); rebuild(); };
@@ -1224,7 +1317,7 @@
       UI._hintT = 0.25;
       const list = g.view === 'observe' || UI.modalOpen() ? [] : g.interactables();
       const h = $('#hint');
-      if (list.length) { h.innerHTML = `<b>E</b> ${esc(J(list[0].label))}${list.length > 1 ? ` <small>외 ${list.length - 1}개</small>` : ''}`; h.hidden = false; $('#hintBtn').hidden = false; }
+      if (list.length) { const hk = list.map(x => x.label).join('|'); if (h._k !== hk) { h._k = hk; h.innerHTML = `<b>E</b> ${esc(J(list[0].label))}${list.length > 1 ? ` <span class="more"><b>R</b> 다른 행동 ${list.length - 1}개</span>` : ''}`; } h.hidden = false; $('#hintBtn').hidden = false; }
       else { h.hidden = true; $('#hintBtn').hidden = true; }
       if (g.view === 'observe' && g.obs && (obsT -= 0.25) < 0) { obsT = 2; paintObs(); }
       if (!$('#map').hidden) drawMap();

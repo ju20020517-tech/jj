@@ -1285,6 +1285,33 @@
     return q;
   }
   Soc.addQuest = addQuest;
+
+  // =========================================================
+  // 동행 (최대 4명) — 플레이어를 따라다니고 건물에도 함께 들어감
+  // =========================================================
+  Soc.followers = function () {
+    const p = pl();
+    if (!p.followers) p.followers = p.follower ? [p.follower] : [];
+    p.followers = p.followers.filter(id => { const v = byId(id); return v && v.following && !v.status.hospital; });
+    p.follower = p.followers[0] || null;
+    return p.followers.map(byId);
+  };
+  Soc.addFollower = function (v, mode = 'walk') {
+    const p = pl(); Soc.followers();
+    if (!p.followers.includes(v.id)) p.followers.push(v.id);
+    p.follower = p.followers[0];
+    v.following = mode; v.followUntil = S().time + (mode === 'walk' ? 240 : 120);
+    v.route = null; v.act = null; Sim.releaseSpot && Sim.releaseSpot(v); Sim.freeUse(v);
+    emit('toast', `🚶 ${v.name}이(가) 함께 다녀요! (${mode === 'walk' ? '동행 산책' : '근처 건물 구경'})`);
+  };
+  Soc.removeFollower = function (v, line) {
+    const p = pl();
+    v.following = false; v.followUntil = 0; v.idleT = 1; v.pose = null; v.act = null; v.followUse = null;
+    if (Sim.useOcc && v.useKey && Sim.useOcc[v.useKey] === v.id) Sim.freeUse(v);
+    p.followers = (p.followers || []).filter(id => id !== v.id);
+    p.follower = p.followers[0] || null;
+    if (line) Sim.say(v, L.sty(v, line));
+  };
   function finishQuest(q, ok = true, msg) {
     q.state = ok ? 'done' : 'failed';
     q.doneAt = S().time;
@@ -1520,7 +1547,9 @@
     O.push({ id: 'praise', label: '👏 칭찬하기' });
     if (ge('FRIEND')) O.push({ id: 'nickname', label: '🏷️ 별명 만들기' });
     if (ge('GOOD_FRIEND')) O.push({ id: 'consult', label: '🤫 비밀 고민 상담' });
-    if (ge('GOOD_FRIEND')) O.push({ id: 'walk', label: partnerOf(v.id) === P ? '💑 같이 가자 (데이트 동행)' : '🚶 동행 산책' });
+    if (v.following) O.push({ id: 'unfollow', label: '👋 오늘 동행은 여기까지! (헤어지기)' });
+    else if (ge('GOOD_FRIEND')) O.push({ id: 'walk', label: partnerOf(v.id) === P ? '💑 같이 가자 (데이트 동행 · 건물도 함께)' : '🚶 동행 산책 (건물도 함께 들어가요)' });
+    else if (ge('FRIEND')) O.push({ id: 'joinIn', label: '🚪 근처 건물 같이 구경 갈래?' });
     if (ge('GOOD_FRIEND')) O.push({ id: 'invite', label: '🏠 우리 집에 초대하기' });
     O.push({ id: 'errand', label: '📦 도와줄 일 있어?' });
     O.push({ id: 'nudge', label: '💘 "너 OO랑 잘 어울리던데?" (부추기기)', disabled: !!v.child });
@@ -1630,8 +1659,16 @@
         Sim.log('gossip', `🗣️ ${nm(sec.owner)}의 비밀이 퍼졌어요: "${sec.text}"`, [sec.owner, v.id], 2, { rumor: true });
         return ret(L.sty(v, '헐... 진짜? 대박이다'));
       }
+      case 'unfollow': Soc.removeFollower(v); return ret(L.sty(v, '오늘 같이 다녀서 즐거웠어! 또 불러줘'), true);
+      case 'joinIn': {
+        if (Soc.followers().length >= 4) return ret(L.sty(v, '벌써 일행이 많네~ 다음에 같이 가자!'));
+        if (!chance(0.45 + r.friendship_point / 150 + r.trust_level / 300)) return ret(L.sty(v, '음... 지금은 좀 바빠서. 다음에 같이 가자!'));
+        Soc.addFollower(v, 'short');
+        return ret(L.sty(v, '좋아! 어디 들어갈 건데? 같이 가자'), true);
+      }
       case 'walk': {
-        p.follower = v.id; v.following = true;
+        if (Soc.followers().length >= 4) return ret(L.sty(v, '벌써 일행이 많네~ 다음에 같이 가자!'));
+        Soc.addFollower(v, 'walk');
         if (partnerOf(v.id) === P) { r.lastDate = day(); r.dates++; addBoredom(r, D.BOREDOM_RULES.date.v, '데이트 동행'); }
         return ret(L.sty(v, '좋아! 어디든 따라갈게'), true);
       }

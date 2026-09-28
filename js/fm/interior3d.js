@@ -43,6 +43,14 @@
         case 'princess': g.fillStyle = 'rgba(255,255,255,0.5)'; for (let y = 16; y < h; y += 48) for (let x = 16; x < w; x += 48) { g.beginPath(); g.moveTo(x, y + 8); g.bezierCurveTo(x - 12, y - 2, x - 4, y - 10, x, y - 3); g.bezierCurveTo(x + 4, y - 10, x + 12, y - 2, x, y + 8); g.fill(); } break;
         case 'bath': for (let y = 0; y < h; y += 32) for (let x = 0; x < w; x += 32) { g.strokeStyle = 'rgba(0,0,0,0.12)'; g.strokeRect(x, y, 32, 32); } break;
         case 'construction': g.fillStyle = 'rgba(0,0,0,0.08)'; for (let i = 0; i < 200; i++) g.fillRect(Math.random() * w, Math.random() * h, 4, 1); g.fillStyle = '#ffd23a'; for (let x = -h; x < w; x += 48) { g.beginPath(); g.moveTo(x, h - 30); g.lineTo(x + 24, h - 30); g.lineTo(x + 54, h); g.lineTo(x + 30, h); g.fill(); } break;
+        case 'heart': g.fillStyle = 'rgba(255,120,160,0.28)'; for (let y = 20; y < h; y += 56) for (let x = (y / 56 % 2) * 28 + 14; x < w; x += 56) { g.beginPath(); g.moveTo(x, y + 7); g.bezierCurveTo(x - 11, y - 2, x - 4, y - 10, x, y - 3); g.bezierCurveTo(x + 4, y - 10, x + 11, y - 2, x, y + 7); g.fill(); } break;
+        case 'stripe': for (let x = 0; x < w; x += 32) { g.fillStyle = x / 32 % 2 ? 'rgba(255,255,255,0.35)' : 'rgba(80,140,200,0.12)'; g.fillRect(x, 0, 32, h); } break;
+        case 'wainscot': g.fillStyle = 'rgba(120,80,40,0.18)'; g.fillRect(0, h * 0.62, w, h * 0.38); g.fillStyle = 'rgba(255,255,255,0.4)'; g.fillRect(0, h * 0.6, w, 5); for (let x = 16; x < w; x += 64) { g.strokeStyle = 'rgba(90,60,30,0.2)'; g.lineWidth = 2; g.strokeRect(x, h * 0.68, 44, h * 0.26); } for (let y = 12; y < h * 0.55; y += 26) for (let x = (y / 26 % 2) * 20; x < w; x += 40) { g.fillStyle = 'rgba(180,140,80,0.18)'; g.fillRect(x, y, 4, 4); } break;
+        case 'star': g.fillStyle = 'rgba(255,190,60,0.45)'; for (let i = 0; i < 18; i++) { const x = (i * 73) % w, y = (i * 47) % h; g.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? 4 : 10, a = k / 10 * Math.PI * 2 - Math.PI / 2; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.fill(); } break;
+        case 'leaf': g.fillStyle = 'rgba(90,150,90,0.25)'; for (let y = 16; y < h; y += 44) for (let x = (y / 44 % 2) * 22 + 10; x < w; x += 44) { g.beginPath(); g.ellipse(x, y, 10, 5, 0.7, 0, Math.PI * 2); g.fill(); } break;
+        case 'brick': for (let y = 0; y < h; y += 24) for (let x = (y / 24 % 2) * 24; x < w; x += 48) { g.fillStyle = `rgba(150,80,60,${0.12 + ((x * 7 + y) % 5) * 0.03})`; g.fillRect(x + 1, y + 1, 46, 22); } break;
+        case 'splatter': for (let i = 0; i < 40; i++) { g.fillStyle = ['rgba(255,111,97,0.4)', 'rgba(79,193,201,0.4)', 'rgba(255,216,74,0.5)', 'rgba(154,107,255,0.35)'][i % 4]; g.beginPath(); g.arc((i * 97) % w, (i * 61) % h, 3 + (i % 5) * 3, 0, Math.PI * 2); g.fill(); } break;
+        case 'check': for (let y = 0; y < h; y += 32) for (let x = 0; x < w; x += 32) if ((x + y) / 32 % 2) { g.fillStyle = 'rgba(120,150,220,0.12)'; g.fillRect(x, y, 32, 32); } break;
         default: g.fillStyle = 'rgba(255,255,255,0.18)'; for (let y = 0; y < h; y += 32) for (let x = (y / 32 % 2) * 16; x < w; x += 32) { g.beginPath(); g.arc(x, y, 3, 0, Math.PI * 2); g.fill(); }
       }
     }, [2, 1]);
@@ -61,6 +69,17 @@
     return t;
   }
   I3.patTex = patTex;
+  // 내가 올린 사진 → 텍스처 (부드럽게)
+  const imgCache = new Map();
+  function imgTex(dataUrl) {
+    if (imgCache.has(dataUrl)) return imgCache.get(dataUrl);
+    const img = new Image(); const t = new THREE.Texture(img);
+    img.onload = () => { t.needsUpdate = true; };
+    img.src = dataUrl; t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+    if (imgCache.size > 40) imgCache.clear();
+    imgCache.set(dataUrl, t); return t;
+  }
+  I3.imgTex = imgTex;
   // 짝사랑 대상의 사진
   function faceTex(id) {
     const st = FM.Sim.get();
@@ -86,7 +105,7 @@
     const fl = new THREE.Mesh(new THREE.PlaneGeometry(w, d), H.soften(new THREE.MeshLambertMaterial({ map: room.patterns && room.patterns.floor ? patTex(room.patterns.floor) : floorTex(room.floor || 'wood', room.floorColor || 0xd9b88a) }), 0.1));
     fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; fl.name = 'floor';
     group.add(fl);
-    const wallMap = room.patterns && room.patterns.wall ? patTex(room.patterns.wall) : wallTex(themeId || 'plain', room.wall || 0xf4efe6);
+    const wallMap = room.patterns && room.patterns.wall ? patTex(room.patterns.wall) : wallTex(themeId || room.wallStyle || 'plain', room.wall || 0xf4efe6);
     const wm = H.soften(new THREE.MeshLambertMaterial({ map: wallMap, side: THREE.DoubleSide }), 0.1);
     const back = new THREE.Mesh(new THREE.PlaneGeometry(w, WALL_H), wm); back.position.set(0, WALL_H / 2, -d / 2); back.receiveShadow = true; group.add(back);
     for (const s of [-1, 1]) { const side = new THREE.Mesh(new THREE.PlaneGeometry(d, WALL_H), wm); side.position.set(s * w / 2, WALL_H / 2, 0); side.rotation.y = -s * Math.PI / 2; side.receiveShadow = true; group.add(side); side.name = 'sideWall'; }
@@ -114,10 +133,11 @@
       if (pats.bed && tags.includes('bed')) pattern = patTex(pats.bed);
       if (pats.sofa && tags.includes('sofa')) pattern = patTex(pats.sofa);
       if (pats.frame && (tags.includes('frame') || f.type === 'poster')) pattern = patTex(pats.frame);
+      if (f.img && F.photo) pattern = imgTex(f.img);
       const opts = { mat: f.mat, color: f.color, pattern };
       if (f.type === 'photo_crush') { const owner = st.villagers.find(v => v.home === iid); const tgt = f.target || (owner && owner.crush && owner.crush.target); if (tgt) opts.faceTex = faceTex(tgt); }
       const o = PM.furniture(f.type, opts);
-      if (pattern && !F.parts.some(p => (p[8] || '').includes('pic'))) o.traverse(m => { if (m.isMesh && m.userData.main) { m.material = new THREE.MeshLambertMaterial({ map: pattern }); } });
+      if (pattern && !f.img && !F.parts.some(p => (p[8] || '').includes('pic'))) o.traverse(m => { if (m.isMesh && m.userData.main) { m.material = new THREE.MeshLambertMaterial({ map: pattern }); } });
       o.position.set(f.x, 0, f.z);
       o.rotation.y = (f.rot || 0) * Math.PI / 180;
       o.userData.furnIdx = idx;

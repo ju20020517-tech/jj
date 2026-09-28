@@ -41,7 +41,7 @@
 
   // 저장 / 불러오기
   G.save = function () {
-    try { const st = Sim.get(); if (!st) return; st.player.lastRealVisit = Date.now(); localStorage.setItem(D.SAVE_KEY, Sim.serialize()); G.savedAt = Date.now(); } catch (e) { console.warn('save failed', e); }
+    try { const st = Sim.get(); if (!st) return; st.player.lastRealVisit = Date.now(); localStorage.setItem(D.SAVE_KEY, Sim.serialize()); G.savedAt = Date.now(); } catch (e) { console.warn('save failed', e); if (!G._quotaWarned && /quota/i.test(String(e && (e.name + e.message)))) { G._quotaWarned = true; FM.UI.toast('⚠️ 저장 공간이 가득 찼어요. 붙인 사진을 몇 장 떼어 주세요'); } }
   };
   G.hasSave = () => { try { return !!localStorage.getItem(D.SAVE_KEY); } catch (e) { return false; } };
   G.loadSave = function () {
@@ -103,8 +103,10 @@
     camDist = 9; camPitch = 0.75; camYaw = 0.35;
     if (iid === 'home_p_in') { Ev.onPlayerHost && 0; }
     fade();
-    if (p.follower) { const f = Sim.byId(p.follower); if (f) { f.loc = iid; f.x = p.x + 0.8; f.z = p.z; f.route = null; } }
-    FM.UI.toast(`🚪 ${FM.INTERIORS[iid].name}`);
+    const fl = Soc.followers();
+    fl.forEach((f, i) => { f.loc = iid; f.x = p.x + (i % 2 ? -0.9 : 0.9) * (1 + (i >> 1) * 0.6); f.z = p.z - 0.4 - (i >> 1) * 0.6; f.route = null; f.followUse = null; });
+    FM.UI.toast(`🚪 ${FM.INTERIORS[iid].name}${fl.length ? ` — ${fl.map(f => f.name).join(', ')}와(과) 함께` : ''}`);
+    if (fl.length) setTimeout(() => { const f = fl[(Math.random() * fl.length) | 0]; if (f && f.loc === iid) Sim.say(f, FM.L.sty(f, ['우와, 여기 처음 와봐!', '분위기 좋다~', '뭐 하고 놀까?', '여기 자주 와?'][(Math.random() * 4) | 0])); }, 900);
   }
   G.enterInterior = enterInterior;
   function exitInterior() {
@@ -119,7 +121,11 @@
     setView('island');
     camDist = 16; camPitch = 0.62;
     fade();
-    if (p.follower) { const f = Sim.byId(p.follower); if (f) { f.loc = 'island'; f.x = p.x + 1; f.z = p.z; f.route = null; } }
+    Soc.followers().forEach((f, i) => {
+      f.loc = 'island'; f.x = p.x + (i % 2 ? -1 : 1) * (1 + (i >> 1) * 0.7); f.z = p.z + 0.6; f.route = null; f.followUse = null; f.pose = null;
+      if (f.following === 'short') Soc.removeFollower(f, '구경 재밌었다! 나 이제 가볼게~');
+    });
+    FM.Play && FM.Play.stop(true);
     if (wasHome) Ev.onPlayerExitHome();
     if (p.hosting) p.hosting = null;
   }
@@ -165,10 +171,12 @@
     window.addEventListener('keydown', e => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
       G.keys[e.code] = true;
+      if (FM.UI.editing && FM.UI.editKey && FM.UI.editKey(e)) { e.preventDefault(); return; }
       if (!$('#dialog').hidden) { if (['KeyE', 'Space', 'Enter'].includes(e.code)) { e.preventDefault(); FM.UI.vnAdvance(); } if (e.code === 'Escape') FM.UI.escape(); if (/^Digit[1-9]$/.test(e.code)) FM.UI.vnPick(+e.code.slice(5) - 1); return; }
       if (e.code === 'KeyE' || e.code === 'Space') { e.preventDefault(); interact(); }
       if (e.code === 'Escape') FM.UI.escape();
       if (e.code === 'KeyM') FM.UI.toggleMap();
+      if (e.code === 'KeyR' && !FM.UI.modalOpen()) FM.UI.actionMenu();
       if (e.code === 'KeyO') { if (G.view === 'observe') G.endObserve(); else G.observe(); }
       if (e.code === 'KeyF') playerAction('fish');
       if (e.code === 'KeyB') playerAction('bug');
@@ -178,11 +186,32 @@
     window.addEventListener('keyup', e => { G.keys[e.code] = false; });
     const cv = $('#game');
     let drag = null;
-    cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, moved: false, id: e.pointerId }; });
+    // 방 꾸미기: 가구를 잡고 끌어서 옮기기
+    const floorPoint = e => {
+      if (!G.interior) return null;
+      mouse.x = e.clientX / window.innerWidth * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const fl = G.interior.group.getObjectByName('floor'); if (!fl) return null;
+      const h = raycaster.intersectObject(fl, false)[0];
+      return h ? G.interior.group.worldToLocal(h.point.clone()) : null;
+    };
+    const furnAt = e => {
+      if (!FM.UI.editing || !G.interior) return null;
+      mouse.x = e.clientX / window.innerWidth * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      for (const h of raycaster.intersectObjects(G.interior.group.children, true)) { if (h.object.userData.furnIdx !== undefined) return h.object.userData.furnIdx; if (h.object.userData.entity) continue; }
+      return null;
+    };
+    cv.addEventListener('pointerdown', e => {
+      drag = { x: e.clientX, y: e.clientY, moved: false, id: e.pointerId };
+      const idx = furnAt(e);
+      if (idx !== null) { drag.furn = idx; FM.UI.selectFurn(idx); cv.style.cursor = 'grabbing'; }
+    });
     window.addEventListener('pointermove', e => {
       if (!drag || drag.id !== e.pointerId) return;
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
+      if (drag.moved && drag.furn !== undefined) { const fp = floorPoint(e); if (fp) { drag.last = fp; FM.UI.dragFurn(drag.furn, fp.x, fp.z, false); } return; }
       if (drag.moved) {
         if (G.view === 'observe' && G.camMode === 'window') { G.obsYaw = Math.max(-0.5, Math.min(0.5, (G.obsYaw || 0) - dx * 0.003)); }
         else { camYaw -= dx * 0.006; camPitch = Math.max(0.15, Math.min(1.35, camPitch + dy * 0.004)); }
@@ -191,6 +220,7 @@
     });
     window.addEventListener('pointerup', e => {
       if (!drag || drag.id !== e.pointerId) return;
+      if (drag.furn !== undefined) { cv.style.cursor = ''; if (drag.moved && drag.last) FM.UI.dragFurn(drag.furn, drag.last.x, drag.last.z, true); drag = null; return; }
       if (!drag.moved && e.target === cv) click(e);
       drag = null;
     });
@@ -253,12 +283,14 @@
   let stepT = 0;
   function movePlayer(dt) {
     const st = Sim.get(), p = st.player;
-    if (G.view === 'observe' || FM.UI.modalOpen() || p.sitting || p.busy) { p.moving = false; return; }
     let ix = 0, iz = 0;
     const k = G.keys;
     if (k.KeyW || k.ArrowUp) iz -= 1; if (k.KeyS || k.ArrowDown) iz += 1;
     if (k.KeyA || k.ArrowLeft) ix -= 1; if (k.KeyD || k.ArrowRight) ix += 1;
     if (G.joy) { ix += G.joy.x; iz += G.joy.y; }
+    // 앉아 있거나 가구를 쓰는 중에 방향키를 누르면 일어남
+    if (p.sitting && (ix || iz) && G.view !== 'observe' && !FM.UI.modalOpen()) FM.Play.stop();
+    if (G.view === 'observe' || FM.UI.modalOpen() || p.sitting || p.busy) { p.moving = false; return; }
     let dx = 0, dz = 0;
     if (ix || iz) {
       G.target = null; if (G.autoPath) { G.autoPath = null; G.autoDest = null; }
@@ -306,16 +338,47 @@
       else if (p.z > 81) kind = 'sand';
       FM.Audio.sfx('step_' + kind);
     }
-    if (p.follower) followUpdate(p);
   }
-  // 동행 모드: 플레이어를 따라다님
-  function followUpdate(p) {
-    const f = Sim.byId(p.follower);
+  // 동행 모드: 플레이어를 따라다님 (여러 명이면 줄지어)
+  function followAll(dt) {
+    const st = Sim.get(), p = st.player;
+    const fl = Soc.followers();
+    fl.forEach((f, i) => followUpdate(p, f, i, fl.length, st));
+    // 로맨틱한 장소 방문 (설렘 상승)
+    if (p.loc === 'island' && fl.length && Math.random() < 0.004) {
+      const rp = ['cliff', 'beach', 'observatory', 'park'].find(id => { const pl = MAP.P[id]; return Math.hypot(p.x - pl.x, p.z - pl.z) < 20; });
+      if (rp) for (const f of fl) if (Soc.canRomance(f.id, 'P')) { Soc.addRomance(f.id, 'P', 1.5, '로맨틱한 장소'); Sim.emote(f, '💗'); }
+    }
+  }
+  function followUpdate(p, f, i, n, st) {
     if (!f || f.sceneId) return;
-    f.route = null; f.act = null;
-    if (f.loc !== p.loc) { f.loc = p.loc; f.x = p.x; f.z = p.z; }
-    const d = Math.hypot(f.x - p.x, f.z - p.z);
-    if (d > 1.6) { const k = (d - 1.4) / d; f.x += (p.x - f.x) * k * 0.2; f.z += (p.z - f.z) * k * 0.2; f.ry = Math.atan2(p.x - f.x, p.z - f.z); f.moving = true; f.idleT = 2; }
+    if (st.time > (f.followUntil || 0)) { Soc.removeFollower(f, '앗, 나 이제 가봐야 해! 오늘 즐거웠어~'); return; }
+    f.route = null;
+    if (f.loc !== p.loc) { f.loc = p.loc; f.x = p.x; f.z = p.z; f.followUse = null; }
+    // 플레이어가 가구를 쓰면 근처 빈 자리에서 같이 놀기
+    if (p.using && p.loc !== 'island') {
+      if (!f.followUse) {
+        const cand = Sim.furnUses(p.loc).filter(u => !Sim.useOcc[u.key] && Math.hypot(u.x - p.x, u.z - p.z) < 4.5).sort((a, b) => (a.F.id === p.using.type ? -1 : 0) - (b.F.id === p.using.type ? -1 : 0) || Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z))[0];
+        if (cand) { Sim.useOcc[cand.key] = f.id; f.useKey = cand.key; f.followUse = cand; f.x = cand.x; f.z = cand.z; f.ry = cand.ry; f.pose = cand.u.pose; f.act = { id: 'follow_' + cand.u.act, name: cand.F.name, t: 999, y: cand.u.y || 0 }; f.state = 'INTERACT_OBJ'; Sim.emote(f, '😆'); }
+        else f.followUse = 'none';
+      }
+      if (f.followUse && f.followUse !== 'none') return;
+    } else if (f.followUse) {
+      if (f.followUse !== 'none') Sim.freeUse(f);
+      f.followUse = null; f.pose = null; f.act = null;
+    }
+    f.act = null;
+    // 뒤따르는 위치: 플레이어 뒤쪽으로 부채꼴
+    const back = p.ry || 0, side = (i % 2 ? -1 : 1) * (0.7 + (i >> 1) * 0.5), dist = 1.3 + (i >> 1) * 0.9;
+    const tx = p.x - Math.sin(back) * dist + Math.cos(back) * side, tz = p.z - Math.cos(back) * dist - Math.sin(back) * side;
+    const d = Math.hypot(tx - f.x, tz - f.z);
+    if (d > 0.35) {
+      const k = Math.min(1, (d > 6 ? 0.3 : 0.12) * (p.moving ? 1.2 : 0.8));
+      let nx = f.x + (tx - f.x) * k, nz = f.z + (tz - f.z) * k;
+      if (p.loc !== 'island') { const sz = Sim.interiorSize(p.loc); nx = Math.max(-sz.w / 2 + 0.4, Math.min(sz.w / 2 - 0.4, nx)); nz = Math.max(-sz.d / 2 + 0.4, Math.min(sz.d / 2 - 0.3, nz)); }
+      else if (d > 25) { nx = tx; nz = tz; }
+      f.ry = Math.atan2(nx - f.x, nz - f.z); f.x = nx; f.z = nz; f.moving = d > 0.6; f.idleT = 2; f.pose = null; f.state = 'WALK';
+    } else if (!p.moving) { f.moving = false; f.state = 'WATCH_LOOK'; f.ry = Math.atan2(p.x - f.x, p.z - f.z); }
     // 로맨틱한 장소 방문 (설렘 상승)
     const rp = ['cliff', 'beach', 'observatory', 'park'].find(id => { const pl = MAP.P[id]; return Math.hypot(p.x - pl.x, p.z - pl.z) < 20; });
     if (rp && Soc.canRomance(f.id, 'P') && Math.random() < 0.004) { Soc.addRomance(f.id, 'P', 1.5, '로맨틱한 장소'); Sim.emote(f, '💗'); }
@@ -391,6 +454,7 @@
       }
       if (I.kind === 'room' && p.loc !== 'home_p_in') add(3, '🔭 이 방 관찰 화면 열기', () => G.observeInterior(p.loc));
     }
+    FM.Play.options(add);
     out.sort((a, b) => a.dist - b.dist);
     return out;
   }
@@ -402,7 +466,7 @@
   function interact() {
     if (FM.UI.modalOpen()) return;
     const st = Sim.get();
-    if (st.player.sitting) { st.player.sitting = false; st.player.pose = null; return; }
+    if (st.player.sitting) { FM.Play.stop(); return; }
     const list = interactables();
     if (list.length) list[0].fn();
   }
@@ -532,6 +596,7 @@
     const st = Sim.get();
     if (!FM.UI.paused()) Sim.tick(dt);
     movePlayer(dt);
+    followAll(dt);
     updateCamera(dt);
     const p = st.player;
     const h = Sim.time.hour();

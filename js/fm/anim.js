@@ -18,6 +18,8 @@
   A.shade = (c, t) => { c.head.rotation.x = -0.1; arms(c, 0, 0, -2.4, 0.6); };
   A.talk = (c, t) => { c.body.position.y += Math.max(0, S(t * 9)) * 0.05; c.head.rotation.x = S(t * 12) * 0.08; arms(c, 0, -0.4 - S(t * 6) * 0.3, 0, 0.4 + S(t * 7) * 0.3); };
   A.chatter = A.talk;
+  A.swingSit = (c, t) => { sitBase(c); const k = S(t * 2.6); c.body.position.z = k * 0.45; c.body.position.y = -0.2 + Math.abs(k) * 0.12; c.body.rotation.x = -k * 0.3; arms(c, -2.6, 0.1, -2.6, -0.1); };
+  A.seesaw = (c, t) => { sitBase(c); c.body.position.y = -0.2 + (S(t * 2.2) + 1) * 0.25; arms(c, -1.3, 0.2, -1.3, -0.2); };
   A.listen = (c, t) => { c.head.rotation.z = S(t * 0.9) * 0.06; c.head.rotation.x = 0.04 + S(t * 1.3) * 0.02; arms(c, 0.05, -0.12, 0.05, 0.12); };   // 가만히 서서 귀 기울이기
   A.crouch = (c, t) => { legs(c, -1.1, -1.1); c.body.position.y = -0.15; c.body.rotation.x = 0.35; arms(c, -1 + S(t * 4) * 0.2, 0, -1.1 - S(t * 4) * 0.2, 0); };
   A.water = (c, t) => { arms(c, 0, 0, -1.2, 0.2); c.body.rotation.z = S(t * 2) * 0.05; c.head.rotation.x = 0.3; };

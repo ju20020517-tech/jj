@@ -465,12 +465,61 @@
   }
   Sim.freeAptRoom = freeAptRoom;
 
+  // 성격 조합이 옷차림과 표정에 묻어남
+  const STYLE = {
+    L1: {
+      ROMANTIC: { top: ['dress', 'sweater'], pattern: ['heart', 'flower', 'dots'], cloth: [0xff8fb1, 0xffc6de, 0xfff4d6], hat: ['flower', 'bow', 'headband'], acc: ['lei', 'necklace'], eyes: ['sparkle', 'happy'] },
+      ATHLETIC: { top: ['tee', 'hoodie'], pattern: ['stripe', 'plain', 'star'], cloth: [0xff6f61, 0x3a7bd5, 0xffd84a], bottom: ['shorts'], hat: ['cap', 'headband'], acc: ['backpack'], height: [1.02, 1.12] },
+      SCHOLARLY: { top: ['sweater', 'vest'], pattern: ['plaid', 'plain'], cloth: [0x55624a, 0x8a5a3b, 0x2f4b6e], glasses: ['round', 'square'], acc: ['satchel', 'tie'], brows: ['thin'] },
+      LAZY: { top: ['hoodie', 'sweater'], pattern: ['plain', 'snow'], cloth: [0x9aa7b0, 0xcfd6de, 0xb69cff], hat: ['nightcap', 'beanie'], eyes: ['sleepy'], width: [1.05, 1.15] },
+      EXTROVERT: { top: ['aloha', 'tee'], pattern: ['stripe2', 'flower', 'star'], cloth: [0xffb13d, 0x4fc1c9, 0xff6f61], glasses: ['sun', 'heart'], acc: ['lei', 'scarf'], mouth: ['grin', 'open'] },
+      INTROVERT: { top: ['hoodie', 'sweater'], pattern: ['plain', 'leaf'], cloth: [0x55624a, 0x9aa3ad, 0x2f4b6e], hat: ['beanie', 'headphones'], mouth: ['flat', 'w'] },
+      SNOB: { top: ['vest', 'dress'], pattern: ['plain'], cloth: [0x2b2b30, 0xfff4d6, 0xb69cff], hat: ['crown', 'beret'], acc: ['bowtie', 'necklace', 'cape'], eyes: ['smug'] },
+      CRANKY: { top: ['vest', 'tee'], pattern: ['plain', 'plaid'], cloth: [0x3a3a3a, 0x8a5a3b, 0x55624a], brows: ['angry', 'thick'], mouth: ['pout', 'flat'], acc: ['tie'] },
+      ARTISTIC: { top: ['apron', 'aloha'], pattern: ['dots', 'stripe2', 'star'], cloth: [0x4fc1c9, 0xff8fb1, 0xffd84a], hat: ['beret'], acc: ['scarf'], hair: ['curly', 'afro', 'sidepart'] },
+      ANXIOUS: { top: ['sweater', 'hoodie'], pattern: ['plain', 'dots'], cloth: [0xfff4d6, 0xcfd6de, 0x8fd3ff], brows: ['worried'], eyes: ['round'], acc: ['scarf'], height: [0.9, 0.98] },
+    },
+    L4: {
+      MUSIC: { hat: ['headphones'] }, FASHION: { glasses: ['sun', 'heart'], acc: ['necklace', 'cape'] }, FITNESS: { hat: ['headband'] }, STUDY: { glasses: ['round'] },
+      OCCULT: { hat: ['horns', 'halo'], acc: ['cape'], eyes: ['star'] }, GARDEN: { hat: ['straw', 'flower'] }, FOOD: { top: ['apron'] }, CLEAN: { top: ['apron'] }, GOSSIP: { acc: ['satchel'] }, FISHING: { hat: ['bucket'] },
+    },
+  };
+  function styleByPersonality(l, keys) {
+    const apply = (st, p) => {
+      if (!st || !chance(p)) return;
+      if (st.top && chance(0.7)) l.top = pick(st.top);
+      if (st.pattern && chance(0.6)) l.pattern = pick(st.pattern);
+      if (st.cloth && chance(0.7)) { l.shirt = pick(st.cloth); if (chance(0.5)) l.shirt2 = pick(st.cloth); }
+      if (st.bottom) l.bottom = pick(st.bottom);
+      if (st.hat && chance(0.55)) { l.hat = pick(st.hat); if (l.hat === 'halo') l.hatColor = 0xfff2a0; }
+      if (st.glasses && chance(0.6)) l.glasses = pick(st.glasses);
+      if (st.acc && chance(0.5)) l.acc = pick(st.acc);
+      if (st.eyes && chance(0.5)) l.eyes = pick(st.eyes);
+      if (st.brows && chance(0.6)) l.brows = pick(st.brows);
+      if (st.mouth && chance(0.5)) l.mouth = pick(st.mouth);
+      if (st.hair && l.species === 'human') l.hairStyle = pick(st.hair);
+      if (st.height) l.height = +rnd(...st.height).toFixed(2);
+      if (st.width) l.width = +rnd(...st.width).toFixed(2);
+    };
+    apply(STYLE.L1[keys.L1], 0.85);
+    apply(STYLE.L4[keys.L4], 0.6);
+    if (l.top === 'dress') l.bottom = 'none';
+  }
+  Sim.styleByPersonality = styleByPersonality;
   function makeVillager(o = {}) {
     const keys = o.keys || {
       L1: pick(Object.keys(D.L1)), L2: pick(Object.keys(D.L2)), L3: pick(Object.keys(D.L3)), L4: pick(Object.keys(D.L4)),
     };
-    const look = o.look || (window.ISLE && ISLE.randomLook ? ISLE.randomLook() : { species: 'cat' });
-    if (look && look.species === 'human' && !o.look && chance(0.7)) look.species = 'cat';
+    let look = o.look || (window.ISLE && ISLE.randomLook ? ISLE.randomLook() : { species: 'cat' });
+    if (!o.look && window.ISLE && ISLE.withSpecies) {
+      // 이미 섬에 많은 종은 피해서 다양하게
+      const count = {}; for (const v of (S ? S.villagers : [])) count[v.look && v.look.species] = (count[v.look && v.look.species] || 0) + 1;
+      if (look.species === 'human' && chance(0.6) || (count[look.species] || 0) >= 2) {
+        const sps = Object.keys(ISLE.SPECIES).filter(k => k !== 'human' && !(count[k] >= 1));
+        if (sps.length) { const keep = Object.assign({}, look); look = ISLE.withSpecies(look, pick(sps)); if (chance(0.4)) { look.fur = keep.fur; look.fur2 = keep.fur2; } }
+      }
+      styleByPersonality(look, keys);
+    }
     const qs = [];
     if (keys.L3 === 'PRANKSTER') qs.push('장난기');
     if (keys.L1 === 'SNOB' || keys.L3 === 'PASSIONATE') qs.push('허세');
@@ -480,7 +529,7 @@
       id: o.id || 'v' + (S.nextId++), name: o.name || freeName(), look, keys, extraMain: o.extraMain || [],
       phrase: o.phrase || '', quirks: [...new Set(qs)].slice(0, 2),
       likesKeys: o.likesKeys || [pick(Object.keys(D.L1)), pick(Object.keys(D.L3))],
-      likesSpecies: o.likesSpecies || (chance(0.4) ? pick(['cat', 'dog', 'bear', 'rabbit', 'hamster', 'fox', 'duck', 'sheep', 'human']) : null),
+      likesSpecies: o.likesSpecies || (chance(0.4) ? pick(window.ISLE && ISLE.SPECIES ? Object.keys(ISLE.SPECIES) : ['cat', 'dog', 'bear']) : null),
       home: o.home || freeAptRoom(), job: 'office', coins: rint(300, 1500), debt: 0,
       hunger: rint(10, 40), energy: 100, stress: rint(0, 25), depression: 0, mood: 70, reputation: 50, popularity: 0,
       loc: 'island', x: 0, z: 0, ry: 0, route: null, state: 'WALK', act: null, idleT: rnd(0, 3), prop: null, pose: null,
@@ -545,7 +594,7 @@
   function ensurePlayerRoom() {
     if (!S || !S.rooms || S.rooms.home_p_in) return;
     const sz = interiorSize('home_p_in');
-    S.rooms.home_p_in = FM.defaultRoom({ keys: { L1: 'ROMANTIC', L4: 'STUDY' } }, sz.w, sz.d);
+    S.rooms.home_p_in = FM.defaultRoom({ id: 'P', keys: S.player.keys || { L1: 'ROMANTIC', L2: 'HOMEBODY', L3: 'WARM', L4: 'STUDY' } }, sz.w, sz.d, FM.INTERIORS.home_p_in.door);
   }
   Sim.ensurePlayerRoom = ensurePlayerRoom;
   Sim.newGame = function (opts = {}) {
@@ -574,7 +623,7 @@
   };
   Sim.load = function (json) {
     S = json; Sim.S = S;
-    for (const v of S.villagers) { derive(v); v.talkingToPlayer = false; v.route = null; v.sceneId = null; v.act = null; v.bubble = null; if (v.loc === 'metro') { v.loc = 'island'; const st = MAP.STATIONS.C; v.x = st.x; v.z = st.z + 1; } }
+    for (const v of S.villagers) { derive(v); v.talkingToPlayer = false; v.followUse = null; v.route = null; v.sceneId = null; v.act = null; v.bubble = null; if (v.loc === 'metro') { v.loc = 'island'; const st = MAP.STATIONS.C; v.x = st.x; v.z = st.z + 1; } }
     S.fx = [];
     if (!S.rooms) S.rooms = {};
     ensurePlayerRoom();
@@ -1232,6 +1281,8 @@
   function updateVillager(v, dtR) {
     v.moving = false;
     if (v.sceneId) return; // 장면이 제어
+    // 동행 중: 움직임은 플레이어 쪽(main.js)에서 처리
+    if (v.following && S.player.followers && S.player.followers.includes(v.id)) { v.route = null; if (!v.followUse) v.act = null; return; }
     // 플레이어와 대화 중: 그 자리에 가만히 서서 플레이어를 바라봄
     if (v.talkingToPlayer) {
       if (!(v.talkUntil > S.realT)) { v.talkingToPlayer = false; v.idleT = 1; }

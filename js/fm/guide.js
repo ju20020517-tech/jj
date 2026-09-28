@@ -89,7 +89,7 @@
         p.ry = Math.atan2(v.x - x, v.z - z);
       } else if (r.ry !== undefined) p.ry = r.ry;
       p.x = x; p.z = z; p.sitting = false; g.target = null; g.autoPath = null;
-      if (p.follower) { const f = Sim.byId(p.follower); if (f) { f.loc = 'island'; f.x = x + 1; f.z = z; f.route = null; } }
+      FM.Soc.followers().forEach((f, i) => { f.loc = 'island'; f.x = x + (i % 2 ? -1 : 1) * (1 + (i >> 1) * 0.7); f.z = z + 0.8; f.route = null; f.followUse = null; });
       s.time += opts.free ? 0 : 3;   // 이동에 게임 시간 3분
       FM.Audio.sfx('pop');
       // 건물 안에 있는 주민에게 가는 경우: 들어갈 수 있는 곳이면 바로 들어감

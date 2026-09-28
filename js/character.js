@@ -29,6 +29,15 @@
     penguin:  { name: '펭귄',   icon: '🐧', ears: null, muzzle: 'penguin', tail: 'flat', fur: 0x3a4a6a, fur2: 0xffffff, beak: 0xffb13d, marking: 'face', markColor: 0xffffff },
     fox:      { name: '여우',   icon: '🦊', ears: 'fox', muzzle: 'fox', tail: 'fox', fur: 0xff9a4a, fur2: 0xffffff, ear: 0x3a2a20 },
     deer:     { name: '사슴',   icon: '🦌', ears: 'side', muzzle: 'deer', tail: 'puff', fur: 0xc98a5a, fur2: 0xf6e4cc, ear: 0xffd0c0, antlers: true },
+    panda:    { name: '판다',   icon: '🐼', ears: 'round', muzzle: 'bear', tail: 'stub', fur: 0xffffff, fur2: 0xffffff, ear: 0x2b2b30, marking: 'patch', markColor: 0x2b2b30 },
+    tiger:    { name: '호랑이', icon: '🐯', ears: 'cat', muzzle: 'cat', tail: 'cat', fur: 0xffa640, fur2: 0xfff4e0, ear: 0x3a2a20, marking: 'stripes', markColor: 0x3a2a20 },
+    wolf:     { name: '늑대',   icon: '🐺', ears: 'fox', muzzle: 'fox', tail: 'fox', fur: 0x9aa3b8, fur2: 0xf4f6fa, ear: 0x55607a, marking: 'blaze', markColor: 0xffffff },
+    cow:      { name: '젖소',   icon: '🐮', ears: 'side', muzzle: 'pig', tail: 'thin', fur: 0xffffff, fur2: 0xffd0d8, ear: 0x3a3a3a, marking: 'spots', markColor: 0x3a3a3a, head: [1.1, 0.95, 1.02] },
+    monkey:   { name: '원숭이', icon: '🐵', ears: 'side', muzzle: 'bear', tail: 'thin', fur: 0x9a6440, fur2: 0xffd9b8, ear: 0xffd9b8, marking: 'face', markColor: 0xffd9b8 },
+    chick:    { name: '병아리', icon: '🐥', ears: null, muzzle: 'duck', tail: 'puff', fur: 0xfff07a, fur2: 0xfff8c0, beak: 0xff9a3a, head: [1.08, 1.0, 1.04] },
+    otter:    { name: '수달',   icon: '🦦', ears: 'small', muzzle: 'dog', tail: 'thin', fur: 0x8a5a3b, fur2: 0xe8d0b0, ear: 0x6a4028, marking: 'face', markColor: 0xe8d0b0 },
+    polar:    { name: '북극곰', icon: '🐻‍❄️', ears: 'round', muzzle: 'bear', tail: 'stub', fur: 0xf6f8ff, fur2: 0xffffff, ear: 0xdfe6f0 },
+    lamb:     { name: '아기양', icon: '🐏', ears: 'side', muzzle: 'sheep', tail: 'puff', fur: 0x5a4a52, fur2: 0xfff4f0, ear: 0x5a4a52, wool: true },
   };
   // 입이 주둥이 위에 입체로 붙는 종
   const MOUTH_3D = { dog: 1, bear: 1, fox: 1, deer: 1 };
@@ -38,13 +47,13 @@
     brows: { none: '없음', thin: '얇은', thick: '굵은', dots: '동그란', angry: '화난', worried: '걱정' },
     mouth: { smile: '방긋', w: 'ω', open: '헤~', grin: '활짝', tooth: '앞니', flat: '일자', pout: '뾰로통', none: '없음' },
     marking: { none: '없음', stripes: '이마 줄무늬', mask: '눈 마스크', patch: '눈 얼룩', blaze: '이마 흰줄', spots: '주근깨', face: '얼굴 무늬' },
-    hairStyle: { short: '짧은 머리', bob: '단발', pigtails: '양갈래', spiky: '삐죽', long: '긴 머리', bun: '똥머리' },
+    hairStyle: { short: '짧은 머리', bob: '단발', pigtails: '양갈래', spiky: '삐죽', long: '긴 머리', bun: '똥머리', ponytail: '포니테일', afro: '뽀글 파마', twinbun: '양쪽 똥머리', curly: '곱슬 단발', sidepart: '가르마 펌' },
     top: { tee: '티셔츠', sweater: '스웨터', hoodie: '후드티', aloha: '알로하 셔츠', vest: '조끼 정장', dress: '원피스', apron: '앞치마' },
     pattern: { plain: '무지', stripe: '줄무늬', stripe2: '알록 줄무늬', dots: '물방울', plaid: '체크', snow: '눈꽃 니트', leaf: '나뭇잎', flower: '꽃무늬', heart: '하트', star: '별' },
     bottom: { shorts: '반바지', pants: '긴바지', skirt: '치마', none: '없음' },
-    hat: { none: '없음', bucket: '벙거지', cap: '야구모자', beanie: '비니', nightcap: '수면 모자', straw: '밀짚모자', bow: '리본', flower: '꽃핀', crown: '왕관' },
-    glasses: { none: '없음', round: '동그란 안경', square: '네모 안경', sun: '선글라스' },
-    acc: { none: '없음', backpack: '가방', bowtie: '나비넥타이', scarf: '목도리', necklace: '목걸이' },
+    hat: { none: '없음', bucket: '벙거지', cap: '야구모자', beanie: '비니', nightcap: '수면 모자', straw: '밀짚모자', bow: '리본', flower: '꽃핀', crown: '왕관', beret: '베레모', headband: '머리띠', halo: '천사 링', horns: '작은 뿔', headphones: '헤드폰' },
+    glasses: { none: '없음', round: '동그란 안경', square: '네모 안경', sun: '선글라스', heart: '하트 안경' },
+    acc: { none: '없음', backpack: '가방', bowtie: '나비넥타이', scarf: '목도리', necklace: '목걸이', tie: '넥타이', cape: '망토', wings: '날개', lei: '꽃목걸이', satchel: '크로스백' },
   };
 
   const PALETTE = {
@@ -293,7 +302,7 @@
       }
 
       // 입 (주둥이가 큰 종은 입체 입을 따로 붙임)
-      if (!MOUTH_3D[l.species]) {
+      if (!MOUTH_3D[sp.muzzle]) {
         const mx = w * 0.5, my = h * (sp.muzzle === 'pig' || sp.muzzle === 'koala' ? 0.8 : l.species === 'frog' ? 0.62 : 0.71);
         drawMouth(g, l.mouth, mx, my, l.species === 'frog' ? 2 : 1);
       }
@@ -364,7 +373,11 @@
     const skin2 = human ? l.skin : l.fur2;
     const root = new THREE.Group();
     const body = new THREE.Group();
-    root.add(body);
+    // 체형 (키 · 통통함) — 주민마다 조금씩 다름
+    const shapeG = new THREE.Group();
+    shapeG.scale.set(l.width || 1, l.height || 1, l.width || 1);
+    shapeG.add(body);
+    root.add(shapeG);
 
     // ----- 다리 / 발 -----
     const legColor = l.bottom === 'pants' && l.top !== 'dress' ? l.pants : skin;
@@ -675,6 +688,30 @@
         for (const s of [-1, 1]) puff(s * 0.38, -0.2, -0.02, 0.18, 0.55, 1.6, 1);
         puff(0, -0.25, -0.26, 0.32, 1.25, 1.5, 0.55);
         break;
+      case 'ponytail':
+        bangs();
+        for (const s of [-1, 1]) puff(s * 0.38, -0.02, 0.02, 0.13, 0.55, 1.1, 0.9);
+        puff(0, 0.1, -0.42, 0.13, 1, 1, 1);
+        puff(0, -0.12, -0.5, 0.15, 0.9, 1.6, 0.9);
+        head.add(mesh(geo('ptTie', () => new THREE.TorusGeometry(0.07, 0.022, 8, 18)), mat(0xff6f86), 0, 0.06, -0.44));
+        break;
+      case 'afro':
+        for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; puff(Math.cos(a) * 0.36, 0.22 + Math.sin(i * 1.7) * 0.08, Math.sin(a) * 0.3 - 0.05, 0.2); }
+        puff(0, 0.42, -0.05, 0.3, 1.2, 0.8, 1.1);
+        break;
+      case 'twinbun':
+        bangs();
+        for (const s of [-1, 1]) { puff(s * 0.3, 0.42, -0.08, 0.13); puff(s * 0.38, -0.02, 0.02, 0.13, 0.55, 1.1, 0.9); }
+        break;
+      case 'curly':
+        bangs();
+        for (let i = 0; i < 9; i++) { const a = (i / 8 - 0.5) * 3.4; puff(Math.sin(a) * 0.4, -0.12 + (i % 2) * 0.06, Math.cos(a) * -0.2, 0.14); }
+        break;
+      case 'sidepart':
+        for (const [x, y, r] of [[-0.2, 0.24, 0.17], [-0.02, 0.28, 0.15], [0.16, 0.22, 0.12]]) puff(x, y, 0.27, r, 1.1, 0.7, 0.6);
+        for (const s of [-1, 1]) puff(s * 0.38, -0.05, 0.02, 0.14, 0.6, 1.3, 0.9);
+        puff(-0.28, 0.3, 0.12, 0.14, 1.2, 0.8, 1);
+        break;
       case 'bun':
         bangs();
         puff(0, 0.45, -0.12, 0.16);
@@ -688,7 +725,7 @@
       sprout.position.set(0.02, HEAD_R + 0.05, -0.02);
       sprout.add(mesh(capsule(0.012, 0.06), mat(0x5a9e3a), 0, 0.02, 0, false));
       for (const s of [-1, 1]) { const lf = mesh(sphere(0.06), mat(0x7cc864), s * 0.05, 0.08, 0, false); lf.scale.set(1, 0.45, 0.6); lf.rotation.z = s * 0.5; sprout.add(lf); }
-      if (l.hairStyle !== 'bun' && l.hairStyle !== 'spiky') head.add(sprout);
+      if (!['bun', 'spiky', 'afro', 'twinbun'].includes(l.hairStyle)) head.add(sprout);
     }
   }
 
@@ -761,8 +798,39 @@
         g.position.set(0, top + 0.02, 0);
         break;
       }
+      case 'beret': {
+        const b = mesh(sphere(0.42), c, 0, 0.02, 0); b.scale.set(1.05, 0.32, 1.05); g.add(b);
+        g.add(mesh(capsule(0.015, 0.05), c, 0.02, 0.15, 0));
+        g.position.set(0.06, top - 0.06, -0.02); g.rotation.z = -0.25;
+        break;
+      }
+      case 'headband': {
+        const hb = mesh(geo('hband', () => new THREE.TorusGeometry(0.43, 0.035, 8, 36, Math.PI)), c, 0, 0, 0);
+        g.add(hb);
+        g.add(mesh(sphere(0.08), c, 0.22, 0.36, 0.05));
+        g.position.set(0, top - 0.42, 0.02); g.rotation.x = -0.3;
+        break;
+      }
+      case 'halo': {
+        const h = mesh(geo('halo', () => new THREE.TorusGeometry(0.24, 0.035, 10, 32)), new THREE.MeshBasicMaterial({ color: 0xfff2a0 }), 0, 0, 0);
+        h.rotation.x = Math.PI / 2; g.add(h);
+        g.position.set(0, top + 0.22, 0);
+        break;
+      }
+      case 'horns': {
+        for (const s of [-1, 1]) { const h = mesh(roundCone(0.06, 0.18), c, s * 0.2, 0, 0); h.rotation.z = -s * 0.35; g.add(h); }
+        g.position.set(0, top - 0.02, 0.05);
+        break;
+      }
+      case 'headphones': {
+        const band = mesh(geo('hpBand', () => new THREE.TorusGeometry(0.45, 0.03, 8, 36, Math.PI)), mat(0x3a3a44), 0, 0, 0);
+        g.add(band);
+        for (const s of [-1, 1]) { const cup = mesh(puck(0.12, 0.08), c, s * 0.45, 0, 0); cup.rotation.z = Math.PI / 2; g.add(cup); }
+        g.position.set(0, top - 0.45, 0);
+        break;
+      }
     }
-    if (l.hat !== 'bow' && l.hat !== 'flower' && l.hat !== 'crown') g.scale.set(hs[0] / 1.02, 1, hs[2]);
+    if (!['bow', 'flower', 'crown', 'halo', 'horns', 'headband', 'headphones', 'beret'].includes(l.hat)) g.scale.set(hs[0] / 1.02, 1, hs[2]);
     head.add(g);
   }
 
@@ -770,7 +838,7 @@
     if (l.glasses === 'none') return;
     const g = new THREE.Group();
     const frame = mat(l.glassesColor);
-    const lensMat = l.glasses === 'sun'
+    const lensMat = l.glasses === 'heart' ? new THREE.MeshLambertMaterial({ color: 0xff5d8a, transparent: true, opacity: 0.55, depthWrite: false }) : l.glasses === 'sun'
       ? soften(new THREE.MeshLambertMaterial({ color: 0x1d2330 }))
       : new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, depthWrite: false });
     for (const s of [-1, 1]) {
@@ -809,6 +877,29 @@
         const sc = mesh(geo('scarf', () => new THREE.TorusGeometry(0.16, 0.06, 12, 28)), c, 0, 0.5, 0.01);
         sc.rotation.x = Math.PI / 2 - 0.15; body.add(sc);
         const tail = mesh(box(0.1, 0.22, 0.05, 0.025), c, 0.08, 0.38, 0.2); tail.rotation.z = 0.15; body.add(tail);
+        break;
+      }
+      case 'tie': {
+        const t = mesh(box(0.07, 0.2, 0.03, 0.015), c, 0, 0.36, 0.25); t.rotation.x = -0.25; body.add(t);
+        body.add(mesh(sphere(0.035), c, 0, 0.47, 0.2));
+        break;
+      }
+      case 'cape': {
+        const cp = mesh(lathe('cape', [[0.0001, 0.42], [0.22, 0.4], [0.3, 0.2], [0.34, 0.02], [0.0001, 0.02]]), soften(new THREE.MeshLambertMaterial({ color: l.accColor, side: THREE.DoubleSide })), 0, 0.06, -0.06);
+        cp.scale.set(1, 1, 0.7); body.add(cp);
+        break;
+      }
+      case 'wings': {
+        for (const s of [-1, 1]) { const w = mesh(sphere(0.16), mat(0xffffff), s * 0.18, 0.4, -0.3); w.scale.set(1.3, 0.8, 0.3); w.rotation.z = s * 0.5; body.add(w); }
+        break;
+      }
+      case 'lei': {
+        for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2; body.add(mesh(sphere(0.045), mat([0xff6f86, 0xffd84a, 0xffffff][k % 3]), Math.cos(a) * 0.19, 0.46 - (Math.sin(a) > 0 ? Math.sin(a) * 0.06 : 0), Math.sin(a) * 0.19 + 0.02, false)); }
+        break;
+      }
+      case 'satchel': {
+        body.add(mesh(box(0.2, 0.16, 0.07, 0.03), c, 0.22, 0.2, 0.12));
+        const st = mesh(capsule(0.014, 0.52), c, 0, 0.35, 0.18, false); st.rotation.z = 0.8; body.add(st);
         break;
       }
       case 'necklace': {
@@ -926,7 +1017,7 @@
   function randomLook() {
     const pick = arr => arr[(Math.random() * arr.length) | 0];
     const keys = o => Object.keys(o);
-    const sp = Math.random() < 0.12 ? 'human' : pick(keys(SPECIES).filter(k => k !== 'human'));
+    const sp = Math.random() < 0.1 ? 'human' : pick(keys(SPECIES).filter(k => k !== 'human'));
     let l = withSpecies(normalizeLook({}), sp);
     if (Math.random() < 0.5 && sp !== 'human') { l.fur = pick(PALETTE.fur); l.fur2 = pick([0xffffff, 0xfff6e0, 0xfff0f4, l.fur2]); }
     Object.assign(l, {
@@ -938,8 +1029,10 @@
       bottom: pick(['shorts', 'pants', 'skirt', 'shorts']), pants: pick(PALETTE.cloth), shoes: pick(PALETTE.cloth),
       hat: Math.random() < 0.45 ? pick(keys(OPT.hat).slice(1)) : 'none', hatColor: pick(PALETTE.cloth),
       glasses: Math.random() < 0.2 ? pick(['round', 'square', 'sun']) : 'none',
-      acc: Math.random() < 0.4 ? pick(['backpack', 'bowtie', 'scarf', 'necklace']) : 'none', accColor: pick(PALETTE.cloth),
+      acc: Math.random() < 0.45 ? pick(keys(OPT.acc).slice(1)) : 'none', accColor: pick(PALETTE.cloth),
+      height: +(0.9 + Math.random() * 0.2).toFixed(2), width: +(0.9 + Math.random() * 0.22).toFixed(2),
     });
+    if (l.glasses === 'none' && Math.random() < 0.05) l.glasses = 'heart';
     if (l.marking !== 'none' && Math.random() < 0.3) l.marking = 'none';
     return l;
   }

@@ -302,7 +302,7 @@
   // =========================================================
   // 장소 이벤트 주사위
   // =========================================================
-  const free = v => v && !v.sceneId && !v.status.hospital && !v.child && v.loc !== 'metro' && !(v.act && v.act.id === 'sleep') && !v.talkingToPlayer;
+  const free = v => v && !v.sceneId && !v.status.hospital && !v.child && v.loc !== 'metro' && !(v.act && v.act.id === 'sleep') && !v.talkingToPlayer && !v.following;
   const freeKid = v => v && !v.sceneId && v.child && v.child.stage === 'CHILD' && v.loc !== 'metro';
   const at = (v, placeId, r = 20) => { const p = MAP.P[placeId]; return v.loc === 'island' && Math.hypot(v.x - p.x, v.z - p.z) < r || v.loc === p.interior; };
   const inside = (v, iid) => v.loc === iid;
