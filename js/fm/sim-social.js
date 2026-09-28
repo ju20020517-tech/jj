@@ -1100,7 +1100,11 @@
     // 1. 성당이 웨딩 아치, 꽃길, 의자로 자동 리모델링 (3D에서 weddingMode 표시)
     steps.push({ bgm: 'wedding' });
     // 2. 모든 주민이 포멀한 하객 의상을 입고 모임
-    steps.push({ par: guests.map((g, i) => ({ go: 'G' + i, to: { loc: 'island', x: cx + (i % 2 ? 3.2 : -3.2) + rnd(-0.5, 0.5), z: cz + 2 + Math.floor(i / 2) * 1.1 }, max: 60, opts: { viaMetro: false } })) });
+    // 하객들은 북쪽 고지대역에서 내려 식장 앞에 모임
+    guests.forEach((g, i) => steps.push({ tp: 'G' + i, loc: 'island', x: cx + rnd(-6, 6), z: cz + 8 + rnd(0, 6) }));
+    if (A) steps.push({ tp: 'A', loc: 'island', x: cx - 0.6, z: cz + 13 });
+    if (B) steps.push({ tp: 'B', loc: 'island', x: cx + 0.6, z: cz + 13 });
+    steps.push({ par: guests.map((g, i) => ({ go: 'G' + i, to: { loc: 'island', x: cx + (i % 2 ? 3.2 : -3.2) + rnd(-0.5, 0.5), z: cz + 2 + Math.floor(i / 2) * 1.1 }, max: 30, opts: { noMetro: true } })) });
     // 4. 신랑/신부 입장 애니메이션
     const couple = [];
     if (A) couple.push({ go: 'A', to: { loc: 'island', x: cx - 0.6, z: cz + 12 }, max: 60 });
@@ -1137,7 +1141,7 @@
     // 6. 마을 단체 기념 사진 촬영 후 신혼집으로 자동 이동
     steps.push({ fx: 'photo', at: gKey }, { sfx: 'camera' }, { do: () => { st.album = st.album || []; st.album.push({ day: day(), title: `${nm(a)} ♥ ${nm(b)} 결혼식 단체 사진`, who: [a, b, ...guests.map(g => g.id)] }); emit('photo', {}); } }, { wait: 1.5 });
     if (A) steps.push({ go: 'A', to: { home: 'A' }, max: 5 });
-    Sim.scene({ title: '💒 마을 대규모 결혼식', major: true, place: 'cathedral', bgm: 'wedding', actors: acts, force: true, steps, onEnd: () => marry(m) });
+    Sim.scene({ title: `💒 ${nm(a)} ♥ ${nm(b)} 결혼식`, major: true, place: 'cathedral', bgm: 'wedding', actors: acts, force: true, steps, onEnd: () => marry(m) });
     if (a === P || b === P) emit('playerWedding', m);
     Sim.log('wedding', `💒 오늘 10:00, ${nm(a)}와(과) ${nm(b)}의 결혼식이 대성당에서 열렸어요! 온 동네 주민이 축가를 불렀어요.`, [a, b], 3, { newsKind: 'wedding' });
   }
@@ -1965,7 +1969,9 @@
       Sim.log('jealous', `💔 ${o.name}이(가) 플레이어가 ${v.name}에게 꽃다발을 주는 걸 목격했어요...`, [o.id, v.id], 1);
     }
     // 연애 시작 조건: 호감도 80 이상 + 설렘 지수 70 이상
-    if (affection(v.id, P) >= 80 && F(v.id, P).romance >= 70) {
+    // 분수대 소원 동전: 24시간 동안 고백 성공률 20% 상승 (조건 완화)
+    const wish = (st.wishes[P] || 0) > st.time ? 0.8 : 1;
+    if (affection(v.id, P) >= 80 * wish && F(v.id, P).romance >= 70 * wish) {
       r.status = 'DATING'; r.since = day(); r.lastDate = day(); p.lover = v.id;
       endCrush(v);
       Sim.fx('hearts', v);

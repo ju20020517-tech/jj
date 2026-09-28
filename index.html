@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>친구모아 아일랜드</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="fm.css" />
+</head>
+<body data-view="island">
+  <canvas id="game"></canvas>
+  <div id="bubbles"></div>
+  <div id="fade"></div>
+  <div id="loading" hidden>🏝️ 섬으로 가는 중…</div>
+  <div id="start" hidden></div>
+
+  <div id="hud" hidden>
+    <div class="hud-top">
+      <div class="chip title">🏝️ 친구모아 아일랜드</div>
+      <div class="chip" id="hudTime">-</div>
+      <div class="chip" id="hudWeather">-</div>
+      <div class="chip speed"><button data-speed="0">⏸</button><button data-speed="1">×1</button><button data-speed="4">×4</button><button data-speed="15">×15</button><button data-speed="60">×60</button></div>
+      <div class="chip" id="hudCoins">🪙 0</div>
+      <div class="chip stam">⚡<div class="bar"><i id="hudStam"></i></div></div>
+      <div class="chip mail" id="hudMail"></div>
+      <div class="hud-btns">
+        <button id="btnObserve" title="아파트 관찰 모드 (O)">🏢</button>
+        <button id="btnMap" title="지도 (M)">🗺️</button>
+        <button id="btnSound" title="소리">🔇</button>
+        <button id="btnPanel" title="패널">☰</button>
+      </div>
+    </div>
+    <div id="notif"></div>
+    <div id="toasts"></div>
+    <div id="banner" hidden></div>
+    <div id="hint" hidden></div>
+    <button id="hintBtn" hidden>행동</button>
+    <div id="emotes"></div>
+
+    <aside id="side" class="open">
+      <nav>
+        <button class="tab" data-tab="villagers">👥 주민</button>
+        <button class="tab" data-tab="quest">📜 퀘스트</button>
+        <button class="tab" data-tab="news">📰 소식</button>
+        <button class="tab" data-tab="bag">🎒 가방</button>
+        <button class="tab" data-tab="god">✨ 신의 툴</button>
+        <button class="tab" data-tab="settings">⚙️</button>
+        <button class="tab" data-tab="help">❓</button>
+      </nav>
+      <div id="sideBody"></div>
+    </aside>
+
+    <div id="obs" hidden></div>
+    <div id="editor" hidden></div>
+    <div id="dialog" hidden></div>
+    <div id="map" hidden><canvas id="mapC" width="560" height="500"></canvas><small>🗺️ 흰 점: 주민 · 분홍 점: 고민 중 · 빨간 점: 나 · M: 닫기</small></div>
+
+    <div id="stick"><div id="knob"></div></div>
+    <div class="mbtns">
+      <button id="mSit">앉기</button><button id="mBug">채집</button><button id="mFish">낚시</button><button id="mRun">달리기</button><button id="mAct" class="big">행동</button>
+    </div>
+  </div>
+
+  <div id="modal" hidden></div>
+  <div id="dreamBox" hidden></div>
+
+  <script src="vendor/three.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/textures.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/character.js"></script>
+  <script src="js/fm/data.js"></script>
+  <script src="js/fm/map.js"></script>
+  <script src="js/fm/terrain.js"></script>
+  <script src="js/fm/furniture.js"></script>
+  <script src="js/fm/interiors.js"></script>
+  <script src="js/fm/lines.js"></script>
+  <script src="js/fm/sim-core.js"></script>
+  <script src="js/fm/sim-social.js"></script>
+  <script src="js/fm/sim-events.js"></script>
+  <script src="js/fm/props.js"></script>
+  <script src="js/fm/anim.js"></script>
+  <script src="js/fm/world3d.js"></script>
+  <script src="js/fm/chars3d.js"></script>
+  <script src="js/fm/interior3d.js"></script>
+  <script src="js/fm/audio.js"></script>
+  <script src="js/fm/ui.js"></script>
+  <script src="js/fm/main.js"></script>
+</body>
+</html>
