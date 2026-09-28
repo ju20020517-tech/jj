@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>캐릭터 만들기 · 두근두근 섬</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="creator.css" />
+</head>
+<body class="creator">
+  <div id="app">
+    <header class="top">
+      <h1>🎨 캐릭터 만들기 <small>3D</small></h1>
+      <p class="sub">종·얼굴·털색·머리·옷·소품을 골라 나만의 주민을 만들어요 · <a class="creator-link" href="index.html">🏝️ 섬으로 돌아가기</a></p>
+    </header>
+
+    <main class="cr-layout">
+      <!-- 미리보기 -->
+      <section class="stage-col">
+        <div class="stage" id="stage">
+          <canvas id="view"></canvas>
+          <div class="loading" id="loading">캐릭터를 불러오는 중…</div>
+          <div class="stage-name" id="stageName"></div>
+          <div class="pose-bar" id="poseBar">
+            <button data-pose="idle" class="active">🧍 서기</button>
+            <button data-pose="walk">🚶 걷기</button>
+            <button data-pose="wave">👋 인사</button>
+            <button data-pose="hop">🐇 깡충</button>
+            <button data-pose="talk">💬 수다</button>
+          </div>
+          <div class="stage-tools">
+            <button id="spinBtn" title="자동 회전">🔄</button>
+            <button id="zoomInBtn" title="가까이">＋</button>
+            <button id="zoomOutBtn" title="멀리">－</button>
+          </div>
+          <div class="stage-hint">드래그해서 돌려보기 · 휠로 확대</div>
+        </div>
+        <div class="action-bar">
+          <button class="btn alt" id="randomBtn">🎲 랜덤</button>
+          <button class="btn ghost" id="newBtn">✨ 새로 만들기</button>
+          <button class="btn" id="saveBtn">💾 저장</button>
+          <button class="btn pink" id="photoBtn">📷 사진</button>
+        </div>
+      </section>
+
+      <!-- 편집 -->
+      <aside class="side editor">
+        <div class="name-row">
+          <label>이름<input id="nameIn" maxlength="8" placeholder="이름" /></label>
+          <label>말버릇<input id="phraseIn" maxlength="4" placeholder="예: 냥" /></label>
+        </div>
+        <nav class="tabs" id="edTabs">
+          <button class="tab active" data-tab="species">🐾 종</button>
+          <button class="tab" data-tab="face">😊 얼굴</button>
+          <button class="tab" data-tab="color">🎨 털색</button>
+          <button class="tab" data-tab="hair">💇 머리</button>
+          <button class="tab" data-tab="clothes">👕 옷</button>
+          <button class="tab" data-tab="acc">🎩 소품</button>
+        </nav>
+        <div class="ed-panels" id="edPanels"></div>
+      </aside>
+    </main>
+
+    <!-- 저장한 캐릭터 -->
+    <section class="gallery-wrap">
+      <div class="gallery-head">
+        <h2>📒 내 캐릭터 도감 <span id="galCount"></span></h2>
+        <div class="gal-tools">
+          <button class="btn small ghost" id="exportBtn">⬇️ 내보내기</button>
+          <label class="btn small ghost file-btn">⬆️ 가져오기<input type="file" id="importIn" accept="application/json,.json" hidden /></label>
+        </div>
+      </div>
+      <p class="gal-help">카드를 누르면 불러와서 수정할 수 있어요. <b>🙋 내 캐릭터</b>로 고르면 섬에서 그 모습으로 플레이하고, <b>🏝️ 초대</b>하면 섬에 주민으로 나타나요.</p>
+      <div class="gallery" id="gallery"></div>
+      <h3 class="preset-title">✨ 추천 스타일로 시작하기</h3>
+      <div class="presets" id="presets"></div>
+    </section>
+  </div>
+
+  <div class="toast-box floating" id="toastBox"></div>
+
+  <script src="vendor/three.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/textures.js"></script>
+  <script src="js/models.js"></script>
+  <script src="js/character.js"></script>
+  <script src="js/creator.js"></script>
+</body>
+</html>

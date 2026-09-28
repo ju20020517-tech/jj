@@ -13,7 +13,7 @@
   <div id="app">
     <header class="top">
       <h1>🍃 <span id="islandTitle">두근두근 섬</span> 생활 <small>3D</small></h1>
-      <p class="sub">방향키/WASD 이동 · Shift 달리기 · Space 행동 · Q 심기 · 1~0 아이템 · 휠 확대/축소</p>
+      <p class="sub"><a class="creator-link" href="creator.html">🎨 캐릭터 만들기</a> · 방향키/WASD 이동 · Shift 달리기 · Space 행동 · Q 심기 · 1~0 아이템 · 휠 확대/축소</p>
     </header>
 
     <main class="layout">
@@ -109,6 +109,8 @@
           <div class="field">옷 색깔<div class="swatches" id="shirtSwatches"></div></div>
           <div class="field">머리 색깔<div class="swatches" id="hairSwatches"></div></div>
           <div class="field">모자<div class="swatches" id="hatSwatches"></div></div>
+          <a class="btn creator-btn" href="creator.html">🎨 캐릭터 만들기에서 동물로 꾸미기</a>
+          <p class="note" id="customNote" hidden>지금은 캐릭터 만들기에서 고른 캐릭터로 플레이 중이에요.</p>
           <div class="stats" id="stats"></div>
           <button class="btn danger" id="resetBtn">🗑️ 섬 처음부터 다시 시작</button>
         </div>
@@ -135,6 +137,7 @@
   <script src="js/data.js"></script>
   <script src="js/textures.js"></script>
   <script src="js/models.js"></script>
+  <script src="js/character.js"></script>
   <script src="js/world.js"></script>
   <script src="js/game.js"></script>
 </body>

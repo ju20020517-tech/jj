@@ -86,36 +86,37 @@
   ISLE.VILLAGERS = [
     {
       id: 'moka', name: '모카', species: 'cat', home: { x: 30, z: 20 },
-      fur: 0xa9c6e8, fur2: 0xeaf3ff, stripe: 0x6f8fb8, shirt: 0xcfd6de, pattern: 'snow', pants: 0x7d8da0,
-      eyes: 'happy', mouth: 'w', ear: 0xff9fb2,
+      fur: 0xa9c6e8, fur2: 0xeaf3ff, ear: 0xff9fb2, marking: 'stripes', markColor: 0x6f8fb8,
+      eyes: 'happy', mouth: 'w', top: 'sweater', pattern: 'snow', shirt: 0xcfd6de, shirt2: 0xffffff, bottom: 'pants', pants: 0x7d8da0,
       lines: ['오늘 바람이 시원하다냥~', '폭신한 스웨터 좋지 않냥?', '나무 그늘에서 낮잠 자고 싶다냥 💤', '과일 하나만 주면 좋겠다냥…'],
       suffix: '냥',
     },
     {
       id: 'bori', name: '보리', species: 'bear', home: { x: 12, z: 24 },
-      fur: 0xd9a066, fur2: 0xf7dcb6, shirt: 0xff6f61, pattern: 'stripe', pants: 0x3f5f8f,
-      eyes: 'dot', mouth: 'smile', ear: 0xb77a45,
+      fur: 0xd9a066, fur2: 0xf7dcb6, ear: 0xb77a45,
+      eyes: 'dot', mouth: 'smile', brows: 'dots', top: 'tee', pattern: 'stripe', shirt: 0xff6f61, shirt2: 0xffffff, bottom: 'shorts', pants: 0x3f5f8f,
       lines: ['꿀 냄새가 나는 것 같아곰!', '다리 건너편에 예쁜 꽃이 피었곰.', '폭포 소리를 들으면 마음이 편해곰~', '같이 산책할래곰?'],
       suffix: '곰',
     },
     {
       id: 'deokbae', name: '덕배', species: 'duck', home: { x: 8, z: 7 },
-      fur: 0xffcc3a, fur2: 0xffe27a, shirt: 0x9aa7b0, pattern: 'plaid', pants: 0x6b5a4a, hat: 0xf2e28a,
-      eyes: 'dot', mouth: 'none', beak: 0xff8a2a,
+      fur: 0xffcc3a, fur2: 0xffe27a, beak: 0xff8a2a,
+      eyes: 'dot', mouth: 'none', blush: 0xff7a5a, top: 'apron', pattern: 'plaid', shirt: 0x9aa7b0, shirt2: 0xfff4d6, bottom: 'none',
+      hat: 'bucket', hatColor: 0xf2e28a,
       lines: ['언덕 위 경치 최고다꽥!', '비탈길로 올라오면 된다꽥.', '바구니 가득 과일을 모으고 싶다꽥.', '모자 어때꽥? 새로 샀다꽥!'],
       suffix: '꽥',
     },
     {
       id: 'kongi', name: '콩이', species: 'hamster', home: { x: 18, z: 26 },
-      fur: 0xff8fa0, fur2: 0xffd9df, shirt: 0xffffff, pattern: 'dots', pants: 0xff6f86,
-      eyes: 'sparkle', mouth: 'tooth', ear: 0x5cbf73, blush: 0xff5d7a,
+      fur: 0xff8fa0, fur2: 0xffd9df, ear: 0x5cbf73, blush: 0xff5d7a,
+      eyes: 'sparkle', mouth: 'tooth', top: 'tee', pattern: 'dots', shirt: 0xffffff, shirt2: 0xff4d4d, bottom: 'shorts', pants: 0xff6f86,
       lines: ['해바라기씨 있어쪼?', '오늘도 신나게 달려보자쪼! 🏃', '조개 줍기 대회 할래쪼?', '볼주머니가 꽉 찼다쪼!'],
       suffix: '쪼',
     },
     {
       id: 'mongsil', name: '몽실', species: 'dog', home: { x: 33, z: 9 },
-      fur: 0xfff6e0, fur2: 0xffffff, shirt: 0x2f4b6e, pattern: 'stripe2', pants: 0xb9c6ff, ear: 0xb3b9ff,
-      eyes: 'smile', mouth: 'smile',
+      fur: 0xfff6e0, fur2: 0xffffff, ear: 0xb3b9ff,
+      eyes: 'happy', mouth: 'smile', top: 'sweater', pattern: 'stripe2', shirt: 0x2f4b6e, shirt2: 0xffffff, bottom: 'shorts', pants: 0xb9c6ff,
       lines: ['멍! 오늘 기분 최고다멍!', '언덕 위에서 섬 전체가 보인다멍.', '같이 뛰어놀자멍~ 🐾', '밤에는 반딧불이가 예쁘다멍.'],
       suffix: '멍',
     },
@@ -124,6 +125,7 @@
   ISLE.SHIRTS = [0x8fd3ff, 0xff8fb1, 0x8ee07a, 0xffd84a, 0xb69cff, 0xff9d5c, 0xffffff];
   ISLE.HAIRS = [0x8a5a3b, 0x3b2b20, 0xf2c46d, 0xe8735a, 0x7a8cff, 0xf59ac0];
   ISLE.HATS = [null, 0xffcf3a, 0xff7a8a, 0x7cc8ff];
+  ISLE.SKINS = [0xfff0e0, 0xffe2c8, 0xf6cfa8, 0xe0b088, 0xc68d62, 0x9a6440];
 
   ISLE.DEFAULT_TODOS = [
     { text: '나무를 흔들어 과일 3개 모으기', goal: { event: 'fruit', count: 3 } },

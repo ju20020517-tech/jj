@@ -284,10 +284,42 @@
   // =========================================================
   // 캐릭터 / 주민
   // =========================================================
-  const playerLook = () => ({
-    id: 'player', species: 'human', shirt: state.player.shirt, hair: state.player.hair,
-    hat: state.player.hat, pants: 0x55624a, eyes: 'dot', mouth: 'smile',
-  });
+  // "캐릭터 만들기"에서 만든 캐릭터 불러오기
+  function readCreator() {
+    try {
+      const d = JSON.parse(localStorage.getItem(ISLE.CREATOR_KEY) || 'null');
+      return d && Array.isArray(d.characters) ? d : null;
+    } catch (e) { return null; }
+  }
+  const creator = readCreator();
+  const customPlayer = () => {
+    if (!creator || !creator.playerId) return null;
+    const c = creator.characters.find(c => c.id === creator.playerId);
+    return c ? c.look : null;
+  };
+  const playerLook = () => customPlayer() || {
+    species: 'human', skin: 0xffe2c8, hair: state.player.hair, hairStyle: 'short',
+    top: 'tee', shirt: state.player.shirt, pattern: 'plain', bottom: 'shorts', pants: 0x55624a,
+    hat: state.player.hat ? 'bucket' : 'none', hatColor: state.player.hat || 0xffcf3a,
+    acc: 'backpack', accColor: 0xef5a4f, eyes: 'dot', mouth: 'smile',
+  };
+  // 섬에 초대한 캐릭터들은 주민으로 등장
+  const GUEST_HOMES = [{ x: 20, z: 22 }, { x: 28, z: 25 }, { x: 15, z: 16 }, { x: 35, z: 16 }, { x: 10, z: 19 }, { x: 25, z: 7 }, { x: 31, z: 28 }, { x: 6, z: 25 }];
+  function guestSpecs() {
+    if (!creator || !Array.isArray(creator.invited)) return [];
+    return creator.invited
+      .map(id => creator.characters.find(c => c.id === id))
+      .filter(Boolean)
+      .slice(0, GUEST_HOMES.length)
+      .map((c, i) => {
+        const sfx = (c.phrase || '').trim() || '요';
+        const name = c.name || '새 친구';
+        return Object.assign({}, c.look, {
+          id: 'guest-' + c.id, name, home: GUEST_HOMES[i], suffix: sfx,
+          lines: [`나는 ${name}! 이 섬 정말 좋다${sfx}~`, `오늘 옷 어때${sfx}?`, `같이 산책하자${sfx}!`, `과일 먹고 싶다${sfx}…`, `초대해줘서 고마워${sfx} 💕`],
+        });
+      });
+  }
 
   const player = { x: 0, z: 0, y: 0, rot: 0, targetRot: 0, move: 0, char: null };
 
@@ -305,7 +337,7 @@
 
   const villagers = [];
   function spawnVillagers() {
-    for (const spec of ISLE.VILLAGERS) {
+    for (const spec of ISLE.VILLAGERS.concat(guestSpecs())) {
       const char = M.character(spec);
       let x = spec.home.x + 0.5, z = spec.home.z + 0.5;
       // 집 위치가 막혀 있으면 근처 빈 곳 찾기
@@ -1686,6 +1718,7 @@
     buildSwatches('shirtSwatches', ISLE.SHIRTS, 'shirt', rebuildPlayerModel);
     buildSwatches('hairSwatches', ISLE.HAIRS, 'hair', rebuildPlayerModel);
     buildSwatches('hatSwatches', ISLE.HATS, 'hat', rebuildPlayerModel);
+    $('customNote').hidden = !customPlayer();
     $('resetBtn').addEventListener('click', () => {
       if (!confirm('정말 섬을 처음부터 다시 시작할까요?\n모든 저장 데이터가 사라져요.')) return;
       resetting = true;

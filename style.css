@@ -460,3 +460,7 @@ body:not(.in-house) .catalog { filter: saturate(.6); }
   background: repeating-linear-gradient(45deg, #fff 0 4px, #f0d9d9 4px 8px);
 }
 .friends { margin-top: 6px; padding-top: 6px; border-top: 2px dashed var(--line); }
+
+.creator-link { color: #e0668f; font-weight: bold; text-decoration: none; }
+.creator-btn { display: block; text-align: center; text-decoration: none; margin: 4px 0 12px; background: var(--pink); box-shadow: 0 3px 0 #d96a90; }
+.note { font-size: 13px; color: var(--ink-soft); margin: -6px 0 10px; }
