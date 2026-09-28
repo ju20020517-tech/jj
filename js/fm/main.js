@@ -471,6 +471,7 @@
     if (G.shake > 0) { G.shake -= dt; camera.position.x += (Math.random() - 0.5) * 0.12; camera.position.y += (Math.random() - 0.5) * 0.08; }
     camera.lookAt(camTarget);
   }
+  G.setCam = (yaw, pitch, dist) => { camYaw = yaw; camPitch = pitch; camDist = dist; };
   G.focusOn = function (x, z) { const p = Sim.get().player; if (p.loc !== 'island') return; camTarget.set(x, T.groundY(x, z), z); };
 
   // ---------------------------------------------------------
@@ -479,6 +480,9 @@
   let saveT = 0, bgmT = 0;
   function loop() {
     requestAnimationFrame(loop);
+    try { frame(); } catch (e) { console.error(e); }
+  }
+  function frame() {
     const dt = Math.min(0.05, clock.getDelta());
     const st = Sim.get();
     if (!FM.UI.paused()) Sim.tick(dt);

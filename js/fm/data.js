@@ -138,15 +138,15 @@
   // 주민 행동 상태(Behavior State) — 8가지 기본 행동 상태
   // =========================================================
   D.STATES = {
-    WALK:         { name: 'WALK / RUN', desc: '지정한 좌표를 향해 걷거나 달림 (성격에 따라 속도 차이)', items: ['none', 'can', 'snack'] },
-    RUN:          { name: 'WALK / RUN', desc: '지정한 좌표를 향해 걷거나 달림 (성격에 따라 속도 차이)', items: ['none', 'can', 'snack'] },
-    SIT_REST:     { name: 'SIT_REST', desc: '벤치, 의자, 바위, 나무 그늘에 앉아 휴식', items: ['book', 'snack', 'can', 'magnifier'] },
-    INTERACT_OBJ: { name: 'INTERACT_OBJ', desc: '필드 오브젝트(꽃, 나무, 라디오 등)와 상호작용', items: ['wateringCan', 'stick', 'mic'] },
-    WATCH_LOOK:   { name: 'WATCH_LOOK', desc: '멈춰 서서 하늘, 바다, 곤충, 별, 타 주민을 바라봄', items: ['telescope', 'camera', 'magnifier'] },
-    TALK_PLAYER:  { name: 'TALK_PLAYER', desc: '플레이어를 바라보며 대화창 출력 및 풍선 이모티콘 표출', items: ['none'] },
-    TALK_NPC:     { name: 'TALK_NPC', desc: '다른 NPC와 마주 보고 2~3초간 수다/손짓/웃음', items: ['drink', 'prop'] },
-    HOME_LIFE:    { name: 'HOME_LIFE', desc: '자기 집 안에서 요리, 청소, 침대 수면, 인테리어 변경', items: ['spatula', 'broom'] },
-    THINKING:     { name: 'THINKING (!)', desc: '머리 위에 고민/하트/먹구름 풍선을 띄우고 서성임', items: ['none'] },
+    WALK:         { name: 'WALK / RUN', ko: '걷는 중', desc: '지정한 좌표를 향해 걷거나 달림 (성격에 따라 속도 차이)', items: ['none', 'can', 'snack'] },
+    RUN:          { name: 'WALK / RUN', ko: '달리는 중', desc: '지정한 좌표를 향해 걷거나 달림 (성격에 따라 속도 차이)', items: ['none', 'can', 'snack'] },
+    SIT_REST:     { name: 'SIT_REST', ko: '앉아서 휴식', desc: '벤치, 의자, 바위, 나무 그늘에 앉아 휴식', items: ['book', 'snack', 'can', 'magnifier'] },
+    INTERACT_OBJ: { name: 'INTERACT_OBJ', ko: '물건 만지작', desc: '필드 오브젝트(꽃, 나무, 라디오 등)와 상호작용', items: ['wateringCan', 'stick', 'mic'] },
+    WATCH_LOOK:   { name: 'WATCH_LOOK', ko: '구경 중', desc: '멈춰 서서 하늘, 바다, 곤충, 별, 타 주민을 바라봄', items: ['telescope', 'camera', 'magnifier'] },
+    TALK_PLAYER:  { name: 'TALK_PLAYER', ko: '나와 대화', desc: '플레이어를 바라보며 대화창 출력 및 풍선 이모티콘 표출', items: ['none'] },
+    TALK_NPC:     { name: 'TALK_NPC', ko: '수다 중', desc: '다른 NPC와 마주 보고 2~3초간 수다/손짓/웃음', items: ['drink', 'prop'] },
+    HOME_LIFE:    { name: 'HOME_LIFE', ko: '집안일', desc: '자기 집 안에서 요리, 청소, 침대 수면, 인테리어 변경', items: ['spatula', 'broom'] },
+    THINKING:     { name: 'THINKING (!)', ko: '고민 중', desc: '머리 위에 고민/하트/먹구름 풍선을 띄우고 서성임', items: ['none'] },
   };
 
   // 행동 사전: state, pose, prop, 지속(초), 필요한 장소 태그, 이모티콘

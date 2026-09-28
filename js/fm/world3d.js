@@ -177,7 +177,7 @@
       g.add(m);
       if (main) {
         // 왕복 4차선 차선 표시
-        for (let i = 0; i < seg; i += 2) { const t = (i + 0.5) / seg; const x = A[0] + (Bn[0] - A[0]) * t, z = A[1] + (Bn[1] - A[1]) * t; for (const o of [-2, 0, 2]) { const l = mesh(box(o === 0 ? 0.25 : 0.15, 0.02, 1.2, 0.01), mat(o === 0 ? 0xffd84a : 0xffffff), x + nx / 4 * o * 0.5 * 2 / width * 4, T.height(x, z) + 0.09, z); l.rotation.y = Math.atan2(dx, dz); l.castShadow = false; g.add(l); } }
+        for (let i = 0; i < seg; i += 2) { const t = (i + 0.5) / seg; const x = A[0] + (Bn[0] - A[0]) * t, z = A[1] + (Bn[1] - A[1]) * t; for (const o of [-2, 0, 2]) { const ux = nx / (width / 2), uz = nz / (width / 2); const l = mesh(box(o === 0 ? 0.25 : 0.15, 0.02, 1.2, 0.01), mat(o === 0 ? 0xffd84a : 0xffffff), x + ux * o, T.height(x + ux * o, z + uz * o) + 0.09, z + uz * o); l.rotation.y = Math.atan2(dx, dz); l.castShadow = false; g.add(l); } }
       }
     }
     // 광장 대리석 바닥
@@ -363,7 +363,7 @@
     const apt = buildings.apartment;
     const wins = apt.userData.windows;
     for (const [id, w] of Object.entries(wins)) {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('💤'), depthTest: false }));
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: emojiTex('💤') }));
       sp.scale.set(1.6, 1.6, 1); sp.visible = false; sp.renderOrder = 10;
       const wp = new THREE.Vector3(w.x, w.y + 1.2, w.z + 0.6);
       apt.localToWorld(wp);
@@ -433,8 +433,8 @@
     sun.target.position.copy(tgt);
     sun.intensity = sunI * (1 - wet * 0.5) * (night > 0.6 ? 0.35 : 1);
     sun.color.set(night > 0.6 ? 0x9ab0ff : (h > 16.5 && h < 19.5) ? 0xffb070 : 0xfff4e0);
-    hemi.intensity = 0.35 + (1 - night) * 0.3; hemi.color.copy(bot).lerp(new THREE.Color(0xffffff), 0.4);
-    amb.intensity = 0.14 + night * 0.12;
+    hemi.intensity = 0.16 + (1 - night) * 0.49; hemi.color.copy(bot).lerp(new THREE.Color(0xffffff), 0.4);
+    amb.intensity = 0.14 + night * 0.04;
     starPts.material.opacity = night * (1 - wet);
     milky.material.opacity = (h >= 22 || h < 4) ? 0.7 * (1 - wet) : 0;       // 밤 22시 이후 은하수
     fogCol.copy(bot); scene.fog.color.copy(fogCol);

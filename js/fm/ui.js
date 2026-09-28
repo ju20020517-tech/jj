@@ -261,7 +261,7 @@
     const rows = s.villagers.map(v => {
       const r = Soc.rel(v.id, P);
       const pt = Soc.partnerOf(v.id);
-      const act = v.act ? v.act.name : v.moving ? '이동 중' : (D.STATES[v.state] || {}).name || v.state;
+      const act = v.act ? v.act.name : v.moving ? '이동 중' : (D.STATES[v.state] || {}).ko || v.state;
       return `<div class="vrow" data-id="${v.id}"><span class="vic">${icon(v)}</span><div class="vinfo"><b>${esc(v.name)}</b>${v.child ? ` <small class="tag">👶 ${D.GROWTH.find(g => g.id === v.child.stage).name}</small>` : ''}${pt ? ` <small class="tag pink">💕 ${esc(Sim.nameOf(pt))}</small>` : ''}${v.balloon ? ` <span class="bal ${v.balloon.color}">!</span>` : ''}
         <small>${esc(v.title)}</small><small class="muted">📍 ${esc(locName(v))} · ${esc(act)} · ${Soc.stageName(r.friendship_stage)}</small></div>
         <div class="vbtn"><button data-a="prof">프로필</button><button data-a="go">찾기</button></div></div>`;
@@ -662,6 +662,7 @@
   UI.editing = false; UI.placing = null;
   let edIid = null, edSel = null;
   UI.openRoomEditor = function (iid) {
+    if (iid === 'home_p_in') Sim.ensurePlayerRoom();
     const g = G();
     if (g.view !== 'observe' || g.obs !== iid) g.observeInterior(iid);
     edIid = iid; UI.editing = true; edSel = null; UI.placing = null;

@@ -100,7 +100,7 @@
     desc: '3층 높이의 중정 통유리 건물 (1층 앤티크 북카페, 2층 정숙 열람실, 3층 거대 서가 벽면, 자연사 전시실)' });
   place('workshop', { name: '마을 공방 & 플리마켓 마당', district: 'WEST', x: -72, z: 58, bld: { type: 'workshop', w: 11, d: 8, h: 6 }, door: [-72, 62.6], interior: 'workshop_in', tags: ['workshop', 'flea'],
     spots: [[-78, 68, ['flea']], [-72, 68, ['flea']], [-66, 68, ['flea']]], desc: '주민들이 가구나 소품을 직접 만들고, 쓰던 물건을 자갈 마당에 나와 파는 곳' });
-  place('teahouse', { name: '앤티크 심야 찻집 "달빛 차관"', district: 'WEST', x: -92, z: 72, bld: { type: 'teahouse', w: 10, d: 8, h: 5 }, door: [-92, 76.6], interior: 'tea_in', tags: ['tea', 'quiet'],
+  place('teahouse', { name: '앤티크 심야 찻집 "달빛 차관"', district: 'WEST', x: -92, z: 72, bld: { type: 'teahouse', w: 10, d: 8, h: 5 }, door: [-92, 67.4], interior: 'tea_in', tags: ['tea', 'quiet'],
     desc: '서쪽 골목 구석, 덩굴식물로 둘러싸인 목조 건물' });
 
   // ===== 동쪽 24시 메가 번화가 =====
@@ -149,44 +149,44 @@
   const N = {
     // 중앙
     c_apt: [0, -7], c_agw: [-10, -4], c_age: [10, -4], c_pl: [0, 1], c_plw: [-13, 10], c_ple: [13, 10], c_pls: [0, 21],
-    c_cafe: [20, 11], c_metro: [-20, 22], c_news: [20, 22], c_s: [0, 38], c_w: [-34, 10], c_e: [34, 10], c_n: [0, -22], c_nt: [0, -40],
+    c_cafe: [20, 11], c_metro: [-20, 22], c_news: [20, 22], c_s: [0, 38], c_w: [-34, 10], c_e: [34, 10], c_n: [0, -22], c_nt: [0, -40], c_nw1: [-17.5, -7], c_nw2: [-17.5, -22.5], c_ne1: [17.5, -7], c_ne2: [17.5, -22.5],
     // 북쪽
     n_b: [0, -60], n_c: [12, -66], n_cd: [12, -75], n_g: [-8, -76], n_w: [-36, -66], n_wf: [-40, -61], n_cl: [-70, -90], n_e: [40, -72],
-    n_metro: [30, -69], n_tower: [26, -80], n_camp: [52, -82], n_obs: [66, -86],
+    n_metro: [30, -69], n_tower: [26, -80], n_ce: [24, -75], n_camp: [52, -82], n_obs: [66, -86],
     // 협곡 / 절벽 아래 저지대
     g_pond: [-40, -47], g_mid: [-72, -48], g_w: [-104, -48], l_lawn: [-98, -80],
     // 서쪽
     w_e: [-46, 10], w_metro: [-48, 28], w_home: [-42, -18], w_vs0: [-52, -17], w_vs1: [-71, -17], w_vs2: [-90, -17], w_vs3: [-109, -17], w_vs4: [-122, -17],
     w_park: [-80, 18], w_ham: [-100, 17], w_swing: [-71, 16], w_lake: [-92, 24], w_pet: [-62, 26], w_forest: [-114, 24], w_stream: [-82, 30],
-    w_play: [-72, 38], w_school: [-54, 54], w_lib: [-100, 62], w_work: [-72, 64], w_flea: [-72, 66], w_tea: [-92, 80], w_s: [-46, 50], w_n: [-100, -36],
+    w_play: [-72, 38], w_school: [-54, 54], w_lib: [-100, 62], w_work: [-72, 65], w_flea: [-72, 69], w_tea: [-92, 64], w_s: [-44, 53], w_n: [-107, -38], w_ps: [-63, 53], w_wk: [-63.5, 65], w_gap: [-92, 6],
     // 동쪽
     e_w: [46, 10], e_metro: [48, 4], e_sky: [90, -6], e_mall: [64, 25], e_arc: [102, 25], e_conv: [46, 30], e_alley: [69, 42], e_sushi: [60, 43],
-    e_pub: [78, 45], e_club: [102, 43], e_s: [46, 52], e_mid: [80, 10],
+    e_pub: [78, 45], e_club: [102, 43], e_s: [46, 52], e_mid: [80, 6], e_mw: [54, 6], e_am: [76, 26], e_ar: [90, 27], e_cs: [52.5, 38], e_cn: [51, 30.5], e_md: [47.5, 71],
     // 남쪽
     s_n: [0, 48], s_metro: [14, 46], s_off: [-12, 56], s_hall: [-44, 64], s_med: [36, 71], s_mid: [0, 70], s_deck: [0, 84], s_beach: [-30, 84], s_beachw: [-58, 84],
-    s_pocha: [40, 78], s_ferry: [52, 92], s_light: [66, 92], s_hallE: [-20, 70],
+    s_pocha: [40, 78], s_ferry: [52, 92], s_light: [66, 92], s_hallE: [-20, 70], s_fw: [44.5, 92], s_hw: [-56.5, 64],
   };
   const E = [
     // 중앙 십자
     ['c_apt', 'c_agw'], ['c_apt', 'c_age'], ['c_apt', 'c_pl'], ['c_agw', 'c_plw'], ['c_age', 'c_ple'], ['c_pl', 'c_plw'], ['c_pl', 'c_ple'], ['c_plw', 'c_pls'], ['c_ple', 'c_pls'],
-    ['c_ple', 'c_cafe'], ['c_pls', 'c_metro'], ['c_pls', 'c_news'], ['c_pls', 'c_s'], ['c_metro', 'c_s'], ['c_news', 'c_s'], ['c_plw', 'c_w'], ['c_ple', 'c_e'], ['c_cafe', 'c_e'],
-    ['c_agw', 'c_n'], ['c_age', 'c_n'], ['c_n', 'c_nt'], ['c_nt', 'n_b'],
+    ['c_ple', 'c_cafe'], ['c_pls', 'c_metro'], ['c_pls', 'c_news'], ['c_pls', 'c_s'], ['c_plw', 'c_w'], ['c_ple', 'c_e'], ['c_cafe', 'c_e'],
+    ['c_agw', 'c_nw1'], ['c_nw1', 'c_nw2'], ['c_nw2', 'c_n'], ['c_age', 'c_ne1'], ['c_ne1', 'c_ne2'], ['c_ne2', 'c_n'], ['c_n', 'c_nt'], ['c_nt', 'n_b'],
     // 북쪽
-    ['n_b', 'n_c'], ['n_c', 'n_cd'], ['n_b', 'n_g'], ['n_g', 'n_cd'], ['n_g', 'n_w'], ['n_w', 'n_wf'], ['n_w', 'n_cl'], ['n_c', 'n_metro'], ['n_metro', 'n_e'], ['n_cd', 'n_tower'],
+    ['n_b', 'n_c'], ['n_c', 'n_cd'], ['n_b', 'n_g'], ['n_g', 'n_cd'], ['n_g', 'n_w'], ['n_w', 'n_wf'], ['n_w', 'n_cl'], ['n_c', 'n_metro'], ['n_metro', 'n_e'], ['n_cd', 'n_ce'], ['n_ce', 'n_tower'],
     ['n_tower', 'n_e'], ['n_e', 'n_camp'], ['n_camp', 'n_obs'],
     // 협곡 / 저지대 (서쪽에서 진입)
     ['w_n', 'g_w'], ['g_w', 'g_mid'], ['g_mid', 'g_pond'], ['g_w', 'l_lawn'],
     // 서쪽
     ['c_w', 'w_e'], ['w_e', 'w_metro'], ['w_e', 'w_home'], ['w_home', 'w_vs0'], ['w_vs0', 'w_vs1'], ['w_vs1', 'w_vs2'], ['w_vs2', 'w_vs3'], ['w_vs3', 'w_vs4'], ['w_vs3', 'w_n'],
     ['w_e', 'w_swing'], ['w_swing', 'w_park'], ['w_park', 'w_ham'], ['w_park', 'w_lake'], ['w_lake', 'w_forest'], ['w_ham', 'w_forest'], ['w_park', 'w_stream'], ['w_metro', 'w_pet'],
-    ['w_pet', 'w_stream'], ['w_stream', 'w_play'], ['w_metro', 'w_play'], ['w_play', 'w_s'], ['w_metro', 'w_s'], ['w_s', 'w_school'], ['w_play', 'w_work'], ['w_work', 'w_flea'], ['w_flea', 'w_lib'],
-    ['w_lib', 'w_tea'], ['w_flea', 'w_tea'], ['w_s', 's_hall'], ['w_vs1', 'w_swing'], ['w_vs2', 'w_park'],
+    ['w_pet', 'w_stream'], ['w_stream', 'w_play'], ['w_metro', 'w_play'], ['w_play', 'w_ps'], ['w_ps', 'w_s'], ['w_metro', 'w_s'], ['w_s', 'w_school'], ['w_ps', 'w_wk'], ['w_wk', 'w_work'], ['w_work', 'w_flea'], ['w_flea', 'w_lib'],
+    ['w_lib', 'w_tea'], ['w_flea', 'w_tea'], ['w_s', 's_hall'], ['w_vs1', 'w_swing'], ['w_vs2', 'w_gap'], ['w_gap', 'w_park'],
     // 동쪽
-    ['c_e', 'e_w'], ['e_w', 'e_metro'], ['e_metro', 'e_sky'], ['e_w', 'e_mid'], ['e_mid', 'e_sky'], ['e_mid', 'e_mall'], ['e_mid', 'e_arc'], ['e_w', 'e_conv'], ['e_conv', 'e_mall'],
-    ['e_mall', 'e_alley'], ['e_arc', 'e_club'], ['e_alley', 'e_sushi'], ['e_alley', 'e_pub'], ['e_pub', 'e_club'], ['e_conv', 'e_s'], ['e_sushi', 'e_s'], ['e_s', 's_med'],
+    ['c_e', 'e_w'], ['e_w', 'e_metro'], ['e_metro', 'e_sky'], ['e_w', 'e_mw'], ['e_mw', 'e_mid'], ['e_mid', 'e_sky'], ['e_mid', 'e_am'], ['e_am', 'e_mall'], ['e_mid', 'e_ar'], ['e_ar', 'e_arc'], ['e_am', 'e_ar'], ['e_w', 'e_conv'], ['e_conv', 'e_mall'],
+    ['e_mall', 'e_alley'], ['e_arc', 'e_club'], ['e_alley', 'e_sushi'], ['e_alley', 'e_pub'], ['e_pub', 'e_club'], ['e_conv', 'e_cn'], ['e_cn', 'e_cs'], ['e_cs', 'e_s'], ['e_sushi', 'e_cs'], ['e_s', 'e_md'], ['e_md', 's_med'],
     // 남쪽
     ['c_s', 's_n'], ['s_n', 's_metro'], ['s_n', 's_off'], ['s_n', 's_mid'], ['s_off', 's_hallE'], ['s_hallE', 's_hall'], ['s_hallE', 's_mid'], ['s_mid', 's_med'], ['s_mid', 's_deck'],
-    ['s_deck', 's_beach'], ['s_beach', 's_beachw'], ['s_deck', 's_pocha'], ['s_pocha', 's_ferry'], ['s_ferry', 's_light'], ['s_metro', 's_med'], ['s_hall', 's_beachw'],
+    ['s_deck', 's_beach'], ['s_beach', 's_beachw'], ['s_deck', 's_pocha'], ['s_pocha', 's_fw'], ['s_fw', 's_ferry'], ['s_ferry', 's_light'], ['s_metro', 's_mid'], ['s_hall', 's_hw'], ['s_hw', 's_beachw'],
   ];
 
   // 각 장소가 속한 지하철 구역(가장 가까운 역)

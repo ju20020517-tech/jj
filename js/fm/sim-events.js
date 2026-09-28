@@ -1221,7 +1221,9 @@
   };
   // 방 레이아웃 코드 (인테리어 코드 / 스타일 코드)
   Ev.roomCode = function (iid) {
+    if (iid === 'home_p_in') Sim.ensurePlayerRoom();
     const room = S().rooms[iid];
+    if (!room) return '';
     const data = { t: room.theme, w: room.wall, f: room.floor, fc: room.floorColor, l: room.light, b: room.bgm, p: room.pattern, fu: room.furn.map(f => [f.type, +f.x.toFixed(2), +f.z.toFixed(2), f.rot || 0, f.mat || 0, f.color || 0]) };
     return 'FMI-' + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
   };
@@ -1295,7 +1297,7 @@
         if (lazy) { v.pose = 'lie'; v.prop = 'tangerine'; v.act.name = '런닝머신 위에 돗자리 깔고 귤 까먹기'; }
         else if (chance(0.35)) Sim.scene({ title: '런닝머신 날아감', actors: { A: v }, steps: [{ pose: 'A', p: 'jog', t: 3 }, { emote: 'A', e: '💦' }, { say: 'A', text: '으아아 속도가~!', t: 1.5 }, { go: 'A', to: { loc: v.loc, x: v.x, z: v.z - 1.5 }, run: true, max: 1 }, { pose: 'A', p: 'faint', t: 2 }, { sfx: 'thud' }] });
         break;
-      case 'trampoline': v.act.name = '지칠 때까지 트램펄린'; v.act.t = 14; break;
+      case 'trampoline': if (v.act) { v.act.name = '지칠 때까지 트램펄린'; v.act.t = 14; } break;
       case 'massage': v.pose = 'massage'; v.act.name = '안마의자에서 눈을 뒤집으며 시원해함'; v.stress = clamp(v.stress - 10, 0, 100); break;
       case 'couple_sofa': {
         const lover = Soc.partnerOf(v.id); const lv = lover && byId(lover);
@@ -1321,7 +1323,7 @@
     }
     // 테마 전용 행동
     const t = room && room.theme && D.THEMES[room.theme];
-    if (t && t.act && v.loc === v.home && chance(0.4) && act !== 'sleep') v.act.name = t.act.split(',')[0];
+    if (t && t.act && v.act && v.loc === v.home && chance(0.4) && act !== 'sleep') v.act.name = t.act.split(',')[0];
     // 공사장 세트 완료: 방에 들어올 때마다 "안전 제일!"
     if (room && room.set === 'construction' && chance(0.3)) Sim.say(v, L.say(v, 'safety', {}, true));
   };

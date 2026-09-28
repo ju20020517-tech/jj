@@ -541,6 +541,13 @@
       stats: {}, fx: [], newsIdx: 0, lastDay: 1, lastHour: 7, wishes: {}, visitors: [], flea: [], popup: null,
     };
   }
+  // 플레이어 집 방 데이터 보장
+  function ensurePlayerRoom() {
+    if (!S || !S.rooms || S.rooms.home_p_in) return;
+    const sz = interiorSize('home_p_in');
+    S.rooms.home_p_in = FM.defaultRoom({ keys: { L1: 'ROMANTIC', L4: 'STUDY' } }, sz.w, sz.d);
+  }
+  Sim.ensurePlayerRoom = ensurePlayerRoom;
   Sim.newGame = function (opts = {}) {
     S = newState();
     Sim.S = S;
@@ -558,6 +565,7 @@
     while (S.villagers.length < n) moveIn(makeVillager(), true);
     // 첫날 아침: 모두 자기 방에서 시작
     for (const v of S.villagers) { v.loc = v.home; const s = interiorSize(v.home); v.x = rnd(-1.5, 1.5); v.z = rnd(-1, 1); }
+    ensurePlayerRoom();
     FM.Soc && FM.Soc.init && FM.Soc.init();
     FM.Ev && FM.Ev.init && FM.Ev.init();
     Sim.log('system', `🏝️ 친구모아 아일랜드에 오신 것을 환영해요! 주민 ${S.villagers.length}명이 아파트 "시티 타워"에 입주했어요.`, [], 3);
@@ -568,6 +576,8 @@
     S = json; Sim.S = S;
     for (const v of S.villagers) { derive(v); v.route = null; v.sceneId = null; v.act = null; v.bubble = null; if (v.loc === 'metro') { v.loc = 'island'; const st = MAP.STATIONS.C; v.x = st.x; v.z = st.z + 1; } }
     S.fx = [];
+    if (!S.rooms) S.rooms = {};
+    ensurePlayerRoom();
     FM.Soc && FM.Soc.onLoad && FM.Soc.onLoad();
     emit('villagers');
     return S;
@@ -1313,10 +1323,10 @@
     const d = day(), h = Math.floor(hour());
     if (d !== S.lastDay) { S.lastDay = d; FM.Soc && FM.Soc.daily && FM.Soc.daily(); FM.Ev && FM.Ev.daily && FM.Ev.daily(); emit('day', d); }
     if (h !== lastHourInt) { lastHourInt = h; FM.Ev && FM.Ev.hourly && FM.Ev.hourly(h); emit('hour', h); }
-    for (const sc of scenes.slice()) stepScene(sc, dtR);
+    for (const sc of scenes.slice()) { try { stepScene(sc, dtR); } catch (e) { console.error('scene', sc.title, e); endScene(sc, true); } }
     for (const v of S.villagers) {
       updateNeeds(v, dMin);
-      updateVillager(v, dtR);
+      try { updateVillager(v, dtR); } catch (e) { console.error('villager', v.name, e); v.act = null; v.route = null; v.idleT = 2; }
       if (v.bubble && v.bubble.until < S.realT) v.bubble = null;
       if (v.emote && v.emote.until < S.realT) v.emote = null;
     }

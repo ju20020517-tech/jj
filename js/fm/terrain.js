@@ -33,6 +33,7 @@
     { x0: -80, x1: -75, z0: 31.5, z1: 34.7 },
     { x0: -106, x1: -102, z0: 28.6, z1: 31.8 },
     { x0: -74, x1: -69.5, z0: -54, z1: -50 },
+    { x0: -106, x1: -101, z0: -54.3, z1: -49.7 },
     { x0: 49.5, x1: 54.5, z0: 90, z1: 107, y: 1.3, pier: true },       // 페리 선착장 데크
     { x0: -8, x1: 8, z0: 84.5, z1: 92, y: 1.1, pier: true },            // 워터프론트 데크
   ];
@@ -141,6 +142,7 @@
       return false;
     }
     const fb = FOOTBRIDGES.some(b => x1 > b.x0 && x1 < b.x1 && z1 > b.z0 && z1 < b.z1);
+    if (fb && !blockedByBuilding(x1, z1)) return true;
     if (!fb && inWater(x1, z1)) return false;
     const h1 = height(x1, z1);
     if (!fb && h1 < 0.15) return false; // 바다
