@@ -1435,7 +1435,7 @@
     const st = S();
     if (v.sceneId) { const sc = Sim.scenes.find(s => s.id === v.sceneId); if (sc && !sc.major && sc.title !== '입원') Sim.endScene(sc, true); else return { text: L.say(v, 'busy'), options: [] }; }
     v.route = null; v.act = null; Sim.releaseSpot(v); Sim.freeUse(v);
-    v.state = 'TALK_PLAYER'; v.pose = 'talk'; v.talkingToPlayer = true;
+    v.state = 'TALK_PLAYER'; v.pose = 'talk'; v.talkingToPlayer = true; v.talkUntil = st.realT + 120;
     const p = pl();
     if (p.loc === v.loc) v.ry = Math.atan2(p.x - v.x, p.z - v.z);
     // 플레이어 쟁탈전: 다른 짝사랑 주민이 뒤에서 발을 구르며 기다림
@@ -1558,6 +1558,13 @@
 
   // 선택 처리 → { text, options?, close? }
   Soc.playerChoose = function (v, id, arg) {
+    Sim.talkChoosing = true;
+    try {
+      if (id !== 'bye') v.talkUntil = S().realT + 120;
+      return choose0(v, id, arg);
+    } finally { Sim.talkChoosing = false; }
+  };
+  function choose0(v, id, arg) {
     const st = S();
     const r = rel(v.id, P);
     const p = pl();

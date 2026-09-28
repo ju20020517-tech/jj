@@ -11,6 +11,7 @@
 </head>
 <body data-view="island">
   <canvas id="game"></canvas>
+  <div id="warm"></div>
   <div id="bubbles"></div>
   <div id="fade"></div>
   <div id="loading" hidden>🏝️ 섬으로 가는 중…</div>
@@ -55,7 +56,15 @@
     <div id="obs" hidden></div>
     <div id="editor" hidden></div>
     <div id="dialog" hidden></div>
-    <div id="map" hidden><canvas id="mapC" width="560" height="500"></canvas><small>🗺️ 흰 점: 주민 · 분홍 점: 고민 중 · 빨간 점: 나 · M: 닫기</small></div>
+    <div id="map" hidden>
+      <div class="map-head"><b>🗺️ 친구모아 아일랜드 지도</b><span class="muted">장소나 주민을 눌러 바로 이동하세요</span><button id="mapX" title="닫기 (M)">✕</button></div>
+      <div class="map-body">
+        <div class="map-cv"><canvas id="mapC" width="560" height="500"></canvas></div>
+        <div class="map-side"><div id="mapInfo"></div><div id="mapList"></div></div>
+      </div>
+      <small class="map-legend">🔴 나 · ⚪ 주민 · 🩷 고민 중인 주민 · ⭐ 퀘스트 목적지 · 📍 표시한 목적지 · Ⓜ 지하철역</small>
+    </div>
+    <div id="qtrack" hidden></div>
 
     <div id="stick"><div id="knob"></div></div>
     <div class="mbtns">
@@ -80,10 +89,12 @@
   <script src="js/fm/sim-core.js"></script>
   <script src="js/fm/sim-social.js"></script>
   <script src="js/fm/sim-events.js"></script>
+  <script src="js/fm/guide.js"></script>
   <script src="js/fm/props.js"></script>
   <script src="js/fm/anim.js"></script>
   <script src="js/fm/world3d.js"></script>
   <script src="js/fm/chars3d.js"></script>
+  <script src="js/fm/portrait.js"></script>
   <script src="js/fm/interior3d.js"></script>
   <script src="js/fm/audio.js"></script>
   <script src="js/fm/ui.js"></script>

@@ -173,46 +173,104 @@
   // =========================================================
   // 대화창 (TALK_PLAYER)
   // =========================================================
-  let talkV = null;
+  let talkV = null, typeTimer = null, vnLog = [], vnFull = '', vnShown = 0, vnDone = true, vnR = null;
   UI.talk = function (v) {
     if (!v || v.staff || v.visitor) return;
-    talkV = v;
+    talkV = v; vnLog = [];
+    G().talkFocus = v.id; G().target = null; G().autoPath = null;
     // 타임캡슐 파내기
     const cap = Ev.digCapsule && Ev.digCapsule(v);
     const r = cap ? { text: cap, options: Soc.talkOptions(v) } : Soc.playerTalk(v);
     showDialog(v, r);
   };
-  function showDialog(v, r) {
-    const d = $('#dialog');
-    const rel = Soc.rel(v.id, P);
-    const stage = D.FRIEND_STAGES.find(s => s.id === rel.friendship_stage);
-    const lover = Soc.partnerOf(v.id) === P;
+  // 친밀도/신뢰도 하트 게이지
+  const hearts = (n, cls) => { const f = Math.round(Math.max(0, Math.min(100, n)) / 20); return `<span class="vn-hearts ${cls}">${'♥'.repeat(f)}<i>${'♥'.repeat(5 - f)}</i></span>`; };
+  function vnSkeleton(d) {
     d.innerHTML = `
-      <div class="dl-head"><span class="dl-ic">${icon(v)}</span><div><b>${esc(v.name)}</b>${v.nick ? ` <small>'${esc(v.nick)}'</small>` : ''}<br><small>${esc(v.title)} · ${stage.name}${lover ? ' · 💕 연인' : ''} · 친밀도 ${pct(rel.friendship_point)} / 신뢰도 ${pct(rel.trust_level)}</small></div>
-        <button class="dl-x" id="dlX">✕</button></div>
-      <p class="dl-text">${esc(J(r.text))}</p>
-      <div class="dl-opts">${(r.options || []).map((o, i) => `<button data-i="${i}" ${o.disabled ? 'disabled title="' + esc(o.hint || '') + '"' : ''}>${esc(o.label)}</button>`).join('')}</div>`;
-    d.hidden = false;
-    FM.Audio.sfx('ui');
-    $('#dlX').onclick = () => closeDialog();
-    d.querySelectorAll('.dl-opts button').forEach(b => b.onclick = () => {
+      <div class="vn-stage"><canvas id="vnC"></canvas><div class="vn-fallback" id="vnFb"></div></div>
+      <div class="vn-opts" id="vnOpts"></div>
+      <div class="vn-box" id="vnBox">
+        <div class="vn-name" id="vnName"></div>
+        <div class="vn-meta" id="vnMeta"></div>
+        <p class="vn-text" id="vnText"></p>
+        <span class="vn-next" id="vnNext">▼</span>
+        <div class="vn-tools"><button id="vnLogB" title="대화 기록">📜 기록</button><button id="vnX" title="대화 끝내기 (Esc)">✕ 닫기</button></div>
+      </div>`;
+    $('#vnX').onclick = e => { e.stopPropagation(); closeDialog(); };
+    $('#vnLogB').onclick = e => { e.stopPropagation(); const box = $('#vnText'); box.innerHTML = vnLog.slice(-12).map(l => `<small class="vn-logl"><b>${esc(l.who)}</b> ${esc(l.text)}</small>`).join(''); vnDone = true; $('#vnNext').hidden = true; };
+    $('#vnBox').onclick = () => { if (!vnDone) finishType(); };
+  }
+  function finishType() {
+    clearInterval(typeTimer); typeTimer = null;
+    vnShown = vnFull.length; $('#vnText').textContent = vnFull; vnDone = true;
+    $('#vnNext').hidden = false;
+    showOpts();
+  }
+  function showOpts() {
+    const r = vnR, v = talkV, box = $('#vnOpts'); if (!r || !v || !box) return;
+    const opts = r.options || [];
+    box.innerHTML = opts.map((o, i) => `<button data-i="${i}" class="${o.id === 'bye' ? 'bye' : ''}" ${o.disabled ? 'disabled title="' + esc(o.hint || '') + '"' : ''} style="animation-delay:${i * 0.03}s">${esc(o.label)}${o.disabled && o.hint ? `<small>${esc(o.hint)}</small>` : ''}</button>`).join('');
+    box.classList.toggle('many', opts.length > 7);
+    box.querySelectorAll('button').forEach(b => b.onclick = e => {
+      e.stopPropagation();
       const o = r.options[+b.dataset.i];
+      vnLog.push({ who: st().player.name, text: o.label });
       if (o.input) { const val = prompt(o.label, ''); if (!val) return; return choose(v, o.id, val.slice(0, 12)); }
       if (o.id === 'gift' && !o.arg) return choose(v, 'gift');
       choose(v, o.id, o.arg);
     });
   }
+  UI.vnAdvance = () => { if (!vnDone) finishType(); };
+  UI.vnPick = i => { if (!vnDone) return finishType(); const b = document.querySelectorAll('#vnOpts button')[i]; if (b && !b.disabled) b.click(); };
+  function showDialog(v, r) {
+    const d = $('#dialog');
+    if (d.hidden || !$('#vnBox')) vnSkeleton(d);
+    d.hidden = false; document.body.classList.add('vn-on');
+    vnR = r;
+    const rel = Soc.rel(v.id, P);
+    const stage = D.FRIEND_STAGES.find(s => s.id === rel.friendship_stage);
+    const lover = Soc.partnerOf(v.id) === P;
+    $('#vnName').innerHTML = `<b>${esc(v.name)}</b>${v.nick ? `<small>'${esc(v.nick)}'</small>` : ''}`;
+    $('#vnMeta').innerHTML = `<span class="tag">${esc(stage ? stage.name : '')}</span>${lover ? '<span class="tag pink">💕 연인</span>' : ''}<span title="친밀도 ${pct(rel.friendship_point)}">친밀 ${hearts(rel.friendship_point, 'pink')}</span><span title="신뢰도 ${pct(rel.trust_level)}">신뢰 ${hearts(rel.trust_level, 'gold')}</span>`;
+    $('#vnName').title = v.title;
+    const text = J(r.text || '...');
+    vnLog.push({ who: v.name, text });
+    // 표정 & 포즈
+    const emo = FM.Portrait.emotionOf(text, v);
+    v.talkPose = (FM.Portrait.FACE[emo] || FM.Portrait.FACE.calm).pose;
+    const ok = FM.Portrait.show($('#vnC'), v, emo);
+    $('#vnFb').hidden = ok; if (!ok) $('#vnFb').textContent = icon(v);
+    $('#dialog').dataset.emo = emo;
+    // 타자기 효과
+    $('#vnOpts').innerHTML = '';
+    vnFull = text; vnShown = 0; vnDone = false; $('#vnNext').hidden = true;
+    const el = $('#vnText'); el.textContent = '';
+    clearInterval(typeTimer);
+    const t0 = performance.now();
+    typeTimer = setInterval(() => {
+      const n = Math.min(vnFull.length, Math.floor((performance.now() - t0) / 1000 * 34) + 1);   // 초당 34자
+      if (n === vnShown) return;
+      if (Math.floor(n / 3) !== Math.floor(vnShown / 3) && vnFull[n - 1] !== ' ') FM.Audio.sfx('blip');
+      vnShown = n; el.textContent = vnFull.slice(0, vnShown);
+      if (vnShown >= vnFull.length) finishType();
+    }, 30);
+    FM.Audio.sfx('page');
+  }
   function choose(v, id, arg) {
     const r = Soc.playerChoose(v, id, arg);
     if (id === 'gift' && arg) { FM.Audio.sfx('heart'); }
-    if (r.close) { if (r.text) { showDialog(v, { text: r.text, options: [{ id: 'bye', label: '👋' }] }); } else closeDialog(); return; }
+    if (r.close) { if (r.text) { showDialog(v, { text: r.text, options: [{ id: 'bye', label: '👋 (대화 마치기)' }] }); } else closeDialog(); return; }
     showDialog(v, r);
     UI.paint();
   }
   function closeDialog() {
-    const d = $('#dialog'); d.hidden = true;
-    if (talkV) { Soc.playerChoose(talkV, 'bye'); talkV = null; }
+    const d = $('#dialog'); d.hidden = true; document.body.classList.remove('vn-on');
+    clearInterval(typeTimer); typeTimer = null;
+    FM.Portrait.hide();
+    G().talkFocus = null;
+    if (talkV) { talkV.talkPose = null; Soc.playerChoose(talkV, 'bye'); talkV = null; }
   }
+  FM.bus.on('talkInterrupt', v => { if (talkV === v) { UI.toast(J(`${v.name}은(는) 급한 일이 생겨서 대화를 멈췄어요`)); talkV.talkPose = null; talkV = null; const d = $('#dialog'); d.hidden = true; document.body.classList.remove('vn-on'); FM.Portrait.hide(); G().talkFocus = null; } });
   UI.closeDialog = closeDialog;
   // 스태프 대화
   UI.staffTalk = function (s) {
@@ -238,7 +296,7 @@
   UI.closeModal = closeModal;
   UI.modalOpen = () => !$('#modal').hidden || !$('#dialog').hidden || !!dreamGame;
   UI.paused = () => !!dreamGame;
-  UI.escape = () => { if (!$('#dialog').hidden) closeDialog(); else if (!$('#modal').hidden) closeModal(); else if (G().view === 'observe') G().endObserve(); else if (UI.editing) UI.closeEditor(); };
+  UI.escape = () => { if (!$('#map').hidden) $('#map').hidden = true; else if (!$('#dialog').hidden) closeDialog(); else if (!$('#modal').hidden) closeModal(); else if (G().view === 'observe') G().endObserve(); else if (UI.editing) UI.closeEditor(); };
   UI.dialogList = (title, lines) => modal(title, `<ul class="list">${lines.map(l => `<li>${esc(J(l))}</li>`).join('')}</ul>`);
 
   // =========================================================
@@ -274,10 +332,85 @@
     });
     $('#addV').onclick = () => UI.addVillager();
   }
-  function paintQuests(body = $('#sideBody')) {
-    const qs = st().quests.slice().reverse();
-    body.innerHTML = qs.length ? qs.map(q => `<div class="qrow ${q.state}"><b>${esc(J(q.title))}</b><small>${esc(J(q.desc || ''))}</small><small class="muted">${q.state === 'active' ? '진행 중' : q.state === 'done' ? '✅ 완료' : '❌ 실패'} · ${q.day}일차</small></div>`).join('') : '<p class="muted">아직 퀘스트가 없어요. 주민의 고민 풍선(!)을 찾아 말을 걸어보세요.</p>';
+  function questCard(q, pinnedId) {
+    const Gd = FM.Guide;
+    const steps = q.state === 'active' ? Gd.questSteps(q) : [];
+    const nowI = steps.findIndex(x => !x.done);
+    const dest = q.state === 'active' && Gd.questDest(q);
+    const giver = q.giver && q.giver !== P ? Sim.byId(q.giver) : null;
+    return `<div class="qcard ${q.state} ${q.id === pinnedId ? 'pinned' : ''}" data-q="${q.id}">
+      <h4>${esc(J(q.title))}</h4>
+      <div class="qmeta">${giver ? `<span>🙋 의뢰: ${icon(giver)} ${esc(giver.name)}</span>` : ''}<span>${q.day}일차</span>${q.state === 'active' ? `<span>${esc(Gd.timeLeft(q))}</span>` : `<span>${q.state === 'done' ? '✅ 완료' : '❌ 실패'}</span>`}${q.id === pinnedId ? '<span>📌 추적 중</span>' : ''}</div>
+      ${q.state === 'active' ? `<div class="qdesc">${esc(J(q.desc || ''))}</div>
+      <ol>${steps.map((x, i) => `<li class="${x.done ? 'ok' : i === nowI ? 'now' : ''}">${i === nowI ? '👉 ' : ''}${esc(x.text)}</li>`).join('')}</ol>
+      <span class="qreward">🎁 보상: ${esc(Gd.reward(q))}</span>
+      <div class="qbtns">${q.id !== pinnedId ? '<button data-a="pin">📌 화면에 띄우기</button>' : ''}${dest ? '<button class="main" data-a="tp">✨ 바로 가기</button><button data-a="walk">🚶 길 안내</button><button data-a="map">🗺️ 지도</button>' : ''}</div>` : ''}
+    </div>`;
   }
+  function bindQuestBtns(root) {
+    root.querySelectorAll('.qcard[data-q]').forEach(c => {
+      const q = st().quests.find(x => x.id === c.dataset.q); if (!q) return;
+      c.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
+        const a = b.dataset.a, dest = FM.Guide.questDest(q);
+        FM.Guide.pin(q);
+        if (a === 'tp' && dest) FM.Guide.teleport(dest);
+        else if (a === 'walk' && dest) FM.Guide.walkTo(dest);
+        else if (a === 'map' && dest) UI.openMapAt(dest.villager ? { type: 'v', id: dest.villager } : dest.place ? { type: 'place', id: dest.place } : null);
+        UI.paint(); paintTracker(true);
+      });
+    });
+  }
+  function paintQuests(body = $('#sideBody')) {
+    const all = st().quests.slice().reverse();
+    const act = all.filter(q => q.state === 'active'), old = all.filter(q => q.state !== 'active').slice(0, 20);
+    const pin = FM.Guide.pinned();
+    body.innerHTML = `
+      <div class="qhelp">💡 <b>퀘스트 받는 법</b>: 머리 위에 <b>!</b> 풍선이 뜬 주민에게 말을 걸어요. (🩷 짝사랑 · ❤️ 질투 · 💜 권태기 · 🧡 부탁)<br>📌 표시한 퀘스트는 화면 왼쪽 위에 떠서 <b>다음에 할 일</b>과 <b>방향</b>을 알려줘요. ⭐ 빛기둥을 따라가세요!</div>
+      ${act.length ? act.map(q => questCard(q, pin && pin.id)).join('') : '<p class="muted">진행 중인 퀘스트가 없어요. 👥 주민 탭에서 <b>!</b> 표시가 있는 주민을 찾아 [찾기]를 눌러보세요.</p>'}
+      ${old.length ? `<details><summary class="muted">지난 퀘스트 ${old.length}개</summary>${old.map(q => questCard(q)).join('')}</details>` : ''}`;
+    bindQuestBtns(body);
+  }
+  // 화면 왼쪽 위 퀘스트 추적기
+  let trackKey = '';
+  function paintTracker(force) {
+    const el = $('#qtrack'); if (!el) return;
+    const s = st(); const g = G();
+    const q = FM.Guide.pinned();
+    if (!q || g.view === 'observe' || UI.editing) { el.hidden = true; trackKey = ''; return; }
+    const next = FM.Guide.nextStep(q);
+    const dest = FM.Guide.questDest(q), pos = dest && FM.Guide.resolve(dest);
+    const p = s.player;
+    let dir = '';
+    if (pos && p.loc === 'island' && g.camera) {
+      const dx = pos.x - p.x, dz = pos.z - p.z, d = Math.hypot(dx, dz);
+      const f = new THREE.Vector3(); g.camera.getWorldDirection(f); f.y = 0; f.normalize();
+      const ang = Math.atan2(dx * -f.z + dz * f.x, dx * f.x + dz * f.z);
+      dir = d < 4 ? '<span class="qt-arrow">✓</span> 거의 다 왔어요!' : `<span class="qt-arrow" style="transform:rotate(${(ang * 180 / Math.PI).toFixed(0)}deg)">↑</span> ${esc(pos.label)} · ${Math.round(d)}m`;
+    } else if (pos) dir = `📍 ${esc(pos.label)}`;
+    const html = `<div class="qt-title">📌 <b>${esc(J(q.title))}</b><small>${esc(FM.Guide.timeLeft(q))}</small></div>
+      <div class="qt-step">👉 ${esc(next ? next.text : '')}</div>
+      ${dir ? `<div class="qt-dir">${dir}</div>` : ''}
+      <div class="qt-btns">${dest ? '<button class="main" data-t="tp">✨ 바로 가기</button><button data-t="walk">🚶 길 안내</button>' : ''}<button data-t="list">📜 자세히</button></div>`;
+    if (html !== trackKey || force) {
+      el.innerHTML = html; trackKey = html;
+      el.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
+        const t = b.dataset.t;
+        if (t === 'tp' && dest) FM.Guide.teleport(dest);
+        if (t === 'walk' && dest) FM.Guide.walkTo(dest);
+        if (t === 'list') { $('#side').classList.add('open'); UI.tab('quest'); }
+      });
+    }
+    el.hidden = false;
+  }
+  UI.paintTracker = paintTracker;
+  FM.bus.on('quest', q => {
+    if (!st()) return;
+    if (q && q.state === 'active' && !st().quests.some(x => x.id === st().pinQuest && x.state === 'active')) st().pinQuest = q.id;
+    if (q && q.state === 'active') setTimeout(() => { const el = $('#qtrack'); if (el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } }, 50);
+    if (q && q.state === 'done') UI.toast(`🎁 퀘스트 보상: ${FM.Guide.reward(q)}`);
+    paintTracker(true);
+    if (curTab === 'quest' && $('#side').classList.contains('open')) UI.tab('quest');
+  });
   let logFilter = 'all';
   function paintNews(body = $('#sideBody')) {
     const s = st();
@@ -395,6 +528,9 @@
     body.innerHTML = `<ul class="help">
       <li>⌨️ WASD/방향키 이동 · Shift 달리기 · <b>E/Space</b> 행동(대화·들어가기·지하철) · F 낚시 · B 곤충 채집 · C 앉기 · O 아파트 관찰 · M 지도 · 드래그 회전 · 휠 확대</li>
       <li>📱 왼쪽 아래 조이스틱, 오른쪽 아래 버튼 · 땅을 누르면 그곳으로 걸어가요</li>
+      <li>🗺️ <b>M 지도</b>에서 장소나 주민을 누르면 ✨ 바로 가기(순간 이동) · 🚪 바로 들어가기 · 🚶 걸어서 가기(자동 길찾기) · 📍 목적지 표시를 할 수 있어요</li>
+      <li>💬 주민과 대화하면 미연시 대화창이 열리고, 주민은 대화가 끝날 때까지 그 자리에서 기다려요. E/Space/Enter로 대사 넘기기 · 숫자 1~9로 선택지 고르기 · 📜 기록 보기</li>
+      <li>📌 퀘스트는 화면 왼쪽 위에 다음 할 일과 방향 화살표가 떠요. ⭐ 노란 빛기둥이 목적지예요</li>
       <li>⏱️ 1초 = 게임 1분 (속도 조절 가능). 평일 09~18시 주민들은 남쪽 오피스로 출근해요</li>
       <li>❗ 주민 머리 위 <b>고민 풍선</b>이 뜨면 말을 걸어 코칭해 주세요 (분홍=짝사랑, 붉은=질투, 보라=권태기)</li>
       <li>🏢 시티 타워 20개 창문: 💭고민 · 🟢손님 · 💤수면(꿈 훔쳐보기) · 🔥싸움 · 💖고백 결심</li>
@@ -913,36 +1049,139 @@
   // =========================================================
   // 지도
   // =========================================================
-  UI.toggleMap = function () {
+  const PLACE_ICON = { apartment: '🏢', apt_yard: '🌷', plaza: '⛲', cafe: '☕', metro: 'Ⓜ️', studio: '📺', stairs: '🪜', bridge: '🌉', cliff: '🌅', cliff_lawn: '🌿', cathedral: '⛪', observatory: '🔭', waterfall: '💧', home_p: '🏠', park: '🌳', playground: '🛝', school: '🏫', library: '📚', workshop: '🔨', teahouse: '🍵', skylounge: '🍽️', mall: '🛍️', arcade: '🎳', sushi: '🍣', pub: '🥟', club: '🎤', conv: '🏪', alley: '🍢', office: '🏢', cityhall: '🏛️', medical: '🏥', beach: '🏖️', ferry: '⛴️' };
+  const placeIcon = p => PLACE_ICON[p.id] || (p.plot ? '🏡' : '📍');
+  let mapSel = null, mapBg = null;
+  UI.toggleMap = function (sel) {
     const m = $('#map');
-    m.hidden = !m.hidden;
-    if (!m.hidden) drawMap();
+    m.hidden = sel ? false : !m.hidden;
+    if (!m.hidden) { if (sel) mapSel = sel; else if (!mapSel) mapSel = null; $('#mapX').onclick = () => UI.toggleMap(); drawMap(); paintMapSide(); }
   };
-  function drawMap() {
-    const cv = $('#mapC'), g = cv.getContext('2d');
-    const W2 = cv.width, H2 = cv.height;
+  UI.openMapAt = sel => UI.toggleMap(sel);
+  function mapXY() {
+    const cv = $('#mapC');
     const { minX, maxX, minZ, maxZ } = MAP.SIZE;
-    const sx = x => (x - minX) / (maxX - minX) * W2, sz = z => (z - minZ) / (maxZ - minZ) * H2;
-    g.fillStyle = '#6fcfe8'; g.fillRect(0, 0, W2, H2);
-    for (let y = 0; y < H2; y += 3) for (let x = 0; x < W2; x += 3) {
+    return { sx: x => (x - minX) / (maxX - minX) * cv.width, sz: z => (z - minZ) / (maxZ - minZ) * cv.height, wx: px => minX + px / cv.width * (maxX - minX), wz: py => minZ + py / cv.height * (maxZ - minZ) };
+  }
+  function mapBackground(W2, H2) {
+    if (mapBg) return mapBg;
+    const c = document.createElement('canvas'); c.width = W2; c.height = H2;
+    const g = c.getContext('2d');
+    const { minX, maxX, minZ, maxZ } = MAP.SIZE;
+    const sea = g.createLinearGradient(0, 0, 0, H2); sea.addColorStop(0, '#8fd8ec'); sea.addColorStop(1, '#6cc6e0');
+    g.fillStyle = sea; g.fillRect(0, 0, W2, H2);
+    for (let y = 0; y < H2; y += 2) for (let x = 0; x < W2; x += 2) {
       const wx = minX + x / W2 * (maxX - minX), wz = minZ + y / H2 * (maxZ - minZ);
       const h = FM.T.height(wx, wz);
       if (h < 0.15) continue;
-      g.fillStyle = h > 20 ? '#b8dd8a' : h > 5 ? '#95d46e' : h > 1.5 ? '#a6d98a' : '#f2e3b0';
-      if (FM.T.inWater(wx, wz)) g.fillStyle = '#6fcfe8';
-      g.fillRect(x, y, 3, 3);
+      g.fillStyle = FM.T.inWater(wx, wz) ? '#7ccfe6' : h > 20 ? '#bfe096' : h > 5 ? '#a4d97c' : h > 1.5 ? '#b3de92' : '#f6e6b8';
+      g.fillRect(x, y, 2, 2);
     }
-    g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 2;
+    g.strokeStyle = 'rgba(255,248,235,0.9)'; g.lineWidth = 3; g.lineCap = 'round';
+    const sx = x => (x - minX) / (maxX - minX) * W2, sz = z => (z - minZ) / (maxZ - minZ) * H2;
     for (const [a, b] of MAP.E) { const A = MAP.N[a], B2 = MAP.N[b]; g.beginPath(); g.moveTo(sx(A[0]), sz(A[1])); g.lineTo(sx(B2[0]), sz(B2[1])); g.stroke(); }
-    g.font = '11px Jua, sans-serif'; g.textAlign = 'center';
-    for (const p of Object.values(MAP.P)) { if (!p.bld && !['plaza', 'park', 'beach', 'cliff', 'waterfall'].includes(p.id)) continue; g.fillStyle = MAP.DISTRICTS[p.district].color; g.fillRect(sx(p.x) - 4, sz(p.z) - 4, 8, 8); if (!p.plot) { g.fillStyle = '#3b2b20'; g.fillText(p.name.replace(/".*"|&.*$/g, '').slice(0, 10), sx(p.x), sz(p.z) - 6); } }
-    for (const [k, s] of Object.entries(MAP.STATIONS)) { g.fillStyle = '#3a7bd5'; g.beginPath(); g.arc(sx(s.x), sz(s.z), 5, 0, Math.PI * 2); g.fill(); g.fillStyle = '#fff'; g.fillText('M', sx(s.x), sz(s.z) + 4); }
-    const st2 = st();
-    for (const v of st2.villagers) if (v.loc === 'island') { g.fillStyle = v.balloon ? '#ff4d8d' : '#ffffff'; g.beginPath(); g.arc(sx(v.x), sz(v.z), 3, 0, Math.PI * 2); g.fill(); }
-    const p = st2.player; if (p.loc === 'island') { g.fillStyle = '#ff3a3a'; g.beginPath(); g.arc(sx(p.x), sz(p.z), 5, 0, Math.PI * 2); g.fill(); }
-    g.font = '14px Jua, sans-serif'; g.fillStyle = '#3b2b20';
-    for (const [k, d] of Object.entries(MAP.DISTRICTS)) { const pos = { CORE: [0, 0], NORTH: [10, -100], WEST: [-90, 0], EAST: [85, 0], SOUTH: [0, 65] }[k]; g.fillText(d.name, sx(pos[0]), sz(pos[1])); }
-    cv.onclick = e => { const r = cv.getBoundingClientRect(); const wx = minX + (e.clientX - r.left) / r.width * (maxX - minX), wz = minZ + (e.clientY - r.top) / r.height * (maxZ - minZ); const near = Object.entries(MAP.STATIONS).sort((a, b) => Math.hypot(a[1].x - wx, a[1].z - wz) - Math.hypot(b[1].x - wx, b[1].z - wz))[0]; UI.toast(`가장 가까운 역: ${near[1].name}`); };
+    g.font = 'bold 15px Jua, sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(90,60,40,0.35)';
+    for (const [k, d] of Object.entries(MAP.DISTRICTS)) { const pos = { CORE: [0, -12], NORTH: [10, -112], WEST: [-100, -8], EAST: [95, -30], SOUTH: [0, 100] }[k]; g.fillText(d.short + ' 지구', sx(pos[0]), sz(pos[1])); }
+    mapBg = c; return c;
+  }
+  function drawMap() {
+    const cv = $('#mapC'), g = cv.getContext('2d');
+    const W2 = cv.width, H2 = cv.height;
+    const { sx, sz, wx, wz } = mapXY();
+    g.drawImage(mapBackground(W2, H2), 0, 0);
+    const s2 = st();
+    // 퀘스트 목적지 & 웨이포인트
+    const qd = FM.Guide.pinned() && FM.Guide.questDest(FM.Guide.pinned());
+    const qpos = qd && FM.Guide.resolve(qd);
+    const wp = FM.Guide.waypointPos();
+    // 장소
+    g.textAlign = 'center';
+    const places = Object.values(FM.Guide.places()).flat();
+    for (const p of places) {
+      const x = sx(p.x), y = sz(p.z);
+      const sel = mapSel && mapSel.type === 'place' && mapSel.id === p.id;
+      g.fillStyle = sel ? '#ff8f6a' : 'rgba(255,255,255,0.92)'; g.strokeStyle = MAP.DISTRICTS[p.district].color; g.lineWidth = sel ? 3 : 2;
+      g.beginPath(); g.arc(x, y, sel ? 13 : 10, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.font = (sel ? '15' : '12') + 'px serif'; g.fillText(placeIcon(p), x, y + (sel ? 5 : 4));
+      if (sel || p.bld && !p.plot) { g.font = (sel ? '14' : '11') + 'px Jua, sans-serif'; g.fillStyle = '#3b2b20'; g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 3; const t = FM.Guide.shortName(p).slice(0, 12); g.strokeText(t, x, y - 13); g.fillText(t, x, y - 13); }
+    }
+    // 주민
+    for (const v of s2.villagers) {
+      const w = v.loc === 'island' ? { x: v.x, z: v.z } : null; if (!w) continue;
+      const sel = mapSel && mapSel.type === 'v' && mapSel.id === v.id;
+      g.fillStyle = v.balloon ? '#ff5d9e' : '#ffffff'; g.strokeStyle = sel ? '#ff8f6a' : 'rgba(90,60,40,0.6)'; g.lineWidth = sel ? 3 : 1.5;
+      g.beginPath(); g.arc(sx(w.x), sz(w.z), sel ? 6 : 4, 0, Math.PI * 2); g.fill(); g.stroke();
+      if (sel) { g.font = '12px Jua, sans-serif'; g.fillStyle = '#3b2b20'; g.fillText(v.name, sx(w.x), sz(w.z) - 9); }
+    }
+    if (mapSel && mapSel.type === 'pt') { g.font = '20px serif'; g.fillText('🚩', sx(mapSel.x), sz(mapSel.z)); }
+    if (wp) { g.font = '22px serif'; g.fillText('📍', sx(wp.x), sz(wp.z) - 2); }
+    if (qpos) { g.font = '20px serif'; g.fillText('⭐', sx(qpos.x), sz(qpos.z) - 4); }
+    const p = s2.player;
+    const pp = p.loc === 'island' ? p : (FM.INTERIORS[p.loc] && Sim.placeDoor(FM.INTERIORS[p.loc].place));
+    if (pp) {
+      const t = performance.now() / 1000;
+      g.fillStyle = 'rgba(255,58,58,0.25)'; g.beginPath(); g.arc(sx(pp.x), sz(pp.z), 9 + Math.sin(t * 4) * 2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ff3a3a'; g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(sx(pp.x), sz(pp.z), 5.5, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    cv.onclick = e => {
+      const r = cv.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width * W2, py = (e.clientY - r.top) / r.height * H2;
+      let best = null, bd = 16;
+      for (const pl of places) { const d = Math.hypot(sx(pl.x) - px, sz(pl.z) - py); if (d < bd) { bd = d; best = { type: 'place', id: pl.id }; } }
+      for (const v of s2.villagers) if (v.loc === 'island') { const d = Math.hypot(sx(v.x) - px, sz(v.z) - py); if (d < Math.min(bd, 8)) { bd = d; best = { type: 'v', id: v.id }; } }
+      if (!best) { const x = wx(px), z = wz(py); if (FM.T.height(x, z) > 0.2 && !FM.T.inWater(x, z)) best = { type: 'pt', x, z }; }
+      mapSel = best; FM.Audio.sfx('ui'); drawMap(); paintMapSide();
+    };
+  }
+  function goButtons(dest, canEnter) {
+    return `<div class="map-go">
+      <button class="main" data-go="tp">✨ 바로 가기</button>
+      ${canEnter ? '<button class="main" data-go="enter">🚪 바로 들어가기</button>' : ''}
+      <button data-go="walk">🚶 걸어서 가기</button>
+      <button data-go="pin">📍 목적지로 표시</button></div>`;
+  }
+  function bindGo(box, dest) {
+    box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+      const k = b.dataset.go;
+      if (k === 'pin') { FM.Guide.setWaypoint(dest); UI.toast('📍 목적지를 표시했어요. 화면의 빛기둥을 따라가세요!'); drawMap(); return; }
+      $('#map').hidden = true;
+      if (k === 'walk') FM.Guide.walkTo(dest);
+      else FM.Guide.teleport(dest, { enter: k === 'enter' });
+    });
+  }
+  function paintMapSide() {
+    const info = $('#mapInfo'), list = $('#mapList'); if (!info) return;
+    const s2 = st();
+    if (!mapSel) info.innerHTML = `<h3>어디로 갈까요?</h3><p>지도에서 장소(아이콘)나 주민(점)을 누르거나, 아래 목록에서 골라주세요.<br>✨ <b>바로 가기</b>는 순간 이동, 🚶 <b>걸어서 가기</b>는 길을 따라 자동으로 걸어가요.</p>`;
+    else if (mapSel.type === 'place') {
+      const p = MAP.P[mapSel.id];
+      const inside = s2.villagers.filter(v => (p.interior && v.loc === p.interior) || (v.loc === 'island' && Math.hypot(v.x - p.x, v.z - p.z) < (p.r || 12)) || (p.id === 'apartment' && v.loc.startsWith('apt')));
+      const canEnter = p.interior && !p.plot;
+      info.innerHTML = `<h3>${placeIcon(p)} ${esc(p.name)}</h3><div class="who">${esc(MAP.DISTRICTS[p.district].name)}</div>${p.desc ? `<p>${esc(p.desc)}</p>` : ''}<div class="who">👥 지금 여기: ${inside.length ? inside.slice(0, 8).map(v => esc(v.name)).join(', ') + (inside.length > 8 ? ` 외 ${inside.length - 8}명` : '') : '아무도 없어요'}</div>${goButtons({ place: p.id }, canEnter)}`;
+      bindGo(info, { place: p.id });
+    } else if (mapSel.type === 'v') {
+      const v = Sim.byId(mapSel.id); const w = FM.Guide.whereIs(v);
+      info.innerHTML = `<h3>${icon(v)} ${esc(v.name)}</h3><div class="who">${esc(v.title)}</div><p>📍 ${esc(w ? w.label : '?')}${v.balloon ? ' · <b style="color:#ff5d9e">고민이 있어요(!)</b>' : ''}</p>${goButtons({ villager: v.id }, false)}`;
+      bindGo(info, { villager: v.id });
+    } else {
+      info.innerHTML = `<h3>🚩 선택한 지점</h3><p>${esc(MAP.DISTRICTS[FM.T.district(mapSel.x, mapSel.z)].name)}</p>${goButtons({ x: mapSel.x, z: mapSel.z, label: '선택한 지점' }, false)}`;
+      bindGo(info, { x: mapSel.x, z: mapSel.z, label: '선택한 지점' });
+    }
+    // 목록
+    const groups = FM.Guide.places();
+    const q = FM.Guide.pinned(); const qd = q && FM.Guide.questDest(q);
+    const qplace = qd && (qd.place || (qd.villager && (FM.Guide.whereIs(Sim.byId(qd.villager)) || {}).place));
+    let html = '';
+    if (q && qd) html += `<h5>⭐ 퀘스트 목적지</h5><div class="map-chips"><button data-q="1">⭐ ${esc(J(FM.Guide.nextStep(q).text).slice(0, 34))}</button></div>`;
+    for (const [dk, arr] of Object.entries(groups)) {
+      const d = MAP.DISTRICTS[dk];
+      html += `<h5><i style="background:${d.color}"></i>${esc(d.name)}</h5><div class="map-chips">${arr.map(p => `<button data-p="${p.id}" class="${mapSel && mapSel.id === p.id ? 'on' : ''}">${placeIcon(p)} ${esc(FM.Guide.shortName(p).slice(0, 14))}${qplace === p.id ? ' <span class="q">⭐</span>' : ''}</button>`).join('')}</div>`;
+    }
+    html += `<h5>👥 주민에게 가기</h5><div class="map-chips">${s2.villagers.map(v => `<button data-v="${v.id}" class="${mapSel && mapSel.id === v.id ? 'on' : ''}">${icon(v)} ${esc(v.name)}${v.balloon ? ' <span class="q">!</span>' : ''}</button>`).join('')}</div>`;
+    list.innerHTML = html;
+    list.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { mapSel = { type: 'place', id: b.dataset.p }; drawMap(); paintMapSide(); });
+    list.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { mapSel = { type: 'v', id: b.dataset.v }; drawMap(); paintMapSide(); });
+    const qb = list.querySelector('[data-q]'); if (qb) qb.onclick = () => { mapSel = qd.villager ? { type: 'v', id: qd.villager } : { type: 'place', id: qd.place }; drawMap(); paintMapSide(); };
   }
 
   // =========================================================
@@ -988,7 +1227,8 @@
       if (list.length) { h.innerHTML = `<b>E</b> ${esc(J(list[0].label))}${list.length > 1 ? ` <small>외 ${list.length - 1}개</small>` : ''}`; h.hidden = false; $('#hintBtn').hidden = false; }
       else { h.hidden = true; $('#hintBtn').hidden = true; }
       if (g.view === 'observe' && g.obs && (obsT -= 0.25) < 0) { obsT = 2; paintObs(); }
-      if (!$('#map').hidden && Math.random() < 0.2) drawMap();
+      if (!$('#map').hidden) drawMap();
+      paintTracker();
     }
     if (!yardGroups._init && g.islandScene) { yardGroups._init = true; UI.renderYards(); }
   };

@@ -574,7 +574,7 @@
   };
   Sim.load = function (json) {
     S = json; Sim.S = S;
-    for (const v of S.villagers) { derive(v); v.route = null; v.sceneId = null; v.act = null; v.bubble = null; if (v.loc === 'metro') { v.loc = 'island'; const st = MAP.STATIONS.C; v.x = st.x; v.z = st.z + 1; } }
+    for (const v of S.villagers) { derive(v); v.talkingToPlayer = false; v.route = null; v.sceneId = null; v.act = null; v.bubble = null; if (v.loc === 'metro') { v.loc = 'island'; const st = MAP.STATIONS.C; v.x = st.x; v.z = st.z + 1; } }
     S.fx = [];
     if (!S.rooms) S.rooms = {};
     ensurePlayerRoom();
@@ -621,6 +621,8 @@
     for (const [k, v] of Object.entries(def.actors || {})) {
       if (!v) return null;
       if (v.sceneId && !def.force) return null;
+      // 플레이어와 대화 중인 주민은 다른 장면에 끌려가지 않음 (대화 선택지로 시작된 장면 제외)
+      if (v.talkingToPlayer && !Sim.talkChoosing) { if (!def.major) return null; emit('talkInterrupt', v); v.talkingToPlayer = false; }
       actors[k] = v;
     }
     const sc = { id: sceneSeq++, title: def.title || '', major: !!def.major, steps: def.steps.slice(), actors, i: 0, st: null, t: 0, onEnd: def.onEnd, place: def.place, bgm: def.bgm };
@@ -1230,6 +1232,15 @@
   function updateVillager(v, dtR) {
     v.moving = false;
     if (v.sceneId) return; // 장면이 제어
+    // 플레이어와 대화 중: 그 자리에 가만히 서서 플레이어를 바라봄
+    if (v.talkingToPlayer) {
+      if (!(v.talkUntil > S.realT)) { v.talkingToPlayer = false; v.idleT = 1; }
+      else {
+        v.route = null; v.act = null; v.run = false; v.state = 'TALK_PLAYER'; v.pose = v.talkPose || 'listen';
+        const p = S.player; if (p.loc === v.loc) v.ry = Math.atan2(p.x - v.x, p.z - v.z);
+        return;
+      }
+    }
     if (v.loc === 'metro' || (v.route && v.route.length)) {
       const done = moveAlong(v, dtR);
       if (v.route && v.route.length && v.route[0].k === 'walk') v.state = v.run ? 'RUN' : 'WALK';

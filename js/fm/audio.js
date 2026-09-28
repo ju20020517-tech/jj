@@ -137,6 +137,8 @@
       case 'heart': tone(N(76), t, 0.12, 'sine', 0.1, sfxGain); tone(N(81), t + 0.12, 0.2, 'sine', 0.1, sfxGain); break;
       case 'splash': noise(t, 0.35, 0.18, 1200, 0.7); break;
       case 'ui': tone(N(84), t, 0.05, 'sine', 0.05, sfxGain); break;
+      case 'blip': tone(N(74 + Math.floor(Math.random() * 6)), t, 0.035, 'triangle', 0.035, sfxGain); break;             // 미연시 대사 타이핑
+      case 'page': noise(t, 0.08, 0.04, 2500, 1); tone(N(79), t, 0.06, 'sine', 0.04, sfxGain); break;
       case 'coin': tone(N(88), t, 0.08, 'square', 0.05, sfxGain); tone(N(93), t + 0.08, 0.12, 'square', 0.05, sfxGain); break;
       case 'bird': for (let i = 0; i < 5; i++) tone(2500 + Math.random() * 1500, t + i * 0.07, 0.05, 'sine', 0.06, sfxGain); break;
       case 'bubbles': for (let i = 0; i < 6; i++) tone(500 + Math.random() * 800, t + i * 0.1, 0.05, 'sine', 0.05, sfxGain); break;

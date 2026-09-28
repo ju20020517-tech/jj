@@ -25,10 +25,10 @@
     camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
     islandScene = new THREE.Scene();
     intScene = new THREE.Scene();
-    intScene.background = new THREE.Color(0x2a2438);
-    intScene.add(new THREE.HemisphereLight(0xfff4e6, 0x4a3a5a, 0.55));
-    intScene.add(new THREE.AmbientLight(0xffffff, 0.22));
-    const dl = new THREE.DirectionalLight(0xffffff, 0.35); dl.position.set(3, 8, 6); intScene.add(dl);
+    intScene.background = new THREE.Color(0x3a2a34);
+    intScene.add(new THREE.HemisphereLight(0xffeedd, 0x5a4048, 0.6));
+    intScene.add(new THREE.AmbientLight(0xffe4cc, 0.22));
+    const dl = new THREE.DirectionalLight(0xffe2c0, 0.38); dl.position.set(3, 8, 6); intScene.add(dl);
     G.intScene = intScene; G.islandScene = islandScene; G.camera = camera; G.renderer = renderer;
     resize();
     window.addEventListener('resize', resize);
@@ -62,6 +62,7 @@
     if (!st.player.look) st.player.look = ISLE.normalizeLook(Object.assign(ISLE.randomLook(), { species: 'human' }));
     if (!st.player.keys) st.player.keys = { L1: 'ROMANTIC', L2: 'CURIOUS', L3: 'WARM', L4: 'STUDY' };
     FM.W.build(islandScene);
+    makeBeacons();
     const p = st.player;
     if (p.loc !== 'island' && !FM.INTERIORS[p.loc]) { p.loc = 'island'; p.x = 0; p.z = 2; }
     if (p.loc !== 'island') enterInterior(p.loc, true); else setView('island');
@@ -164,6 +165,7 @@
     window.addEventListener('keydown', e => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
       G.keys[e.code] = true;
+      if (!$('#dialog').hidden) { if (['KeyE', 'Space', 'Enter'].includes(e.code)) { e.preventDefault(); FM.UI.vnAdvance(); } if (e.code === 'Escape') FM.UI.escape(); if (/^Digit[1-9]$/.test(e.code)) FM.UI.vnPick(+e.code.slice(5) - 1); return; }
       if (e.code === 'KeyE' || e.code === 'Space') { e.preventDefault(); interact(); }
       if (e.code === 'Escape') FM.UI.escape();
       if (e.code === 'KeyM') FM.UI.toggleMap();
@@ -259,16 +261,20 @@
     if (G.joy) { ix += G.joy.x; iz += G.joy.y; }
     let dx = 0, dz = 0;
     if (ix || iz) {
-      G.target = null;
+      G.target = null; if (G.autoPath) { G.autoPath = null; G.autoDest = null; }
       const l = Math.hypot(ix, iz); ix /= Math.max(1, l); iz /= Math.max(1, l);
       const s = Math.sin(camYaw), c = Math.cos(camYaw);
       dx = ix * c + iz * s; dz = -ix * s + iz * c;
     } else if (G.target) {
       const tx = G.target.x - p.x, tz = G.target.z - p.z, d = Math.hypot(tx, tz);
-      if (d < 0.25) G.target = null; else { dx = tx / d; dz = tz / d; }
+      if (d < (G.autoPath ? 0.6 : 0.25)) {
+        G.target = null;
+        if (G.autoPath && G.autoPath.length) G.target = G.autoPath.shift();
+        else if (G.autoPath) { G.autoPath = null; const r = G.autoDest; G.autoDest = null; if (r) { FM.UI.toast(`🎉 ${r.label}에 도착했어요!`); FM.Audio.sfx('pop'); FM.Guide.clearWaypointIfNear(); if (r.ry !== undefined && !r.villager) p.ry = r.ry; } }
+      } else { dx = tx / d; dz = tz / d; }
     }
     const running = (k.ShiftLeft || k.ShiftRight || G.runBtn) && p.stamina > 0;
-    const sp = (running ? 7 : 3.8) * dt;
+    const sp = (running ? 7 : G.autoPath ? 6 : 3.8) * dt;
     p.moving = !!(dx || dz);
     p.run = running && p.moving;
     if (!p.moving) return;
@@ -278,6 +284,8 @@
       if (T.canWalk(p.x, p.z, nx, nz)) { p.x = nx; p.z = nz; }
       else if (T.canWalk(p.x, p.z, nx, p.z)) p.x = nx;
       else if (T.canWalk(p.x, p.z, p.x, nz)) p.z = nz;
+      else if (G.autoPath && G.autoPath.length) { G.target = G.autoPath.shift(); }
+      else if (G.autoPath) { G.autoPath = null; G.target = null; const r = G.autoDest; G.autoDest = null; if (r) FM.UI.toast(`🚶 ${r.label} 근처에 도착했어요`); }
       else G.target = null;
       // 문으로 걸어 들어가기
       const door = nearDoor(p.x, p.z);
@@ -463,8 +471,12 @@
     // 따라가기
     const gy = p.loc === 'island' ? T.groundY(p.x, p.z) : 0;
     const want = new THREE.Vector3(p.x, gy + 1.0, p.z);
+    let dist = camDist;
+    // 미연시 대화 중: 두 사람 사이로 카메라를 부드럽게 당김
+    const tf = G.talkFocus && Sim.byId(G.talkFocus);
+    if (tf && tf.loc === p.loc) { want.set((p.x + tf.x) / 2, gy + 1.0, (p.z + tf.z) / 2); G.talkDist = (G.talkDist || camDist) + (Math.min(camDist, 8) - (G.talkDist || camDist)) * Math.min(1, dt * 3); dist = G.talkDist; }
+    else G.talkDist = null;
     camTarget.lerp(want, Math.min(1, dt * 6));
-    const dist = camDist;
     camPos.set(camTarget.x + Math.sin(camYaw) * Math.cos(camPitch) * dist, camTarget.y + Math.sin(camPitch) * dist, camTarget.z + Math.cos(camYaw) * Math.cos(camPitch) * dist);
     if (p.loc === 'island') { const gh = T.height(camPos.x, camPos.z) + 1.2; if (camPos.y < gh) camPos.y = gh; }
     camera.position.copy(camPos);
@@ -482,6 +494,39 @@
     requestAnimationFrame(loop);
     try { frame(); } catch (e) { console.error(e); }
   }
+  // 목적지 빛기둥: ⭐ 퀘스트(노랑) · 📍 표시한 목적지(분홍)
+  const beacons = {};
+  function makeBeacon(color) {
+    const g = new THREE.Group();
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.9, 40, 16, 1, true), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false }));
+    beam.position.y = 20; g.add(beam);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.12, 8, 32), new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8, depthWrite: false }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = 0.15; g.add(ring);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.9, 16), new THREE.MeshBasicMaterial({ color }));
+    cone.rotation.x = Math.PI; g.add(cone);
+    g.userData = { ring, cone, beam };
+    g.visible = false; islandScene.add(g);
+    return g;
+  }
+  function makeBeacons() { if (beacons.q) return; beacons.q = makeBeacon(0xffc83a); beacons.w = makeBeacon(0xff7fb0); }
+  function updateBeacons(dt, st) {
+    if (!beacons.q) return;
+    const p = st.player, t = performance.now() / 1000;
+    const q = FM.Guide.pinned(); const qd = q && FM.Guide.questDest(q);
+    const list = [[beacons.q, qd && FM.Guide.resolve(qd)], [beacons.w, FM.Guide.waypointPos()]];
+    if (list[1][1] && list[0][1] && Math.hypot(list[1][1].x - list[0][1].x, list[1][1].z - list[0][1].z) < 2) list[1][1] = null;
+    for (const [b, pos] of list) {
+      const show = !!pos && G.view === 'island' && p.loc === 'island' && Math.hypot(pos.x - p.x, pos.z - p.z) > 2.5;
+      b.visible = show; if (!show) continue;
+      const y = T.groundY(pos.x, pos.z);
+      b.position.set(pos.x, y, pos.z);
+      const u = b.userData;
+      u.cone.position.y = 3.2 + Math.sin(t * 3) * 0.35; u.cone.rotation.y = t * 2;
+      const k = 1 + (t % 1.5) / 1.5 * 0.8; u.ring.scale.set(k, k, k); u.ring.material.opacity = 0.9 - (t % 1.5) / 1.5 * 0.8;
+      u.beam.material.opacity = 0.18 + Math.sin(t * 2) * 0.06;
+    }
+    FM.Guide.clearWaypointIfNear();
+  }
   function frame() {
     const dt = Math.min(0.05, clock.getDelta());
     const st = Sim.get();
@@ -495,6 +540,7 @@
     if (G.view === 'island' || (G.view === 'observe' && !G.obs) || G.zoomAnim) {
       FM.W.applyTime(h, st.weather.type, camTarget);
       FM.W.update(dt, st, camTarget, camera.position);
+      updateBeacons(dt, st);
       FM.Chars.sync(ents, 'island', islandScene, dt, { cullFrom: G.view === 'observe' ? { x: 0, z: -10 } : camTarget, cullR: G.view === 'observe' ? 60 : Math.max(70, camDist * 3) });
       renderer.render(islandScene, camera);
     } else {
