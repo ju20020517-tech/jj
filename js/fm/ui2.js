@@ -489,6 +489,7 @@
     if (!$('#breaking')) { const d = document.createElement('div'); d.id = 'breaking'; d.hidden = true; $('#hud').appendChild(d); }
     origInit();
     $('#btnNews').onclick = () => UI.newsShow();
+    if ($('#hudTitle')) $('#hudTitle').onclick = () => UI.toTitle();
     $('#btnHome').onclick = () => UI.myHome();
     FM.bus.on('news', () => {
       paintNewsBadge();
@@ -507,6 +508,14 @@
     setInterval(paintNewsBadge, 2000);
     // 이어하기: 못 본 뉴스가 있으면 잠시 뒤 틀어 줌
     if (unseen()) setTimeout(() => { if (!UI.modalOpen()) UI.newsShow(); }, 2500);
+  };
+  // 시작(타이틀) 화면으로 돌아가기 — 저장 후 새로 불러옴
+  UI.toTitle = function () {
+    UI.modal('🏝️ 시작 화면으로', `<div class="tt-confirm"><div class="big">🏝️</div><p>지금까지의 섬 생활을 저장하고<br>시작 화면으로 돌아갈까요?</p>
+      <div class="md-actions"><button class="btn" id="ttGo">💾 저장하고 돌아가기</button><button class="btn ghost" id="ttNo">계속 놀기</button></div></div>`, b => {
+      b.querySelector('#ttNo').onclick = () => UI.closeModal();
+      b.querySelector('#ttGo').onclick = () => { try { G().save(); } catch (e) { /* 무시 */ } $('#fade') && $('#fade').classList.add('on'); setTimeout(() => location.reload(), 250); };
+    });
   };
   UI.myHome = function () {
     const p = st().player;
