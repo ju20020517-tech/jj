@@ -22,30 +22,30 @@
     return s;
   };
   const B = [
-    ['cafe', 8, 21, '카페 앙상블', v => w(v, { EXTROVERT: 2, ROMANTIC: 1.5, FASHIONISTA: 1.5, GOSSIP: 2, FOOD: 1, FRIENDSHIP: 1, LOVE: 1 })],
-    ['studio', 9, 20, '방송국', v => w(v, { FAME: 3, EXTROVERT: 1, LEADER: 1.5, MUSICIAN: 1 })],
-    ['cathedral', 8, 20, '대성당', v => w(v, { TRADITION: 3, FAMILY: 1.5, SAINT: 1.5, HONEST: 1, ROMANTIC: 1, OCCULT: 1, DEVOTED: 1 })],
-    ['observatory', 18, 26, '천문대', v => w(v, { SCHOLARLY: 2, ROMANTIC: 1.5, ADVENTURER: 1.5, OCCULT: 2, INTROVERT: 1, NIGHT_OWL: 1.5 })],
-    ['school', 9, 17, '어린이 학교', v => w(v, { GROWTH: 2.5, SCHOLARLY: 1.5, LEADER: 1, FAMILY: 1 })],
-    ['library', 9, 21, '도서관', v => w(v, { SCHOLARLY: 3, INTROVERT: 2, GROWTH: 2, STUDY: 2, CLUMSY: 0.5 })],
-    ['workshop', 10, 19, '마을 공방', v => w(v, { ARTISTIC: 2.5, DILIGENT: 1.5, GROWTH: 1, NATURE: 1, CLUMSY: 1 })],
-    ['teahouse', 14, 24, '달빛 차관', v => w(v, { TRADITION: 2, INTROVERT: 1.5, SNOB: 1.5, HARMONY: 1, ANXIOUS: 1, NATURE: 1 })],
-    ['skylounge', 17, 24, '스카이라운지', v => w(v, { SNOB: 2.5, MONEY: 2, FAME: 1, LOVE: 1, FASHIONISTA: 1 }) + (FM.Soc.partnerOf(v.id) ? 1.5 : 0)],
-    ['mall', 10, 22, '쇼핑몰', v => w(v, { FASHIONISTA: 3, FASHION: 2, SNOB: 1.5, EXTROVERT: 1, FAME: 1, FUN: 0.5 })],
-    ['arcade', 11, 24, '오락실', v => w(v, { GAMER: 4, FUN: 2.5, LAZY: 1, PRANKSTER: 1, CLUMSY: 0.5 })],
-    ['sushi', 11, 22, '회전초밥', v => w(v, { FOOD: 2.5, LAZY: 2, FUN: 1 }) + (v.hunger > 55 ? 2 : 0)],
-    ['pub', 17, 26, '레트로 펍', v => w(v, { EXTROVERT: 1.5, FUN: 1.5, CRANKY: 1, MUSICIAN: 0.5 }) + ((v.stress || 0) > 50 ? 2 : 0)],
-    ['club', 21, 28, '클럽', v => w(v, { FUN: 2.5, EXTROVERT: 2, MUSICIAN: 2, NIGHT_OWL: 1.5, PLAYBOY: 2 })],
-    ['conv', 0, 24, '편의점', v => w(v, { LAZY: 1.5, GAMER: 1 }) + 0.3 + (v.hunger > 50 ? 1 : 0)],
+    ['cafe', 8, 21, '카페 앙상블', v => w(v, { EXTROVERT: 2, ROMANTIC: 1.5, FASHIONISTA: 1.5, GOSSIP: 2, FOOD: 1, FRIENDSHIP: 1, CHIC: 2.5, FRESH: 2, CUTIE: 2, DANDY: 1.5, PURE: 0.5, LOVE: 1 })],
+    ['studio', 9, 20, '방송국', v => w(v, { FAME: 3, EXTROVERT: 1, LEADER: 1.5, CHARISMA: 2.5, HIP: 1.5, FRESH: 1, CUTIE: 1, MUSICIAN: 1 })],
+    ['cathedral', 8, 20, '대성당', v => w(v, { TRADITION: 3, FAMILY: 1.5, SAINT: 1.5, HONEST: 1, ROMANTIC: 1, OCCULT: 1, ELEGANT: 2, PURE: 2, CLASSIC: 2.5, MYSTIC: 1, DEVOTED: 1 })],
+    ['observatory', 18, 26, '천문대', v => w(v, { SCHOLARLY: 2, ROMANTIC: 1.5, ADVENTURER: 1.5, OCCULT: 2, INTROVERT: 1, MYSTIC: 4, PURE: 0.5, NIGHT_OWL: 1.5 })],
+    ['school', 9, 17, '어린이 학교', v => w(v, { GROWTH: 2.5, SCHOLARLY: 1.5, LEADER: 1, BEAGLE: 1, TOMBOY: 1, CLASSIC: 0.5, FAMILY: 1 })],
+    ['library', 9, 21, '도서관', v => w(v, { SCHOLARLY: 3, INTROVERT: 2, GROWTH: 2, STUDY: 2, PURE: 2.5, CLASSIC: 2, MYSTIC: 1, ELEGANT: 0.5, CLUMSY: 0.5 })],
+    ['workshop', 10, 19, '마을 공방', v => w(v, { ARTISTIC: 2.5, DILIGENT: 1.5, GROWTH: 1, NATURE: 1, HIP: 1.5, MYSTIC: 1, CLASSIC: 1, CLUMSY: 1 })],
+    ['teahouse', 14, 24, '달빛 차관', v => w(v, { TRADITION: 2, INTROVERT: 1.5, SNOB: 1.5, HARMONY: 1, ANXIOUS: 1, ELEGANT: 3, CLASSIC: 3, DANDY: 1, CHIC: 1, NATURE: 1 })],
+    ['skylounge', 17, 24, '스카이라운지', v => w(v, { SNOB: 2.5, MONEY: 2, FAME: 1, LOVE: 1, ELEGANT: 2.5, CHARISMA: 2, DANDY: 2.5, CHIC: 1.5, FASHIONISTA: 1 }) + (FM.Soc.partnerOf(v.id) ? 1.5 : 0)],
+    ['mall', 10, 22, '쇼핑몰', v => w(v, { FASHIONISTA: 3, FASHION: 2, SNOB: 1.5, EXTROVERT: 1, FAME: 1, CUTIE: 2.5, HIP: 2, CHIC: 2, FRESH: 1.5, DANDY: 1, FUN: 0.5 })],
+    ['arcade', 11, 24, '오락실', v => w(v, { GAMER: 4, FUN: 2.5, LAZY: 1, PRANKSTER: 1, BEAGLE: 3, TOMBOY: 2, HIP: 1, CUTIE: 1, CLUMSY: 0.5 })],
+    ['sushi', 11, 22, '회전초밥', v => w(v, { FOOD: 2.5, LAZY: 2, TOMBOY: 1.5, FRESH: 1, BEAGLE: 1, FUN: 1 }) + (v.hunger > 55 ? 2 : 0)],
+    ['pub', 17, 26, '레트로 펍', v => w(v, { EXTROVERT: 1.5, FUN: 1.5, CRANKY: 1, TOMBOY: 2, CHARISMA: 1, HIP: 1, MUSICIAN: 0.5 }) + ((v.stress || 0) > 50 ? 2 : 0)],
+    ['club', 21, 28, '클럽', v => w(v, { FUN: 2.5, EXTROVERT: 2, MUSICIAN: 2, NIGHT_OWL: 1.5, HIP: 3.5, BEAGLE: 1.5, CHARISMA: 1.5, FRESH: 1, PLAYBOY: 2 })],
+    ['conv', 0, 24, '편의점', v => w(v, { LAZY: 1.5, TOMBOY: 1, BEAGLE: 0.5, GAMER: 1 }) + 0.3 + (v.hunger > 50 ? 1 : 0)],
     ['office', 9, 19, '오피스 타워', v => w(v, { MONEY: 2, DILIGENT: 1 }) * (v.job === 'office' ? 0.3 : 1)],
-    ['cityhall', 9, 18, '시청 · 법원', v => w(v, { CRANKY: 2, LEADER: 2, JUSTICE: 1.5, TRADITION: 0.5 })],
+    ['cityhall', 9, 18, '시청 · 법원', v => w(v, { CRANKY: 2, LEADER: 2, JUSTICE: 1.5, CHARISMA: 2, CLASSIC: 1, TRADITION: 0.5 })],
     ['medical', 0, 24, '메디컬 센터', v => w(v, { ANXIOUS: 1.5 }) * 0.5 + ((v.stress || 0) > 55 ? 3 : 0) + ((v.depression || 0) > 55 ? 1.5 : 0)],
   ];
   O.BUILDINGS = B;
   const open = (b, h) => { const [, o, c] = b; const hh = h < o && c > 24 ? h + 24 : h; return hh >= o && hh < c; };
   // 성격별 외출 성향 (얼마나 자주 건물에 가나)
-  const outgoing = v => 0.5 + (has(v, 'EXTROVERT') ? 0.12 : 0) + (has(v, 'WANDERER') ? 0.1 : 0) + (has(v, 'ADVENTURER') ? 0.08 : 0) + (has(v, 'BUSYBODY') ? 0.05 : 0)
-    - (has(v, 'HOMEBODY') ? 0.12 : 0) - (has(v, 'INTROVERT') ? 0.05 : 0) - (v.stats && v.stats.range === 'HOME' ? 0.1 : 0);
+  const outgoing = v => 0.5 + (has(v, 'EXTROVERT') ? 0.12 : 0) + (has(v, 'WANDERER') ? 0.1 : 0) + (has(v, 'ADVENTURER') ? 0.08 : 0) + (has(v, 'BUSYBODY') ? 0.05 : 0) + (has(v, 'BEAGLE') || has(v, 'FRESH') || has(v, 'HIP') || has(v, 'TOMBOY') ? 0.08 : 0)
+    - (has(v, 'HOMEBODY') ? 0.12 : 0) - (has(v, 'INTROVERT') ? 0.05 : 0) - (has(v, 'MYSTIC') || has(v, 'PURE') ? 0.05 : 0) - (v.stats && v.stats.range === 'HOME' ? 0.1 : 0);
   O.pick = function (v, h) {
     const cands = B.filter(b => open(b, h) && MAP.P[b[0]] && MAP.P[b[0]].interior && FM.INTERIORS[MAP.P[b[0]].interior]).map(b => [b, Math.max(0, b[4](v))]).filter(x => x[1] > 0);
     if (v.lastOuting) for (const c of cands) if (c[0][0] === v.lastOuting) c[1] *= 0.35;   // 같은 곳만 가지 않게
