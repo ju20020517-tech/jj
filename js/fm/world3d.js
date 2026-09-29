@@ -51,7 +51,7 @@
     const col = new Float32Array(pos.count * 3);
     const surf = new Float32Array(pos.count * 2);
     const c = new THREE.Color();
-    const G1 = new THREE.Color(0x74c450), G2 = new THREE.Color(0x62b446), HG = new THREE.Color(0x8fd262), SAND = new THREE.Color(0xf6e6b4), ROCK = new THREE.Color(0xd2a47a), ROCK2 = new THREE.Color(0xc0906a), UNDER = new THREE.Color(0x7fd6d8), LAWN = new THREE.Color(0x9ee07a);
+    const G1 = new THREE.Color(0x6fd24a), G2 = new THREE.Color(0x5cc244), HG = new THREE.Color(0x8cdc5c), SAND = new THREE.Color(0xf6e6b4), ROCK = new THREE.Color(0xd2a47a), ROCK2 = new THREE.Color(0xc0906a), UNDER = new THREE.Color(0x7fd6d8), LAWN = new THREE.Color(0x9ee07a);
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
       const y = T.height(x, z);
@@ -614,10 +614,10 @@
   // ---------------------------------------------------------
   // 시간/날씨 적용 & 매 프레임 갱신
   // ---------------------------------------------------------
-  const cDay = { top: new THREE.Color(0x7cc2f2), bottom: new THREE.Color(0xfff0d6) };
+  const cDay = { top: new THREE.Color(0x4fb4ff), bottom: new THREE.Color(0xd8f2ff) };
   const cSet = { top: new THREE.Color(0x8a5a9a), bottom: new THREE.Color(0xffa865) };
   const cNight = { top: new THREE.Color(0x161838), bottom: new THREE.Color(0x44345e) };
-  const cDawn = { top: new THREE.Color(0x8aaee0), bottom: new THREE.Color(0xffd6a8) };
+  const cDawn = { top: new THREE.Color(0x7ab4f0), bottom: new THREE.Color(0xffd8b0) };
   const tmpA = new THREE.Color(), tmpB = new THREE.Color();
   W.nightness = 0;
   W.applyTime = function (h, weather, target) {
@@ -643,15 +643,15 @@
     sun.position.copy(tgt).addScaledVector(night > 0.6 ? new THREE.Vector3(0.3, 0.8, -0.4).normalize() : sd, 120);
     sun.target.position.copy(tgt);
     sun.intensity = sunI * (1 - wet * 0.5) * (night > 0.6 ? 0.35 : 1);
-    sun.color.set(night > 0.6 ? 0xb8b0e8 : (h > 16 && h < 19.5) ? 0xffb070 : h < 9 ? 0xffdcb0 : 0xffe6c4);
+    sun.color.set(night > 0.6 ? 0xb8b0e8 : (h > 16 && h < 19.5) ? 0xffb070 : h < 9 ? 0xffe2bc : 0xfff2dc);
     hemi.intensity = 0.15 + (1 - night) * 0.44; hemi.color.copy(bot).lerp(new THREE.Color(0xfff0dc), 0.45);
     hemi.groundColor.set(night > 0.5 ? 0x4a3a4a : 0x8a7a4a);
     amb.intensity = 0.13 + night * 0.03; amb.color.set(night > 0.5 ? 0xe0c8e0 : 0xffe8d0);
     starPts.material.opacity = night * (1 - wet);
     milky.material.opacity = (h >= 22 || h < 4) ? 0.7 * (1 - wet) : 0;       // 밤 22시 이후 은하수
-    fogCol.copy(bot).lerp(new THREE.Color(night > 0.5 ? 0x5a4060 : 0xffe4c4), 0.25); scene.fog.color.copy(fogCol);
-    scene.fog.near = weather === 'fog' ? 8 : weather === 'rain' ? 60 : 140;
-    scene.fog.far = weather === 'fog' ? 90 : weather === 'rain' ? 300 : 560;
+    fogCol.copy(bot).lerp(new THREE.Color(night > 0.5 ? 0x5a4060 : 0xeaf6ff), 0.3); scene.fog.color.copy(fogCol);
+    scene.fog.near = weather === 'fog' ? 8 : weather === 'rain' ? 60 : 220;
+    scene.fog.far = weather === 'fog' ? 90 : weather === 'rain' ? 300 : 900;
     for (const b of dyn.bulbs) b.material.color.set(night > 0.3 ? 0xfff1b0 : 0xe8e0c0);
     for (const { l, i } of dyn.lampLights) l.intensity = night * i * 1.3;
     if (dyn.fireflies) dyn.fireflies.material.opacity = night * 0.9;

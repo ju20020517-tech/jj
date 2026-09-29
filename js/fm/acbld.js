@@ -13,10 +13,13 @@
   // ---------- 공통 도우미 ----------
   // 벽 몸통 + 모서리 기둥 + 처마 띠 + 돌 기단
   function body(g, w, h, d, kind, color, o = {}) {
-    g.add(K.base(w, d, o.baseH || 0.45, o.baseColor || 0xd9cfc0));
+    g.add(K.base(w, d, o.baseH || 0.45, o.baseColor || 0xd9cfc0, o.baseKind || 'stone'));
     g.add(tbox(w, h, d, kind, color, 0, 0.4, 0, 0.12, o.scale || 1));
-    if (o.corners !== false) for (const [x, z] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) g.add(mesh(box(0.34, h, 0.34, 0.1), mat(o.trim || 0xffffff), x, 0.4 + h / 2, z));
-    if (o.band !== false) g.add(mesh(box(w + 0.3, 0.26, d + 0.3, 0.08), mat(o.trim || 0xffffff), 0, 0.4 + h - 0.1, 0));
+    const trimM = o.trimKind ? tm(o.trimKind, o.trim || 0xffffff) : mat(o.trim || 0xffffff);
+    if (o.corners !== false) for (const [x, z] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) g.add(mesh(o.trimKind ? geo('trC' + h, () => AC.wuv(box(0.34, h, 0.34, 0.1), 1.5)) : box(0.34, h, 0.34, 0.1), trimM, x, 0.4 + h / 2, z));
+    if (o.band !== false) g.add(mesh(o.trimKind ? geo(`trB${w},${d}`, () => AC.wuv(box(w + 0.3, 0.26, d + 0.3, 0.08), 1.5)) : box(w + 0.3, 0.26, d + 0.3, 0.08), trimM, 0, 0.4 + h - 0.1, 0));
+    // 아랫단 두른 벽 (타일/대리석 등)
+    if (o.wainscot) g.add(tbox(w + 0.04, o.wainscotH || 1.0, d + 0.04, o.wainscot, o.wainscotColor || 0xffffff, 0, 0.4, 0, 0.08, 1));
   }
   // 한 면에 창문 줄 세우기 (face: 'front'|'back'|'left'|'right')
   function windows(g, w, h, d, face, ys, o = {}) {
@@ -47,8 +50,8 @@
   // =========================================================
   BLD.cafe = (p) => {
     const g = new THREE.Group(); const { w, d } = p.bld, h = 3.6;
-    body(g, w, h, d, 'siding', 0xfff0dc, { trim: 0xffffff });
-    const roof = K.gable(w, d, 2.6, 0xe0604f, { wallColor: 0xfff0dc }); roof.position.y = h + 0.4; g.add(roof);
+    body(g, w, h, d, 'siding', 0xfff4e2, { trim: 0xffffff, wainscot: 'tile', wainscotColor: 0xa8e6d4, wainscotH: 1.1 });
+    const roof = K.gable(w, d, 2.6, 0xff6a58, { wallColor: 0xffe8f0 }); roof.position.y = h + 0.4; g.add(roof);
     const ch = K.chimney(1.8, 0xc9765a); ch.position.set(w / 2 - 1.6, h + 1.2, -1); g.add(ch);
     windows(g, w, h, d, 'front', [2.1], { n: 4, skipDoor: 1.8, ww: 1.5, wh: 1.4, shutters: 0x5fae6a, curtain: '#ffe0a0' });
     windows(g, w, h, d, 'left', [2.1], { n: 2, shutters: 0x5fae6a });
@@ -69,8 +72,8 @@
   // =========================================================
   BLD.station = (p) => {
     const g = new THREE.Group(); const { w, d } = p.bld;
-    g.add(K.base(w, d, 0.5, 0xd8d0c4));
-    g.add(tbox(w, 0.1, d, 'stone', 0xf0e8dc, 0, 0.45, 0, 0.02, 1.2));
+    g.add(K.base(w, d, 0.5, 0xe8e4f0, 'tile'));
+    g.add(tbox(w, 0.1, d, 'terrazzo', 0xffffff, 0, 0.45, 0, 0.02, 2));
     for (const x of [-w / 2 + 0.5, 0, w / 2 - 0.5]) for (const z of [-d / 2 + 0.5, d / 2 - 0.5]) { g.add(mesh(cyl(0.16, 0.2, 3.6, 14), mat(0x3a7bd5), x, 2.3, z)); g.add(mesh(sphere(0.26, 12, 8), mat(0x2f5fb0), x, 4.1, z)); }
     const vault = mesh(geo('stVault' + w + d, () => AC.scaleUV(new THREE.CylinderGeometry(d / 2 + 0.6, d / 2 + 0.6, w + 1.2, 24, 1, true, 0, Math.PI), 6, w / 1.2)), tm('metal', 0x5b9ae6), 0, 4.1, 0);
     vault.rotation.z = Math.PI / 2; vault.material.side = THREE.DoubleSide; vault.scale.set(0.45, 1, 1); g.add(vault);
@@ -109,15 +112,15 @@
   // =========================================================
   BLD.cathedral = (p) => {
     const g = new THREE.Group(); const { w, d, h } = p.bld; const hh = h - 5;
-    body(g, w, hh, d, 'stone', 0xf6f0e6, { trim: 0xf0e6d8, scale: 1.4 });
-    const nave = K.gable(d, w, 6, 0x8a6aa8, { wallKind: 'stone', wallColor: 0xf6f0e6, ridge: 0xd9b44a }); nave.rotation.y = Math.PI / 2; nave.position.y = hh + 0.4; g.add(nave);
+    body(g, w, hh, d, 'ashlar', 0xfff8ee, { trim: 0xfbf8f2, trimKind: 'marble', baseKind: 'marble', baseColor: 0xf4eee6, scale: 1.6 });
+    const nave = K.gable(d, w, 6, 0x8a6aa8, { wallKind: 'ashlar', wallColor: 0xfff8ee, ridge: 0xd9b44a }); nave.rotation.y = Math.PI / 2; nave.position.y = hh + 0.4; g.add(nave);
     const dome = K.dome(5, 0x8a6aa8); dome.position.set(0, hh + 4, -5); g.add(dome);
     g.add(mesh(cyl(0.5, 0.2, 2.5), mat(0xffd23a), 0, hh + 10, -5));
     // 부벽
-    for (const s of [-1, 1]) for (let i = 0; i < 4; i++) { const b = tbox(0.8, hh * 0.7, 1.2, 'stone', 0xe8e0d4, s * (w / 2 + 0.4), 0.4, -d / 2 + 3 + i * (d - 6) / 3, 0.15, 1.4); g.add(b); }
+    for (const s of [-1, 1]) for (let i = 0; i < 4; i++) { const b = tbox(0.8, hh * 0.7, 1.2, 'marble', 0xfbf8f2, s * (w / 2 + 0.4), 0.4, -d / 2 + 3 + i * (d - 6) / 3, 0.15, 1.4); g.add(b); }
     // 종탑
     const t = new THREE.Group(); t.position.set(w / 2 + 3, 0, 7);
-    t.add(K.base(4, 4, 0.5)); t.add(tbox(4, 19, 4, 'stone', 0xf1e8dc, 0, 0.4, 0, 0.1, 1.4));
+    t.add(K.base(4, 4, 0.5, 0xf4eee6, 'marble')); t.add(tbox(4, 19, 4, 'ashlar', 0xfff8ee, 0, 0.4, 0, 0.1, 1.6));
     const spire = K.cone(3.3, 6, 0x8a6aa8, 'shingle', 4); spire.rotation.y = Math.PI / 4; spire.position.y = 22.6; t.add(spire);
     t.add(mesh(sphere(0.3, 10, 8), mat(0xffd23a), 0, 25.8, 0));
     t.add(mesh(box(2.6, 3, 4.2, 0.1), mat(0x3a2a40), 0, 16.5, 0));
@@ -126,12 +129,14 @@
     g.userData.bellTower = { x: w / 2 + 3, y: 16, z: 7 };
     const rose = new THREE.Mesh(new THREE.CircleGeometry(3, 32), new THREE.MeshBasicMaterial({ map: PM.ctex('roseWin', 256, 256, (c, W2) => { const cols = ['#ff5d7a', '#ffd84a', '#4fc1e9', '#8ee07a', '#b69cff', '#ff9a4a']; for (let i = 0; i < 12; i++) { c.fillStyle = cols[i % 6]; c.beginPath(); c.moveTo(128, 128); c.arc(128, 128, 128, i / 12 * Math.PI * 2, (i + 1) / 12 * Math.PI * 2); c.fill(); } c.strokeStyle = '#3a2a40'; c.lineWidth = 6; for (let r = 30; r < 128; r += 34) { c.beginPath(); c.arc(128, 128, r, 0, Math.PI * 2); c.stroke(); } for (let i = 0; i < 12; i++) { c.beginPath(); c.moveTo(128, 128); c.lineTo(128 + Math.cos(i / 6 * Math.PI) * 128, 128 + Math.sin(i / 6 * Math.PI) * 128); c.stroke(); } }) }));
     rose.position.set(0, hh - 2.5, d / 2 + 0.06); rose.userData.noBake = true; g.add(rose);
-    g.add(mesh(geo('roseRing', () => new THREE.TorusGeometry(3.05, 0.25, 10, 40)), tm('stone', 0xe8dcc8), 0, hh - 2.5, d / 2 + 0.1));
+    g.add(mesh(geo('roseRing', () => new THREE.TorusGeometry(3.05, 0.25, 10, 40)), tm('marble', 0xfbf8f2), 0, hh - 2.5, d / 2 + 0.1));
     windows(g, w, hh, d, 'left', [4.5], { n: 5, ww: 1.2, wh: 3, arch: true, box: false, curtain: '#b69cff' });
     windows(g, w, hh, d, 'right', [4.5], { n: 5, ww: 1.2, wh: 3, arch: true, box: false, curtain: '#b69cff' });
     const door = K.door(2.8, 3.6, 0x6a4028, { arch: true, frame: 0xe8dcc8, matColor: 0xff8fb1 }); door.position.set(0, 0.42, d / 2 + 0.03); g.add(door);
     sign(g, '⛪ 축복의 마블 대성당', 7, hh + 1.2, d / 2 + 0.5, '#ffffff', '#8a6aa8');
     for (const x of [-4, 4]) { const pl = K.planter(0xf0e6d8, 0xffffff); pl.position.set(x, 0.4, d / 2 + 1); g.add(pl); }
+    for (const x of [-2.4, 2.4]) { const c = K.column(4.4); c.position.set(x, 0.4, d / 2 + 0.5); g.add(c); }
+    for (let i = 0; i < 3; i++) g.add(tbox(6 - i * 0.4, 0.16, 0.5, 'marble', 0xfbf8f2, 0, 0.1 + i * 0.15, d / 2 + 1.6 - i * 0.45, 0.04, 2));
     return g;
   };
 
@@ -140,8 +145,8 @@
   // =========================================================
   BLD.observatory = (p) => {
     const g = new THREE.Group();
-    g.add(mesh(geo('obsBase', () => AC.scaleUV(new THREE.CylinderGeometry(7.1, 7.3, 0.6, 32), 30, 0.5)), tm('stone', 0xd8d0c4), 0, 0.3, 0));
-    g.add(mesh(geo('obsBody', () => AC.scaleUV(new THREE.CylinderGeometry(6.5, 6.8, 6, 32, 1, true), 28, 4)), tm('stone', 0xf1eadc), 0, 3.4, 0));
+    g.add(mesh(geo('obsBase', () => AC.scaleUV(new THREE.CylinderGeometry(7.1, 7.3, 0.6, 32), 30, 0.5)), tm('marble', 0xf4eee6), 0, 0.3, 0));
+    g.add(mesh(geo('obsBody', () => AC.scaleUV(new THREE.CylinderGeometry(6.5, 6.8, 6, 32, 1, true), 28, 4)), tm('ashlar', 0xfff6ea), 0, 3.4, 0));
     g.add(mesh(geo('obsTop', () => new THREE.CylinderGeometry(6.5, 6.5, 0.2, 32)), mat(0xf1eadc), 0, 6.4, 0));
     g.add(mesh(geo('obsRail', () => new THREE.TorusGeometry(7.2, 0.08, 6, 48)), mat(0xffffff), 0, 7.2, 0).rotateX(Math.PI / 2));
     for (let i = 0; i < 24; i++) { const a = i / 24 * Math.PI * 2; g.add(mesh(cyl(0.05, 0.05, 0.8, 6), mat(0xffffff), Math.cos(a) * 7.2, 6.8, Math.sin(a) * 7.2)); }
@@ -162,7 +167,7 @@
   function glassCyl(r, h, key, cols, rows, lit, tint, seg = 24) { const t = winT(key, cols, rows, lit, tint); return mesh(geo(`gc${r},${h},${key}`, () => new THREE.CylinderGeometry(r, r, h, seg)), H.soften(new THREE.MeshLambertMaterial({ map: t })), 0, h / 2, 0); }
   BLD.skyscraper = (p) => {
     const g = new THREE.Group(); const { w, d, h } = p.bld;
-    g.add(K.base(w, d, 0.8, 0xd0d4dc));
+    g.add(K.base(w, d, 0.8, 0xf4f0ea, 'marble'));
     const t1 = glassCyl(w / 2, h * 0.45, 'sky1', 10, 12, 0.35, '#9ab8ff', 8); t1.position.y = 0.4; t1.rotation.y = Math.PI / 8; t1.scale.set(1.08, 1, 1.08); g.add(t1);
     g.add(mesh(cyl(w / 2 + 0.6, w / 2 + 0.6, 0.6, 8), mat(0x2a2a3a), 0, h * 0.45 + 0.7, 0).rotateY(Math.PI / 8));
     const t2 = glassCyl(w * 0.4, h * 0.32, 'sky2', 12, 10, 0.4, '#b8a8ff'); t2.position.y = h * 0.45 + 1; g.add(t2);
@@ -185,7 +190,7 @@
   // =========================================================
   BLD.mall = (p) => {
     const g = new THREE.Group(); const { w, d, h } = p.bld;
-    g.add(K.base(w, d, 0.5, 0xe0d8e0));
+    g.add(K.base(w, d, 0.5, 0xfbf6f8, 'marble'));
     const core = mesh(geo('mallCore' + w, () => new THREE.BoxGeometry(w - d, h, d)), H.soften(new THREE.MeshLambertMaterial({ map: winT('mall', 8, 4, 0.5, '#ffc8e8') })), 0, h / 2 + 0.4, 0); g.add(core);
     for (const s of [-1, 1]) { const c = glassCyl(d / 2, h, 'mallc', 6, 4, 0.5, '#ffc8e8'); c.position.set(s * (w - d) / 2, 0.4, 0); g.add(c); }
     for (let f = 1; f < 4; f++) { g.add(mesh(box(w - d, 0.3, d + 0.3, 0.05), mat(0xffffff), 0, f * 4 + 0.4, 0)); for (const s of [-1, 1]) g.add(mesh(cyl(d / 2 + 0.15, d / 2 + 0.15, 0.3, 24), mat(0xffffff), s * (w - d) / 2, f * 4 + 0.4, 0)); }
@@ -204,7 +209,7 @@
   // =========================================================
   BLD.arcade = (p) => {
     const g = new THREE.Group(); const { w, d } = p.bld, h = 5.5;
-    body(g, w, h, d, 'brick', 0x6a4aa8, { trim: 0x39ffb0, band: false });
+    body(g, w, h, d, 'tile', 0x9a7ae8, { trim: 0x39ffb0, band: false, baseKind: 'terrazzo', baseColor: 0xffffff });
     const vault = mesh(geo('arcVault' + w + d, () => AC.scaleUV(new THREE.CylinderGeometry(d / 2, d / 2, w + 0.4, 28, 1, false, 0, Math.PI), 8, w)), tm('metal', 0x8a5ad0), 0, h + 0.4, 0); vault.rotation.z = Math.PI / 2; vault.scale.set(0.35, 1, 1); g.add(vault);
     const s = PM.sign('🎮 NEON SPARK · 오락실 & 24시 볼링장', w - 3, 2, '#14101f', '#39ffb0', '#39ffb0'); s.position.set(0, h - 0.8, d / 2 + 0.3); g.add(s);
     bulbRow(g, -w / 2 + 1.2, w / 2 - 1.2, h + 0.35, d / 2 + 0.3, 0xfff0a0, 16);
@@ -224,8 +229,8 @@
   BLD.restaurant = (p) => {
     const g = new THREE.Group(); const { w, d } = p.bld, h = 3.4;
     const red = p.id === 'pub';
-    body(g, w, h, d, red ? 'plaster' : 'plank', red ? 0xf6e0c8 : 0xe8c89a, { trim: red ? 0xc0392b : 0x5a3a28 });
-    const roof = K.gable(w, d, 2.2, red ? 0x2f8a5a : 0x3a4a6a, { kind: 'rooftile', wallKind: red ? 'plaster' : 'plank', wallColor: red ? 0xf6e0c8 : 0xe8c89a, ridge: red ? 0xffd23a : 0x2a3448, gableWindow: false });
+    body(g, w, h, d, red ? 'stucco' : 'plank', red ? 0xffe6d0 : 0xf0d0a0, { trim: red ? 0xd8453a : 0x5a3a28, wainscot: red ? 'tile' : null, wainscotColor: 0xe8584a, wainscotH: 0.9 });
+    const roof = K.gable(w, d, 2.2, red ? 0x2f8a5a : 0x3a4a6a, { kind: 'rooftile', wallKind: red ? 'stucco' : 'plank', wallColor: red ? 0xffe6d0 : 0xf0d0a0, ridge: red ? 0xffd23a : 0x2a3448, gableWindow: false });
     roof.position.y = h + 0.4; g.add(roof);
     // 휘어 올라간 처마 끝 장식
     for (const [x, z] of [[-w / 2 - 0.6, -d / 2 - 0.6], [w / 2 + 0.6, -d / 2 - 0.6], [-w / 2 - 0.6, d / 2 + 0.6], [w / 2 + 0.6, d / 2 + 0.6]]) { const c = mesh(geo('eaveTip', () => new THREE.ConeGeometry(0.22, 0.8, 8)), mat(red ? 0xffd23a : 0x2a3448), x, h + 0.6, z); c.rotation.set(z > 0 ? -0.7 : 0.7, 0, x > 0 ? -0.7 : 0.7); g.add(c); }
@@ -261,7 +266,7 @@
   // =========================================================
   BLD.shop = (p) => {
     const g = new THREE.Group(); const { w, d, h } = p.bld; const c = p.bld.color || 0x7ad0a0;
-    body(g, w, h - 0.4, d, 'panel', 0xffffff, { trim: 0xffffff, scale: 1.2 });
+    body(g, w, h - 0.4, d, 'tile', 0xffffff, { trim: 0xffffff, baseKind: 'terrazzo', baseColor: 0xffffff });
     g.add(mesh(box(w + 0.3, 0.7, d + 0.3, 0.12), mat(c), 0, h - 0.2, 0));
     g.add(mesh(box(w + 0.1, 0.2, d + 0.1, 0.06), mat(0xffb13d), 0, h - 0.6, 0));
     g.add(mesh(box(w - 2.2, 2, 0.1, 0.03), glass(0xbfe8ff), -0.6, 1.5, d / 2 + 0.05));
@@ -305,7 +310,9 @@
   const oldHall = BLD.cityhall;
   BLD.cityhall = (p) => {
     const g = oldHall(p); const { w, d, h } = p.bld;
-    g.add(tbox(w + 0.08, h - 2.05, d + 0.08, 'stone', 0xf1eadc, 0, 0, 0, 0.12, 1.5));
+    g.add(tbox(w + 0.08, h - 2.05, d + 0.08, 'marble', 0xfbf8f2, 0, 0, 0, 0.12, 2.2));
+    for (let i = 0; i < 7; i++) { const c = K.column(h - 2.6); c.position.set(-w / 2 + 1.5 + i * (w - 3) / 6, 0.5, d / 2 + 0.8); g.add(c); }
+    for (let i = 0; i < 3; i++) g.add(tbox(w + 2 - i * 0.6, 0.18, 0.6, 'marble', 0xf4f0e8, 0, i * 0.17, d / 2 + 2.4 - i * 0.5, 0.04, 2));
     windows(g, w, h - 2, d, 'left', [3.5], { n: 2, arch: true, shutters: 0x5a7ab8 }); windows(g, w, h - 2, d, 'right', [3.5], { n: 2, arch: true, shutters: 0x5a7ab8 });
     const dome = K.dome(3, 0x5aa89a, 'metal'); dome.position.set(0, h - 1.6, -1.5); g.add(dome);
     const clock = mesh(cyl(1.1, 1.1, 0.2, 28), mat(0xffffff), 0, h + 0.8, 1.3); clock.rotation.x = Math.PI / 2; g.add(clock);
@@ -319,18 +326,18 @@
   // =========================================================
   BLD.library = (p) => {
     const g = new THREE.Group(); const { w, d } = p.bld, h = 7.5;
-    body(g, w, h, d, 'brick', 0xd8845a, { trim: 0xfff4e6, scale: 1 });
+    body(g, w, h, d, 'brick', 0xe0906a, { trim: 0xfbf8f2, trimKind: 'marble', baseKind: 'marble', baseColor: 0xf4eee6 });
     const roof = K.gable(w, d, 4, 0x4a9a8a, { kind: 'metal', wallKind: 'brick', wallColor: 0xd8845a }); roof.position.y = h + 0.4; g.add(roof);
     const tw = new THREE.Group(); tw.position.set(w / 2 - 1.2, 0, -d / 2 + 1.2);
     tw.add(mesh(geo('libTw', () => AC.scaleUV(new THREE.CylinderGeometry(2, 2, h + 3.5, 24), 12, h + 3.5)), tm('brick', 0xc9744a), 0, (h + 3.5) / 2 + 0.4, 0));
     const tc = K.cone(2.5, 3.2, 0x4a9a8a, 'metal', 24); tc.position.y = h + 5.5; tw.add(tc); g.add(tw);
     windows(g, w, h, d, 'front', [2.4, 5.4], { n: 4, skipDoor: 2.4, ww: 1.3, wh: 1.8, arch: true, box: false, frame: 0xfff4e6, curtain: '#fff4dc' });
     windows(g, w, h, d, 'left', [2.4, 5.4], { n: 3, ww: 1.3, wh: 1.8, arch: true, box: false, frame: 0xfff4e6, curtain: '#fff4dc' });
-    for (const x of [-2, 2]) g.add(mesh(cyl(0.3, 0.34, 4, 16), mat(0xfff4e6), x, 2.4, d / 2 + 1.2));
-    g.add(mesh(geo('libPed', () => { const s = new THREE.Shape(); s.moveTo(-3, 0); s.lineTo(0, 1.4); s.lineTo(3, 0); s.lineTo(-3, 0); return new THREE.ExtrudeGeometry(s, { depth: 1.8, bevelEnabled: false }); }), mat(0xfff4e6), 0, 4.4, d / 2 + 0.2));
+    for (const x of [-2, 2]) { const c = K.column(4); c.position.set(x, 0.4, d / 2 + 1.2); g.add(c); }
+    g.add(mesh(geo('libPed', () => { const s = new THREE.Shape(); s.moveTo(-3, 0); s.lineTo(0, 1.4); s.lineTo(3, 0); s.lineTo(-3, 0); return AC.wuv(new THREE.ExtrudeGeometry(s, { depth: 1.8, bevelEnabled: false }), 1.5); }), tm('marble', 0xfbf8f2), 0, 4.4, d / 2 + 0.2));
     frontDoor(g, d, { color: 0x6a4028, arch: true, w: 1.8, h: 2.6, frame: 0xfff4e6 });
     woodSign(g, '📚 시립 도서관 & 힐링 북카페', 5.5, 6.5, d / 2 + 0.3);
-    for (let i = 0; i < 3; i++) g.add(tbox(4.4 - i * 0.2, 0.16, 0.5, 'stone', 0xe8e0d4, 0, 0.1 + i * 0.15, d / 2 + 2.2 - i * 0.45, 0.04, 1));
+    for (let i = 0; i < 3; i++) g.add(tbox(4.4 - i * 0.2, 0.16, 0.5, 'marble', 0xf4f0e8, 0, 0.1 + i * 0.15, d / 2 + 2.2 - i * 0.45, 0.04, 2));
     return g;
   };
 
@@ -358,7 +365,7 @@
   BLD.teahouse = (p) => {
     const g = new THREE.Group(); const { w, d } = p.bld, h = 3.2;
     g.add(tbox(w + 0.6, 0.7, d + 0.6, 'stone', 0xcfc6b8, 0, -0.05, 0, 0.1, 1));
-    g.add(tbox(w, h, d, 'plaster', 0xf6ead0, 0, 0.6, 0, 0.08, 1.4));
+    g.add(tbox(w, h, d, 'stucco', 0xfff4dc, 0, 0.6, 0, 0.08, 1.4));
     for (const x of [-w / 2, -w / 4, 0.01, w / 4, w / 2]) for (const z of [-d / 2, d / 2]) g.add(mesh(box(0.28, h, 0.28, 0.06), tm('plank', 0x8a5a3b), x, 0.6 + h / 2, z));
     g.add(mesh(box(w + 0.3, 0.3, d + 0.3, 0.06), tm('plank', 0x6a4028), 0, 0.6 + h, 0));
     // 휘어진 기와 지붕
@@ -382,10 +389,10 @@
   BLD.school = (p) => {
     const g = new THREE.Group(); const { w, d } = p.bld, h = 4.2;
     body(g, w, h, d, 'siding', 0xfff4d6, { trim: 0xffffff });
-    g.add(tbox(w + 0.02, 1.2, d + 0.02, 'brick', 0xd8745a, 0, 0.4, 0, 0.1, 1));
+    g.add(tbox(w + 0.04, 1.2, d + 0.04, 'tile', 0x9fd8f5, 0, 0.4, 0, 0.1, 1));
     const roof = K.gable(w, d, 2.4, 0xff8f6a, { wallColor: 0xfff4d6 }); roof.position.y = h + 0.4; g.add(roof);
     const tw = new THREE.Group(); tw.position.set(0, h + 0.4, d / 2 - 1.2);
-    tw.add(tbox(2, 3.6, 2, 'siding', 0xfff4d6, 0, 0, 0, 0.06, 1));
+    tw.add(tbox(2, 3.6, 2, 'fishscale', 0xfff4d6, 0, 0, 0, 0.06, 1));
     const cr = K.cone(1.8, 2.2, 0xff8f6a, 'shingle', 4); cr.rotation.y = Math.PI / 4; cr.position.y = 4.7; tw.add(cr);
     const clock = mesh(cyl(0.7, 0.7, 0.12, 24), mat(0xffffff), 0, 2.3, 1.05); clock.rotation.x = Math.PI / 2; tw.add(clock);
     tw.add(mesh(box(0.06, 0.5, 0.04, 0.01), mat(0x2b2b30), 0, 2.45, 1.13)); tw.add(mesh(box(0.4, 0.06, 0.04, 0.01), mat(0x2b2b30), 0.16, 2.3, 1.13));
@@ -404,7 +411,7 @@
   // =========================================================
   BLD.terminal = (p) => {
     const g = new THREE.Group(); const { w, d, h } = p.bld;
-    body(g, w, h - 1.2, d, 'siding', 0xf4f8ff, { trim: 0x2f6bb0 });
+    body(g, w, h - 1.2, d, 'siding', 0xf8fbff, { trim: 0x2f6bb0, wainscot: 'tile', wainscotColor: 0x7ab8f0, wainscotH: 0.9, baseKind: 'terrazzo', baseColor: 0xffffff });
     const vault = mesh(geo('termVault' + w + d, () => AC.scaleUV(new THREE.CylinderGeometry(d / 2 + 0.6, d / 2 + 0.6, w + 1, 28, 1, false, 0, Math.PI), 8, w)), tm('metal', 0x3a7bd5), 0, h - 0.8, 0); vault.rotation.z = Math.PI / 2; vault.scale.set(0.42, 1, 1); g.add(vault);
     const scr = new THREE.Mesh(new THREE.PlaneGeometry(w - 2, 2.6), new THREE.MeshBasicMaterial({ color: 0x222222 }));
     scr.position.set(0, h + 2.2, 0); scr.rotation.y = Math.PI; scr.userData.dyn = true; g.add(scr);
@@ -424,11 +431,11 @@
   BLD.apartment = (p) => {
     const g = oldApt(p); const { w, d, h } = p.bld;
     // 기존 흰 상자를 무늬 벽으로 덮기 (창문 틀보다 살짝 뒤)
-    g.add(tbox(w + 0.06, h - 3.3, d + 0.06, 'plaster', 0xfff2e0, 0, 3.3, 0, 0.1, 1.6));
-    g.add(tbox(w + 0.09, 3.35, d + 0.09, 'brick', 0xe0906a, 0, -0.02, 0, 0.1, 1));
+    g.add(tbox(w + 0.06, h - 3.3, d + 0.06, 'stucco', 0xfff4e4, 0, 3.3, 0, 0.1, 1.6));
+    g.add(tbox(w + 0.09, 3.35, d + 0.09, 'ashlar', 0xf6ecdc, 0, -0.02, 0, 0.1, 1.6));
     g.traverse(o => { if (o.isMesh && o.material && o.material.map && o.userData.noBake && Math.abs(o.position.y - (h + 2.2)) < 0.1) { o.position.set(0, h + 2.4, d / 2 - 0.1); } });
     const roof = K.gable(w, d, 4.2, 0xff8f6a, { wallColor: 0xfff2e0 }); roof.position.y = h + 0.5; g.add(roof);
-    for (const x of [-9, 0, 9]) { const dm = new THREE.Group(); dm.position.set(x, h + 0.9, d / 2 - 1.2); dm.add(tbox(2.2, 1.6, 1.6, 'siding', 0xfff2e0, 0, 0, 0, 0.06, 1)); const r2 = K.gable(2.2, 1.6, 1.0, 0xff8f6a, { over: 0.25, gableWindow: false, wallColor: 0xfff2e0 }); r2.rotation.y = Math.PI / 2; r2.position.y = 1.6; dm.add(r2); const wn = K.window(0.9, 0.9, { box: false, curtain: '#ffe0a0' }); wn.position.set(0, 0.8, 0.82); dm.add(wn); g.add(dm); }
+    for (const x of [-9, 0, 9]) { const dm = new THREE.Group(); dm.position.set(x, h + 0.9, d / 2 - 1.2); dm.add(tbox(2.2, 1.6, 1.6, 'fishscale', 0xfff4e4, 0, 0, 0, 0.06, 1)); const r2 = K.gable(2.2, 1.6, 1.0, 0xff8f6a, { over: 0.25, gableWindow: false, wallColor: 0xfff2e0 }); r2.rotation.y = Math.PI / 2; r2.position.y = 1.6; dm.add(r2); const wn = K.window(0.9, 0.9, { box: false, curtain: '#ffe0a0' }); wn.position.set(0, 0.8, 0.82); dm.add(wn); g.add(dm); }
     for (const x of [-w / 2 + 3, w / 2 - 3]) { const ch = K.chimney(2.4, 0xc9765a); ch.position.set(x, h + 1.4, -1.5); g.add(ch); }
     const can = new THREE.Group(); can.position.set(0, 3, d / 2 + 0.1);
     can.add(K.awning(4.4, 1.6, 0xff8f6a, 0xffffff)); g.add(can);
@@ -440,13 +447,13 @@
   // 빌라 8종 — 테마별 벽 무늬 / 지붕 / 덧창 / 굴뚝 / 현관
   // =========================================================
   const VILLA_LOOK = {
-    glass: { wall: 'panel', color: 0xe8f4ff, roof: 0x55595f, flat: true, shutter: null, curtain: '#e8f8ff' },
+    glass: { wall: 'marble', color: 0xffffff, roof: 0x55595f, flat: true, shutter: null, curtain: '#e8f8ff' },
     log: { wall: 'log', color: 0xc98a52, roof: 0x6a8a4a, shutter: 0x8a5a3b, chimney: 0x9a9a9a },
     hanok: { wall: 'plaster', color: 0xf6ead0, roof: 0x3a3a44, hanok: true, shutter: null },
-    chalet: { wall: 'siding', color: 0xffc6de, roof: 0xff6f9f, shutter: 0xffffff, chimney: 0xffffff },
-    med: { wall: 'plaster', color: 0xffffff, roof: 0x3a7bd5, flat: true, dome: true, shutter: 0x3a7bd5 },
+    chalet: { wall: 'fishscale', color: 0xffcfe4, roof: 0xff6f9f, shutter: 0xffffff, chimney: 0xffffff },
+    med: { wall: 'stucco', color: 0xffffff, roof: 0x3a7bd5, flat: true, dome: true, shutter: 0x3a7bd5 },
     tree: { wall: 'log', color: 0x9a6a44, roof: 0x4fae4a, tree: true, shutter: 0x4fae4a },
-    castle: { wall: 'stone', color: 0xd8d4cc, roof: 0x8a6aa8, castle: true, shutter: null, curtain: '#b69cff' },
+    castle: { wall: 'ashlar', color: 0xf0ece6, roof: 0x8a6aa8, castle: true, shutter: null, curtain: '#b69cff' },
     container: { wall: 'metal', color: 0xff8a24, roof: 0x2f4b6e, flat: true, shutter: null },
   };
   const oldVilla = BLD.villa;
@@ -468,15 +475,15 @@
     const g = new THREE.Group(); const { w, d, h } = p.bld; const hh = h - 2.2;
     const facing = p.plot ? p.plot.doorSide : 1;
     const inner = new THREE.Group(); if (facing < 0) inner.rotation.y = Math.PI; g.add(inner);
-    body(inner, w, hh, d, L.wall, L.color, { trim: L.wall === 'metal' ? 0x2f4b6e : 0xffffff, scale: L.wall === 'stone' ? 1.3 : 1 });
+    body(inner, w, hh, d, L.wall, L.color, { trim: L.wall === 'metal' ? 0x2f4b6e : 0xffffff, scale: L.wall === 'ashlar' ? 1.4 : L.wall === 'marble' ? 2 : 1, baseKind: L.wall === 'marble' || L.wall === 'ashlar' ? 'marble' : 'stone' });
     if (L.flat) {
       inner.add(mesh(box(w + 0.6, 0.45, d + 0.6, 0.15), mat(L.roof), 0, hh + 0.6, 0));
       if (L.dome) { const dm = K.dome(1.8, L.roof, 'metal'); dm.position.set(-w / 4, hh + 0.8, -d / 4); inner.add(dm); }
       if (ext === 'glass') inner.add(mesh(box(w - 1, hh - 0.6, 0.08, 0.02), glass(0xbfe8ff), 0, 0.4 + hh / 2, d / 2 + 0.06));
       for (let i = 0; i < 3; i++) { const pl = K.planter(0xffffff, 0xff8fb1); pl.position.set(-w / 2 + 1 + i * (w - 2) / 2, hh + 0.8, d / 2 - 0.8); inner.add(pl); }
     } else if (L.castle) {
-      for (const [x, z] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) { inner.add(mesh(geo('cTw' + hh, () => AC.scaleUV(new THREE.CylinderGeometry(0.95, 1.05, hh + 2, 16), 5, hh + 2)), tm('stone', L.color), x, 0.4 + (hh + 2) / 2, z)); const c = K.cone(1.25, 2.2, L.roof, 'shingle', 16); c.position.set(x, 0.4 + hh + 3.1, z); inner.add(c); }
-      for (let i = 0; i < 7; i++) inner.add(tbox(0.6, 0.6, d + 0.1, 'stone', L.color, -w / 2 + 0.8 + i * (w - 1.6) / 6, hh + 0.4, 0, 0.05, 1.3));
+      for (const [x, z] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) { inner.add(mesh(geo('cTw' + hh, () => AC.scaleUV(new THREE.CylinderGeometry(0.95, 1.05, hh + 2, 16), 5, hh + 2)), tm('ashlar', L.color), x, 0.4 + (hh + 2) / 2, z)); const c = K.cone(1.25, 2.2, L.roof, 'shingle', 16); c.position.set(x, 0.4 + hh + 3.1, z); inner.add(c); }
+      for (let i = 0; i < 7; i++) inner.add(tbox(0.6, 0.6, d + 0.1, 'ashlar', L.color, -w / 2 + 0.8 + i * (w - 1.6) / 6, hh + 0.4, 0, 0.05, 1.3));
     } else {
       const roof = K.gable(w, d, 2.6, L.roof, { wallKind: L.wall, wallColor: L.color }); roof.position.y = hh + 0.4; inner.add(roof);
       if (L.chimney) { const ch = K.chimney(1.6, L.chimney === 0xffffff ? 0xd27a5a : L.chimney); ch.position.set(w / 2 - 1.4, hh + 1.3, -0.8); inner.add(ch); }

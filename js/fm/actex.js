@@ -195,6 +195,64 @@
     g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 3; g.strokeRect(2, 2, w - 4, h - 4);
     g.fillStyle = 'rgba(255,255,255,0.6)'; g.fillRect(6, 6, w - 12, 6);
   });
+  // 대리석 (은은한 결 + 광택 줄)
+  T.marble = () => tex('marble2', 256, (g, w, h) => {
+    g.fillStyle = '#fafafa'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 30; i++) { const x = rnd() * w, y = rnd() * h; wrap(w, h, x, y, (a, b) => blob(g, a, b, 14 + rnd() * 30, 'rgba(225,225,235,0.25)')); }
+    for (let i = 0; i < 9; i++) {
+      g.strokeStyle = `rgba(${150 + rnd() * 40},${150 + rnd() * 40},${170 + rnd() * 30},${0.25 + rnd() * 0.3})`; g.lineWidth = 0.8 + rnd() * 2;
+      let x = rnd() * w, y = -10; g.beginPath(); g.moveTo(x, y);
+      while (y < h + 10) { x += (rnd() - 0.5) * 34; y += 10 + rnd() * 14; g.lineTo(x, y); }
+      g.stroke();
+    }
+    g.strokeStyle = 'rgba(0,0,0,0.07)'; g.lineWidth = 2; g.strokeRect(1, 1, w - 2, h - 2);   // 판 이음새
+  });
+  // 마름돌 블록 (크게 자른 돌, 관공서·성당)
+  T.ashlar = () => tex('ashlar', 256, (g, w, h) => {
+    g.fillStyle = '#d0d0d0'; g.fillRect(0, 0, w, h);
+    const bw = 128, bh = 64;
+    for (let y = 0; y < h; y += bh) for (let x = ((y / bh) % 2) * bw / 2 - bw; x < w; x += bw) {
+      const v = 228 + rnd() * 24 | 0; g.fillStyle = `rgb(${v},${v},${v - 4})`;
+      g.fillRect(x + 3, y + 3, bw - 6, bh - 6);
+      g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(x + 3, y + 3, bw - 6, 4); g.fillRect(x + 3, y + 3, 4, bh - 6);
+      g.fillStyle = 'rgba(0,0,0,0.06)'; g.fillRect(x + 3, y + bh - 7, bw - 6, 4);
+      for (let k = 0; k < 6; k++) { g.fillStyle = 'rgba(0,0,0,0.05)'; g.fillRect(x + 8 + rnd() * (bw - 16), y + 8 + rnd() * (bh - 16), 3, 3); }
+    }
+  });
+  // 유약 바른 네모 타일 (반짝임)
+  T.tile = () => tex('tile', 256, (g, w, h) => {
+    g.fillStyle = '#d8d8d8'; g.fillRect(0, 0, w, h);
+    const s = 32;
+    for (let y = 0; y < h; y += s) for (let x = 0; x < w; x += s) {
+      const v = 238 + rnd() * 17 | 0; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(x + 2, y + 2, s - 4, s - 4);
+      g.fillStyle = 'rgba(255,255,255,0.8)'; g.beginPath(); g.moveTo(x + 5, y + 5); g.lineTo(x + 14, y + 5); g.lineTo(x + 5, y + 14); g.fill();
+    }
+  });
+  // 스터코 (고운 모래 질감 벽)
+  T.stucco = () => tex('stucco', 256, (g, w, h) => {
+    g.fillStyle = '#f6f6f6'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 2400; i++) { g.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.045)' : 'rgba(255,255,255,0.7)'; g.fillRect(rnd() * w, rnd() * h, 1.5, 1.5); }
+    for (let i = 0; i < 26; i++) { const x = rnd() * w, y = rnd() * h; wrap(w, h, x, y, (a, b) => blob(g, a, b, 16 + rnd() * 24, 'rgba(255,255,255,0.18)')); }
+  });
+  // 물고기 비늘 사이딩 (동화 속 집 박공 / 샬레)
+  T.fishscale = () => tex('fishscale', 256, (g, w, h) => {
+    g.fillStyle = '#bdbdbd'; g.fillRect(0, 0, w, h);
+    const sw = 32, sh = 22;
+    for (let r = -1; r < h / sh + 1; r++) {
+      const y = r * sh, off = (r % 2) * sw / 2;
+      for (let x = -sw + off; x < w + sw; x += sw) {
+        const v = 232 + rnd() * 23 | 0; g.fillStyle = `rgb(${v},${v},${v})`;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + sw, y); g.lineTo(x + sw, y + sh * 0.4); g.arc(x + sw / 2, y + sh * 0.4, sw / 2, 0, Math.PI); g.closePath(); g.fill();
+        g.strokeStyle = 'rgba(0,0,0,0.12)'; g.lineWidth = 1.5; g.beginPath(); g.arc(x + sw / 2, y + sh * 0.4, sw / 2, 0, Math.PI); g.stroke();
+      }
+    }
+  });
+  // 테라조 (알록달록 돌 조각)
+  T.terrazzo = () => tex('terrazzo', 256, (g, w, h) => {
+    g.fillStyle = '#f4f4f4'; g.fillRect(0, 0, w, h);
+    const cols = ['rgba(255,140,160,0.55)', 'rgba(120,190,230,0.55)', 'rgba(255,200,90,0.6)', 'rgba(140,200,140,0.5)', 'rgba(170,170,170,0.5)'];
+    for (let i = 0; i < 220; i++) { const x = rnd() * w, y = rnd() * h, r = 1.5 + rnd() * 4; const c = cols[i % cols.length]; wrap(w, h, x, y, (a, b) => { g.fillStyle = c; g.beginPath(); g.moveTo(a, b - r); g.lineTo(a + r, b + r * 0.6); g.lineTo(a - r * 0.8, b + r); g.fill(); }); }
+  });
   AC.T = T;
 
   // 차양막 줄무늬 (두 색)
@@ -240,7 +298,8 @@
     const k = kind + ':' + color + ':' + (extra || '');
     if (mcache.has(k)) return mcache.get(k);
     const map = T[kind] ? T[kind]() : null;
-    const m = soften(new THREE.MeshLambertMaterial({ map, color }), 0.3);
+    const glossy = kind === 'marble' || kind === 'tile';
+    const m = soften(glossy ? new THREE.MeshPhongMaterial({ map, color, shininess: kind === 'marble' ? 70 : 90, specular: 0x555555 }) : new THREE.MeshLambertMaterial({ map, color }), 0.3);
     mcache.set(k, m); return m;
   }
   AC.tm = tm;
@@ -280,7 +339,7 @@
     const ridge = mesh(cyl(0.2, 0.2, len + 0.1, 12), H.mat(o.ridge || shade(color, 0.78)), 0, rise + 0.22, 0); ridge.rotation.z = Math.PI / 2; g.add(ridge);
     if (o.wallKind !== false) {
       const tri = geo(`tri${d},${rise}`, () => { const sh = new THREE.Shape(); sh.moveTo(-d / 2, 0); sh.lineTo(0, rise); sh.lineTo(d / 2, 0); sh.lineTo(-d / 2, 0); const e = new THREE.ExtrudeGeometry(sh, { depth: 0.2, bevelEnabled: false }); e.rotateY(Math.PI / 2); e.computeVertexNormals(); return wuv(e, 1); });
-      for (const s of [-1, 1]) g.add(mesh(tri, tm(o.wallKind || 'siding', o.wallColor || 0xffffff), s > 0 ? w / 2 - 0.2 : -w / 2, 0, 0));
+      for (const s of [-1, 1]) g.add(mesh(tri, tm(o.wallKind || 'fishscale', o.wallColor || 0xffffff), s > 0 ? w / 2 - 0.2 : -w / 2, 0, 0));
       // 박공 동그란 창
       if (o.gableWindow !== false) for (const s of [-1, 1]) { const r = Math.min(0.45, rise * 0.22); const c = mesh(geo(`gw${r}`, () => new THREE.CircleGeometry(r, 20)), winMat('#ffe0a0'), s * (w / 2 + 0.01), rise * 0.4, 0); c.rotation.y = s * Math.PI / 2; g.add(c); const rr = mesh(geo(`gwr${r}`, () => new THREE.TorusGeometry(r, 0.06, 8, 20)), H.mat(0xffffff), s * (w / 2 + 0.02), rise * 0.4, 0); rr.rotation.y = Math.PI / 2; g.add(rr); }
     }
@@ -365,7 +424,9 @@
     return g;
   };
   // 기단 (돌)
-  K.base = function (w, d, h = 0.5, color = 0xd8d0c0) { return tbox(w + 0.4, h, d + 0.4, 'stone', color, 0, -0.02, 0, 0.08, 1.2); };
+  K.base = function (w, d, h = 0.5, color = 0xd8d0c0, kind = 'stone') { return tbox(w + 0.4, h, d + 0.4, kind, color, 0, -0.02, 0, 0.08, kind === 'marble' ? 2 : 1.2); };
+  // 대리석 기둥 (홈 파인 기둥 + 받침/머리)
+  K.column = function (h, color = 0xfbf8f2) { const g = new THREE.Group(); g.add(mesh(geo('colSh' + h, () => AC.scaleUV(new THREE.CylinderGeometry(0.28, 0.32, h, 16), 2, h / 1.5)), tm('marble', color), 0, h / 2, 0)); g.add(mesh(box(0.8, 0.22, 0.8, 0.05), tm('marble', color), 0, 0.11, 0)); g.add(mesh(box(0.8, 0.22, 0.8, 0.05), tm('marble', color), 0, h - 0.11, 0)); return g; };
 
   function shade(c, k) { const r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255; return (Math.round(r * k) << 16) | (Math.round(g * k) << 8) | Math.round(b * k); }
   AC.shade = shade;
