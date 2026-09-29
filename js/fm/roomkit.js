@@ -646,11 +646,11 @@
     let seed = (w * 131 + d * 17 + styleId.length * 7 + (seedIn | 0)) | 0; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
     const NEUTRAL = ['k_candle_cluster', 'k_crate_stack', 'k_side_table_plant', 'k_floor_vase', 'k_round_stool', 'k_books_floor', 'k_plant_trio'];
     const pool = [...S.fill, ...S.fill, ...NEUTRAL];
-    const nFloor = Math.round(w * d * 0.2) + 3, nWall = Math.round((w + 2 * d) / 1.5);
+    const dens = S.density || 1, nFloor = Math.round((Math.round(w * d * 0.2) + 3) * dens), nWall = Math.round((w + 2 * d) / 1.5 * Math.min(1.6, dens));   // density: 촘촘한 스타일
     let fi = Math.floor(rnd() * pool.length);
-    for (let tries = 0, placed = 0; tries < 900 && placed < nFloor; tries++) {
+    for (let tries = 0, placed = 0; tries < 1400 && placed < nFloor; tries++) {
       const type = pool[fi % pool.length], Fd = F[type]; fi++; if (!Fd) continue;
-      if (furn.filter(o => o.type === type).length >= 2) continue;   // 같은 소품은 최대 2개
+      if (furn.filter(o => o.type === type).length >= (S.maxSame || 2)) continue;   // 같은 소품은 최대 2개 (스타일별 조정)
       // 벽 · 모서리 가까이 (80%) 또는 가구 곁 빈 바닥
       let x, z, r = 0;
       const m = Math.max(Fd.w, Fd.d) / 2 + 0.05;
@@ -702,7 +702,7 @@
   const mixC = (a, b, t) => { const c = (v, sh) => (v >> sh) & 255; return [16, 8, 0].reduce((o, sh) => o | (Math.round(c(a, sh) + (c(b, sh) - c(a, sh)) * t) << sh), 0); };
   function moodFor(styleId, v = 'base') {
     const b = STYLES[styleId] && STYLES[styleId].mood; if (!b) return null;
-    const m = { main: b.main || 1, lamp: b.lamp || 1, hemi: b.hemi.slice(), amb: b.amb.slice(), dir: b.dir.slice(), bg: b.bg };
+    const m = { main: b.main || 1, lamp: b.lamp || 1, hemi: b.hemi.slice(), amb: b.amb.slice(), dir: b.dir.slice(), bg: b.bg, shadow: b.shadow || null };
     const tint = (col, k) => { m.hemi[0] = mixC(m.hemi[0], col, k); m.amb[0] = mixC(m.amb[0], col, k); m.dir[0] = mixC(m.dir[0], col, k); m.bg = mixC(m.bg, col, k * 0.4); };
     if (v === 'sunset') { tint(0xff9a60, 0.42); m.dir[2] *= 1.15; m.lamp *= 1.1; }
     else if (v === 'night') { tint(0x3a50a0, 0.5); m.hemi[2] *= 0.55; m.amb[1] *= 0.6; m.dir[2] *= 0.25; m.main *= 0.45; m.lamp *= 1.35; m.bg = mixC(m.bg, 0x000000, 0.4); }

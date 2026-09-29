@@ -14,15 +14,19 @@
     {
       vec3 vd = normalize( vViewPosition );
       float rim = 1.0 - clamp( dot( vd, normal ), 0.0, 1.0 );
-      outgoingLight += diffuseColor.rgb * pow( rim, 2.2 ) * SOFT_RIM;
-      outgoingLight += vec3( 1.0 ) * pow( rim, 5.0 ) * 0.06;
+      outgoingLight += diffuseColor.rgb * pow( rim, 2.2 ) * SOFT_RIM * rimK;
+      outgoingLight += vec3( 1.0 ) * pow( rim, 5.0 ) * 0.06 * rimK;
     }
     #include <output_fragment>`;
+  // 림 라이트 세기 (전역) — 어두운 무드 방에서는 낮춰서 조명 · 그림자가 살아나게
+  const rimU = { value: 1 };
+  M.rimU = rimU;
   function soften(m, strength = 0.38) {
     m.onBeforeCompile = shader => {
+      shader.uniforms.rimK = rimU;
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <output_fragment>', RIM_CHUNK)
-        .replace('#include <common>', `#include <common>\n#define SOFT_RIM ${strength.toFixed(2)}`);
+        .replace('#include <common>', `#include <common>\nuniform float rimK;\n#define SOFT_RIM ${strength.toFixed(2)}`);
     };
     m.customProgramCacheKey = () => 'soft' + strength;
     return m;

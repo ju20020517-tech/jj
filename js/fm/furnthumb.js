@@ -45,7 +45,9 @@
     const dist = r / Math.sin((cam.fov / 2) * Math.PI / 180) * 0.92;
     cam.position.copy(c).add(dir.normalize().multiplyScalar(dist)); cam.near = dist / 50; cam.far = dist * 4; cam.updateProjectionMatrix(); cam.lookAt(c);
     let url = '';
+    const rim = window.ISLE && ISLE.M.rimU, rim0 = rim ? rim.value : 1; if (rim) rim.value = 1;
     try { R.render(scene, cam); url = cv.toDataURL('image/png'); } catch (e) { url = ''; }
+    if (rim) rim.value = rim0;
     scene.remove(g);
     cache.set(type, url);
     return url;

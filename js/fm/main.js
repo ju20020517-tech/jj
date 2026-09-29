@@ -98,6 +98,20 @@
     L.hemi.color.setHex(hm[0]); L.hemi.groundColor.setHex(hm[1]); L.hemi.intensity = hm[2];
     L.amb.color.setHex(am[0]); L.amb.intensity = am[1]; L.dir.color.setHex(dm[0]); L.dir.intensity = dm[1];
     if (md && md.bg) intScene.background = new THREE.Color(md.bg);
+    // 스타일 방 빛 그림자: 창 · 달빛 방향에서 비추는 주광이 가구 그림자를 드리움
+    // 어두운 무드일수록 림 라이트를 줄임 (밝은 방은 그대로)
+    G.intRim = md ? (md.rim !== undefined ? md.rim : Math.max(0.25, Math.min(1, (hm[2] + am[1]) / 0.55))) : 1;
+    const sh = md && md.shadow;
+    L.dir.castShadow = !!sh;
+    if (sh) {
+      L.dir.position.set(sh.pos[0], sh.pos[1], sh.pos[2]); L.dir.target.position.set(sh.at ? sh.at[0] : 0, 0, sh.at ? sh.at[1] : 0);
+      if (!L.dir.target.parent) intScene.add(L.dir.target);
+      L.dir.shadow.mapSize.set(1024, 1024); const c = L.dir.shadow.camera; c.left = -7; c.right = 7; c.top = 7; c.bottom = -7; c.near = 0.5; c.far = 40; c.updateProjectionMatrix();
+      L.dir.shadow.bias = -0.0012; L.dir.shadow.normalBias = 0.02; L.dir.shadow.radius = sh.soft || 4;
+      if (L.dir.shadow.map) { L.dir.shadow.map.dispose(); L.dir.shadow.map = null; }
+      // 벽 · 바닥은 그림자를 드리우지 않음 (창빛이 벽에 막히지 않게) — 가구만
+      G.interior.group.traverse(o => { if (o.isMesh && o.userData.furnIdx === undefined) o.castShadow = false; });
+    } else L.dir.position.set(3, 8, 6);
   }
   G.rebuildInterior = () => { if (G.interior) buildInterior(G.interior.iid); };
   function enterInterior(iid, silent) {
@@ -638,14 +652,14 @@
       FM.W.update(dt, st, camTarget, camera.position);
       updateBeacons(dt, st);
       FM.Chars.sync(ents, 'island', islandScene, dt, { cullFrom: G.view === 'observe' ? { x: 0, z: -10 } : camTarget, cullR: G.view === 'observe' ? 60 : Math.max(70, camDist * 3) });
-      renderer.render(islandScene, camera);
+      ISLE.M.rimU.value = 1; renderer.render(islandScene, camera);
     } else {
       const iid = G.view === 'observe' ? G.obs : p.loc;
       if (G.interior && G.interior.iid !== iid) buildInterior(iid);
       if (!G.interior) buildInterior(iid);
       FM.Int3D.update(G.interior, dt, performance.now() / 1000);
       FM.Chars.sync(ents, iid, G.interior.group, dt, { spaceFloat: G.interior.set === 'space' });
-      renderer.render(intScene, camera);
+      ISLE.M.rimU.value = G.intRim || 1; renderer.render(intScene, camera);
     }
     // BGM
     if ((bgmT -= dt) < 0) { bgmT = 1; FM.UI.pickBgm(); }
@@ -668,7 +682,7 @@
       FM.W.update(dt, st, C.center, C.cam.position);
       FM.Chars.sync(ents, 'island', islandScene, dt, { cullFrom: C.center, cullR: 70 });
       if (C.tick) C.tick(dt);
-      renderer.render(islandScene, C.cam);
+      ISLE.M.rimU.value = 1; renderer.render(islandScene, C.cam);
     } else {
       if (!C.int) {
         if (G.interior) { intScene.remove(G.interior.group); G.interior = null; }
@@ -678,7 +692,7 @@
       FM.Int3D.update(C.int, dt, performance.now() / 1000);
       FM.Chars.sync(ents, C.loc, C.int.group, dt, { spaceFloat: C.int.set === 'space' });
       if (C.tick) C.tick(dt);
-      renderer.render(intScene, C.cam);
+      ISLE.M.rimU.value = G.intRim || 1; renderer.render(intScene, C.cam);
     }
   }
 
