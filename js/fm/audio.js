@@ -146,4 +146,39 @@
     }
   };
   FM.bus.on('sfx', e => Au.sfx(e.key));
+
+  // ---------------------------------------------------------
+  // 방 앰비언스 (특이 취향 Layer 4) — 작게 반복되는 배경 효과음
+  // ---------------------------------------------------------
+  let ambKind = null, ambTimer = null, ambGain = null, drone = null, nextA = 0;
+  function stopDrone() { if (drone) { for (const o of drone) try { o.stop(); } catch (e) {} drone = null; } }
+  function ambTick() {
+    if (!ctx || !Au.on || !ambKind) return;
+    const t = ctx.currentTime;
+    if (t < nextA) return;
+    const R = Math.random;
+    switch (ambKind) {
+      case 'crickets': for (let i = 0; i < 3; i++) tone(4300 + R() * 500, t + i * 0.06, 0.03, 'square', 0.012, ambGain, 0.005, 0.02); nextA = t + 0.35 + R() * 0.9; break;          // 풀벌레
+      case 'sizzle': noise(t, 0.08 + R() * 0.1, 0.05, 5000, 0.7, ambGain, 'highpass'); nextA = t + 0.1 + R() * 0.4; break;                                                          // 지글지글
+      case 'pages': noise(t, 0.28, 0.08, 2600, 0.8, ambGain); nextA = t + 3 + R() * 4; break;                                                                                         // 종이 넘기는 소리
+      case 'surf': noise(t, 3.2, 0.09, 500, 0.6, ambGain, 'lowpass'); nextA = t + 3.5 + R() * 2; break;                                                                            // 파도
+      case 'chime': tone(1600 + R() * 1400, t, 0.4, 'sine', 0.035, ambGain, 0.005, 1.2); nextA = t + 1.4 + R() * 2; break;                                                           // 반짝
+      case 'twinkle': tone(N(84), t, 0.12, 'sine', 0.04, ambGain); tone(N(88), t + 0.12, 0.2, 'sine', 0.04, ambGain); nextA = t + 3 + R() * 3; break;                                  // 하트 핑
+      case 'fresh': for (let i = 0; i < 4; i++) tone(N(84 + i * 3), t + i * 0.07, 0.12, 'sine', 0.03, ambGain); nextA = t + 4 + R() * 3; break;                                          // 상쾌
+      case 'drone': tone(2400 + R() * 1600, t, 0.6, 'sine', 0.015, ambGain, 0.2, 1.5); nextA = t + 1.2 + R() * 2; break;                                                             // 은하수 반짝임 (+ 저음 패드)
+      case 'beat': tone(58, t, 0.18, 'sine', 0.12, ambGain, 0.002, 0.15); noise(t + 0.3, 0.04, 0.03, 8000, 1, ambGain, 'highpass'); nextA = t + 0.6; break;                           // 비트
+      default: nextA = t + 1;
+    }
+  }
+  Au.ambience = function (kind) {
+    if (kind === ambKind) return;
+    ambKind = kind || null;
+    if (!ctx) return;
+    if (!ambGain) { ambGain = ctx.createGain(); ambGain.gain.value = 0.8; ambGain.connect(master); }
+    stopDrone();
+    if (ambKind === 'drone') { drone = [110, 164.8].map(f => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f; g.gain.value = 0.018; o.connect(g); g.connect(ambGain); o.start(); return o; }); }
+    if (bgmGain) bgmGain.gain.value = ambKind === 'hum' ? 0.46 : 0.35;   // 음악 취향: 룸 BGM 음질(볼륨·존재감) 향상
+    if (!ambTimer) ambTimer = setInterval(ambTick, 120);
+    nextA = 0;
+  };
 })();

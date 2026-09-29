@@ -16,7 +16,29 @@
   A.look = (c, t) => { c.head.rotation.y = S(t * 0.8) * 0.5; };
   A.lookUp = (c, t) => { c.head.rotation.x = -0.45; arms(c, 0, -0.2, 0, 0.2); };
   A.shade = (c, t) => { c.head.rotation.x = -0.1; arms(c, 0, 0, -2.4, 0.6); };
-  A.talk = (c, t) => { c.body.position.y += Math.max(0, S(t * 9)) * 0.05; c.head.rotation.x = S(t * 12) * 0.08; arms(c, 0, -0.4 - S(t * 6) * 0.3, 0, 0.4 + S(t * 7) * 0.3); };
+  // 수다: 2.2초마다 손짓이 바뀜 (설명하는 손 · 어깨 으쓱 · 가슴에 손 얹고 끄덕)
+  A.talk = (c, t) => {
+    const ph = Math.floor(t / 2.2) % 4, k = S(Math.min(1, (t % 2.2) / 0.3) * PI / 2);
+    c.body.position.y += Math.max(0, S(t * 8)) * 0.03; c.head.rotation.x = S(t * 10) * 0.06;
+    if (ph === 0) { arms(c, 0, -0.15, (-0.9 + S(t * 5) * 0.35) * k, 0.45 * k); c.head.rotation.z = 0.08; }
+    else if (ph === 1) { arms(c, -0.35 * k, (-0.95 - S(t * 3) * 0.12) * k, -0.35 * k, (0.95 + S(t * 3) * 0.12) * k); c.head.rotation.z = 0.16 * k; c.body.position.y += 0.03 * k; }
+    else if (ph === 2) { arms(c, 0, -0.15, -1.25 * k, -0.45 * k); c.head.rotation.x = S(t * 6) * 0.14; }
+    else { arms(c, (-0.6 + S(t * 6) * 0.4) * k, -0.3 * k, 0, 0.15); c.body.rotation.y = S(t * 2) * 0.12; }
+  };
+  // 감정 몸짓 (이모티콘이 뜰 때 잠깐)
+  const EMO_G = {
+    joy: (c, t) => { c.body.position.y += Math.abs(S(t * 9)) * 0.14; arms(c, 0, -2.3, 0, 2.3); },
+    love: (c, t) => { arms(c, -2.2, 0.9, -2.2, -0.9); c.body.rotation.z = S(t * 4) * 0.1; c.head.rotation.z = S(t * 4 + 0.5) * 0.14; },
+    sad: (c, t) => { arms(c, 0, 0, -2.0 + S(t * 12) * 0.2, -0.3); c.head.rotation.x = 0.28; },
+    angry: (c, t) => { const s = Math.abs(S(t * 10)); c.legL.rotation.x = -s * 0.5; c.legR.rotation.x = -Math.abs(S(t * 10 + 1.5)) * 0.5; arms(c, 0.1, 0.3, 0.1, -0.3); c.body.position.x = S(t * 40) * 0.02; },
+    think: (c, t) => { arms(c, -0.5, 0.2, -1.9, -0.45); c.head.rotation.z = 0.22; c.head.rotation.y = S(t) * 0.2; },
+    surprise: (c, t) => { arms(c, 0, -2.5, 0, 2.5); c.body.position.y += Math.max(0, S(Math.min(1, t * 3) * PI)) * 0.2; c.head.rotation.x = -0.15; },
+    wave: (c, t) => { c.armR.rotation.x = 0; c.armR.rotation.z = 2.5 + S(t * 12) * 0.35; c.head.rotation.z = 0.12; },
+    dance: (c, t) => { c.body.rotation.z = S(t * 6) * 0.12; arms(c, 0, -1.2 - S(t * 6) * 0.5, 0, 1.2 - S(t * 6) * 0.5); c.body.position.y += Math.abs(S(t * 6)) * 0.06; },
+    sleepy: (c, t) => { c.head.rotation.x = 0.35 + S(t * 1.5) * 0.08; arms(c, 0, -0.05, 0, 0.05); },
+  };
+  const EMO_MAP = { '😊': 'joy', '😆': 'joy', '😄': 'joy', '🎉': 'joy', '👏': 'joy', '🙌': 'joy', '❤️': 'love', '💖': 'love', '💕': 'love', '💗': 'love', '😍': 'love', '🥰': 'love', '😢': 'sad', '😭': 'sad', '💧': 'sad', '😣': 'sad', '💢': 'angry', '😡': 'angry', '😠': 'angry', '❓': 'think', '🤔': 'think', '❗': 'surprise', '😲': 'surprise', '😳': 'surprise', '👋': 'wave', '🎵': 'dance', '🎶': 'dance', '🕺': 'dance', '💤': 'sleepy', '😴': 'sleepy' };
+  A._emoGesture = (c, emoji, t) => { const g = EMO_G[EMO_MAP[emoji]]; if (g && t < 2) { g(c, t); return true; } return false; };
   A.chatter = A.talk;
   A.swingSit = (c, t) => { sitBase(c); const k = S(t * 2.6); c.body.position.z = k * 0.45; c.body.position.y = -0.2 + Math.abs(k) * 0.12; c.body.rotation.x = -k * 0.3; arms(c, -2.6, 0.1, -2.6, -0.1); };
   A.seesaw = (c, t) => { sitBase(c); c.body.position.y = -0.2 + (S(t * 2.2) + 1) * 0.25; arms(c, -1.3, 0.2, -1.3, -0.2); };

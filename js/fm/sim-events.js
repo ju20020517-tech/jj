@@ -1434,7 +1434,67 @@
     return true;
   };
 
+  // =========================================================
+  // 동적 방 분위기 — 취향 적합도 & 리액션
+  //  베이스(메인 성격: 벽지 색·조명) + 오버레이(특이 취향: 무늬·파티클·앰비언스)
+  // =========================================================
+  const rgb = c => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
+  const colDist = (a, b) => { const A = rgb(a), B = rgb(b); return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]); };
+  Ev.atmoScore = function (v, room) {
+    if (!room || room.theme) return null;
+    const A1 = D.ATMO_L1[v.keys.L1], A4 = D.ATMO_L4[v.keys.L4];
+    if (!A1 || !A4) return null;
+    const wall = room.wall !== undefined ? room.wall : 0xf4efe6;
+    const color = Math.max(0, 1 - Math.min(...A1.palette.map(p => colDist(wall, p))) / 160);
+    const pattern = room.wallStyle === 'p_' + A4.pattern ? 1 : (room.wallStyle || '').startsWith('p_') ? 0.25 : 0.1;
+    const light = room.light === A1.light ? 1 : ['warm', 'sunset', 'mood', 'rosy', 'study', 'pastel'].includes(room.light) ? 0.45 : 0.15;
+    let score = Math.round(100 * (0.4 * color + 0.35 * pattern + 0.25 * light));
+    // 최악의 조합: 조용한/심약한 주민 + 화려한 파티 조명·파티 색
+    const loud = ['party', 'redneon', 'neon', 'holo', 'bright'].includes(room.light) || colDist(wall, D.ATMO_L1.EXTROVERT.palette[1]) < 60 || colDist(wall, D.ATMO_L1.EXTROVERT.palette[0]) < 60;
+    if ((v.keys.L1 === 'INTROVERT' || v.keys.L1 === 'ANXIOUS') && loud) score = 0;
+    return Math.max(0, Math.min(100, score));
+  };
+  Ev.atmoLabel = function (v, room) {
+    const A1 = D.ATMO_L1[v.keys.L1], A4 = D.ATMO_L4[v.keys.L4];
+    return A1 && A4 ? `${A1.name} 베이스(${A1.pname}) + ${A4.name} 무늬(${A4.pname})` : '';
+  };
+  // 방 분위기 리액션: 대만족(90+) 공중부양 댄스 / 최악(10 이하) 눈 가리고 구석에 웅크림
+  Ev.atmoReact = function (v, room, byPlayer) {
+    const sc = Ev.atmoScore(v, room); if (sc === null) return null;
+    room.atmoScore = sc; room.satisfaction = sc;
+    if (v.sceneId || v.talkingToPlayer || v.following || v.child || (v.act && v.act.id === 'sleep')) return sc;
+    const { w, d } = Sim.interiorSize(v.home);
+    if (sc >= 90) {
+      Sim.scene({ title: '방 분위기 대만족', actors: { A: v }, steps: [{ emote: 'A', e: '💖' }, { say: 'A', text: L.sty(v, '이 방… 완전 내 취향이야!'), t: 2.5 }, { pose: 'A', p: 'levitateDance', t: 4 }, { fx: 'hearts', at: 'A' }] });
+      v.stress = clamp(v.stress - 30, 0, 100); v.mood = clamp(v.mood + 20, 0, 100);
+      if (byPlayer) Soc.addFriend(v.id, P, 15, 10, '방 분위기 대만족');
+      Sim.log('room', `💖 ${v.name}이(가) 방 분위기에 대만족해서 공중부양 댄스를 췄어요! (적합도 ${sc}%)`, [v.id], byPlayer ? 2 : 0);
+    } else if (sc <= 10) {
+      Sim.scene({ title: '방 분위기 최악', actors: { A: v }, steps: [{ pose: 'A', p: 'coverEyes', t: 2.5 }, { emote: 'A', e: '😣' }, { say: 'A', text: L.sty(v, '너무 눈부셔… 여긴 내 방 같지 않아'), t: 2.5 }, { go: 'A', to: { loc: v.home, x: -w / 2 + 0.6, z: -d / 2 + 0.6 }, max: 6 }, { pose: 'A', p: 'sadSit', t: 5 }] });
+      v.depression = clamp((v.depression || 0) + 15, 0, 100); v.stress = clamp(v.stress + 10, 0, 100);
+      if (byPlayer) Soc.addFriend(v.id, P, -3, -2, '방 분위기 최악');
+      Sim.log('room', `😣 ${v.name}이(가) 방 분위기가 너무 맞지 않아 눈을 가리고 구석에 웅크렸어요… (적합도 ${sc}%)`, [v.id], byPlayer ? 2 : 0);
+    }
+    return sc;
+  };
+  // 집에 들어설 때 (방이 바뀐 뒤 처음 / 하루 한 번 가끔) 분위기에 반응
+  let atmoT = 0;
+  Ev.atmoTick = function (dtR) {
+    if ((atmoT -= dtR) > 0) return; atmoT = 2;
+    const st = S();
+    for (const v of st.villagers) {
+      if (v.loc !== v.home || v.child) continue;
+      const room = st.rooms[v.home]; if (!room || room.theme) continue;
+      const rev = room.atmoRev || 1;
+      if (v.atmoSeenRev === undefined) { v.atmoSeenRev = rev; v.atmoDay = day(); room.atmoScore = Ev.atmoScore(v, room); continue; }   // 처음엔 조용히 기록만
+      const fresh = v.atmoSeenRev !== rev;
+      if (!fresh && (v.atmoDay === day() || Math.random() > 0.15)) { v.atmoDay = day(); continue; }
+      v.atmoSeenRev = rev; v.atmoDay = day();
+      Ev.atmoReact(v, room, fresh && room.atmoByPlayer);
+    }
+  };
+
   // 지연 실행 처리
   const baseTick = Ev.tick;
-  Ev.tick = function (dtR, dMin) { while (later.length) { try { later.shift()(); } catch (e) { console.error(e); } } baseTick(dtR, dMin); Ev.playerHomeTick(dtR); };
+  Ev.tick = function (dtR, dMin) { while (later.length) { try { later.shift()(); } catch (e) { console.error(e); } } baseTick(dtR, dMin); Ev.playerHomeTick(dtR); Ev.atmoTick(dtR); };
 })();

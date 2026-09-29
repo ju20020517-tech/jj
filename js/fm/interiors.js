@@ -175,10 +175,12 @@
     if (C.tint) wall = mixColor(wall, C.tint, 0.35);
     const trash = [];
     for (let i = 0; i < (B.trash || 0); i++) trash.push({ kind: ['snack', 'dust', 'clothes'][i % 3], x: +((rnd() - 0.5) * (w - 2)).toFixed(2), z: +((rnd() - 0.2) * (d - 2)).toFixed(2) });
-    return {
+    // 동적 방 분위기: 메인 성격 = 베이스 벽지 색 & 조명 / 특이 취향 = 벽지 무늬 & 파티클 & 앰비언스
+    const AT1 = FM.D.ATMO_L1[keys.L1], AT4 = FM.D.ATMO_L4[keys.L4];
+    return Object.assign({
       theme: null, wall, wallStyle: A.wallStyle, floor: A.floor, floorColor: mixColor(A.floorColor, 0xffffff, rnd() * 0.2), light: B.light || (A.light === 'warm' && C.light) || A.light, lightOn: true,
       bgm: C.bgm || 'none', furn, trash, clean: 100 - trash.length * 8, pattern: null, patternFace: null, set: null, style: [keys.L1, keys.L2, keys.L3, keys.L4].join('+'),
-    };
+    }, AT1 ? { wall: AT1.palette[0], wall2: AT1.palette[1], light: AT1.light } : {}, AT4 ? { wallStyle: 'p_' + AT4.pattern, particles: AT4.particle, ambience: AT4.sound } : {}, { atmo: { l1: keys.L1, l4: keys.L4 }, atmoRev: 1 });
   }
   // 테마 방 (인테리어 티켓)
   function themeRoom(themeId, w = 8, d = 6) {

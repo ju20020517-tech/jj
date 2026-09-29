@@ -345,7 +345,49 @@
     gold:   { name: '골드(Gold)', color: 0xffcf3a },
     jelly:  { name: '말랑 젤리(Jelly)', color: 0xff7ac0 },
   };
-  D.LIGHT_COLORS = { warm: { name: '따뜻한 조명', color: 0xfff1d6 }, sunset: { name: '노을빛', color: 0xffa060 }, neon: { name: '붉은 네온', color: 0xff3a6a }, dark: { name: '어두움', color: 0x30304a }, cool: { name: '형광등', color: 0xe8f4ff } };
+  D.LIGHT_COLORS = {
+    warm: { name: '따뜻한 조명', color: 0xfff1d6 }, sunset: { name: '노을빛', color: 0xffa060 }, neon: { name: '붉은 네온', color: 0xff3a6a }, dark: { name: '어두움', color: 0x30304a }, cool: { name: '형광등', color: 0xe8f4ff },
+    // 동적 방 분위기 — 메인 성격(Layer 1)별 조명 톤
+    rosy: { name: '노을빛 스팟 조명', color: 0xffb8a0, k: 1.0 },
+    bright: { name: '강렬한 하이라이트', color: 0xffffff, k: 1.35 },
+    study: { name: '서재형 눈부심 방지 조명', color: 0xfff0d2, k: 0.85 },
+    mood: { name: '주황빛 무드등', color: 0xffb468, k: 0.8 },
+    party: { name: '미러볼 & 네온 반사', color: 0xff5fd0, k: 1.1, fx: 'party' },
+    dim: { name: '낮은 암막형 감성 조명', color: 0xffe0c0, k: 0.5 },
+    chandelier: { name: '은은한 샹들리에', color: 0xffe2a0, k: 1.0 },
+    redneon: { name: '붉은 네온 앰비언스', color: 0xff4a4a, k: 0.9, fx: 'flicker' },
+    holo: { name: '4차원 홀로그램', color: 0xb49cff, k: 1.0, fx: 'holo' },
+    pastel: { name: '파스텔 수면등', color: 0xd8e8ff, k: 0.7 },
+  };
+  // =========================================================
+  // 동적 방 분위기 생성 시스템
+  //  최종 방 분위기 = 메인 성격(베이스 색상/조명) + 특이 취향(벽지 무늬/파티클/앰비언스)
+  // =========================================================
+  D.ATMO_L1 = {
+    ROMANTIC: { name: '낭만파', palette: [0xf7b8c8, 0xffd3b0], pname: '로즈 핑크 & 웜 피치', light: 'rosy', tone: '파스텔 감성의 따뜻하고 포근한 노을빛 스팟 조명' },
+    ATHLETIC: { name: '운동파', palette: [0xffa050, 0x4fb8ff], pname: '비비드 오렌지 & 에너제틱 네온 블루', light: 'bright', tone: '시야가 명확하고 활력 넘치는 강렬한 하이라이트 조명' },
+    SCHOLARLY: { name: '탐구파', palette: [0x3f6e56, 0x2f3f6a], pname: '딥 그리너리 & 클래식 네이비', light: 'study', tone: '눈이 편안한 서재형 차분한 눈부심 방지 조명' },
+    LAZY: { name: '미식/휴식파', palette: [0xf3e3c8, 0xffe79a], pname: '크림 베이지 & 버터 옐로우', light: 'mood', tone: '나른하고 오순도순한 은은한 주황빛 무드등' },
+    EXTROVERT: { name: '사교파', palette: [0xffe14a, 0xff4fb0], pname: '팝 옐로우 & 파티 마젠타', light: 'party', tone: '시끌벅적하고 화려한 미러볼 및 네온사인 반사 조명' },
+    INTROVERT: { name: '내향파', palette: [0x5a5a62, 0xb8b4ae], pname: '스모키 묵빛 & 아늑한 무채색', light: 'dim', tone: '조용하고 안락한 낮은 암막형 감성 조명' },
+    SNOB: { name: '명예/신사파', palette: [0x7a2238, 0xd4a73a], pname: '클래식 버건디 & 딥 로열 골드', light: 'chandelier', tone: '고급스럽고 품격 있는 은은한 샹들리에형 조명' },
+    CRANKY: { name: '반항/츤데레파', palette: [0x4a4a52, 0xa8443a], pname: '빈티지 다크 그레이 & 브릭 레드', light: 'redneon', tone: '날카로우면서도 분위기 있는 붉은 네온 앰비언스' },
+    ARTISTIC: { name: '예술/엉뚱파', palette: [0x8a5ad8, 0x9ff0e0], pname: '사이키델릭 바이올렛 & 오로라 파스텔', light: 'holo', tone: '몽환적이고 기상천외한 4차원 홀로그램 조명' },
+    ANXIOUS: { name: '걱정/심약파', palette: [0xbfeedd, 0xa8c8f0], pname: '파스텔 민트 & 세레니티 블루', light: 'pastel', tone: '시각적 자극을 줄여주는 정서 안정용 파스텔 수면등' },
+  };
+  D.ATMO_L4 = {
+    GARDEN: { name: '원예', pattern: 'vine', pname: '덩굴 & 플로럴 그리너리', particle: 'leaves', sound: 'crickets', sname: '싱그러운 풀벌레 소리' },
+    FOOD: { name: '미식', pattern: 'dessert', pname: '디저트 & 음료 격자 무늬', particle: 'steam', sound: 'sizzle', sname: '달콤한 김 & 고소한 냄새' },
+    STUDY: { name: '독서/공부', pattern: 'books', pname: '양장본 책장 & 클래식 문서', particle: null, sound: 'pages', sname: '종이 넘기는 소리' },
+    FISHING: { name: '낚시/채집', pattern: 'waves', pname: '잔물결 & 수중 무늬', particle: 'caustic', sound: 'surf', sname: '잔잔한 파도 소리' },
+    FASHION: { name: '패션', pattern: 'chevron', pname: '모던 스트라이프 & 셰브론', particle: 'sparkle', sound: 'chime', sname: '반짝이는 소리' },
+    MUSIC: { name: '음악', pattern: 'vinyl', pname: '음표 & 바이닐 LP & 음파', particle: 'notes', sound: 'hum', sname: '룸 BGM 음질 향상 & 미러볼' },
+    GOSSIP: { name: '연애/수다', pattern: 'hearts', pname: '레터링 & 하트 실루엣', particle: 'hearts', sound: 'twinkle', sname: '하트 핑 소리' },
+    CLEAN: { name: '청결', pattern: 'grid', pname: '깨끗한 격자 타일 & 빗살', particle: 'shine', sound: 'fresh', sname: '상쾌한 청결 효과음' },
+    OCCULT: { name: '주술/운세', pattern: 'sacred', pname: '신성기하학 & 별자리', particle: 'galaxy', sound: 'drone', sname: '몽환적인 은하수 소리' },
+    FITNESS: { name: '운동기구', pattern: 'track', pname: '굵은 사선 스포티 라인 & 트랙', particle: null, sound: 'beat', sname: '파이팅 넘치는 비트' },
+  };
+  D.ATMO_PATTERNS = Object.fromEntries(Object.values(D.ATMO_L4).map(a => ['p_' + a.pattern, a.pname]));
   D.ROOM_BGM = { lofi: 'Lo-Fi', chip: '8-bit', opera: '웅장한 오페라', healing: '힐링', none: '없음' };
   D.FLOOR_SOUND = { wood: '삐걱', log: '삐걱', marble: '또각', tile: '톡톡', carpet: '사박', metal: '텅텅', candy: '말랑', water: '찰박', sand: '사각', mat: '폭신' };
 

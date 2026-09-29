@@ -958,18 +958,27 @@
   function animate(c, dt, moveAmount) {
     c.idleT += dt;
     const m = Math.min(1, moveAmount);
-    if (m > 0.01) c.phase += dt * (7 + m * 7);
-    const sw = Math.sin(c.phase) * m;
-    const bounce = Math.abs(Math.sin(c.phase)) * m;
-    c.legL.rotation.x = sw * 0.8;
-    c.legR.rotation.x = -sw * 0.8;
-    c.armL.rotation.x = -sw * 0.8;
-    c.armR.rotation.x = sw * 0.8;
+    const run = moveAmount > 1.05;
+    // 걷기: 통통 튀는 종종걸음 / 달리기: 몸을 앞으로 숙이고 팔을 크게 흔듦
+    if (m > 0.01) c.phase += dt * (run ? 12 + m * 4 : 7.5 + m * 5);
+    const sn = Math.sin(c.phase), cs = Math.cos(c.phase);
+    const sw = sn * m;
+    const bounce = Math.abs(sn) * m;
+    const legAmp = run ? 1.05 : 0.72, armAmp = run ? 1.25 : 0.8;
+    c.legL.rotation.x = sw * legAmp;
+    c.legR.rotation.x = -sw * legAmp;
+    if (c.legL.userData.y0 === undefined) { c.legL.userData.y0 = c.legL.position.y; c.legR.userData.y0 = c.legR.position.y; }
+    c.legL.position.y = c.legL.userData.y0 + Math.max(0, -cs) * (run ? 0.07 : 0.045) * m;   // 앞으로 나가는 발을 살짝 들어 올림
+    c.legR.position.y = c.legR.userData.y0 + Math.max(0, cs) * (run ? 0.07 : 0.045) * m;
+    c.armL.rotation.x = -sw * armAmp;
+    c.armR.rotation.x = sw * armAmp;
     const breath = Math.sin(c.idleT * 2.4) * 0.015 * (1 - m);
-    const squash = (bounce - 0.5) * 0.08 * m;
-    c.body.position.y = bounce * 0.07;
+    const squash = (bounce - 0.5) * (run ? 0.1 : 0.08) * m;
+    c.body.position.y = bounce * (run ? 0.1 : 0.065);
     c.body.scale.set(1 - squash * 0.5 - breath * 0.5, 1 + squash + breath, 1 - squash * 0.5 - breath * 0.5);
-    c.body.rotation.z = Math.sin(c.phase) * 0.05 * m;
+    c.body.rotation.z = sn * 0.045 * m;
+    c.body.rotation.x = (run ? 0.2 : 0.06) * m;                 // 앞으로 기울기
+    c.body.rotation.y = sn * (run ? 0.12 : 0.08) * m;            // 골반 비틀기
 
     const rot = c.root.rotation.y;
     let dr = rot - c.lastRot;
@@ -979,8 +988,8 @@
     c.headYaw += (target - c.headYaw) * Math.min(1, dt * 10);
     c.head.rotation.y = c.headYaw;
     c.head.rotation.z = m < 0.05 ? Math.sin(c.idleT * 1.3) * 0.06 : Math.sin(c.phase) * 0.04;
-    c.head.rotation.x = 0;
-    c.armR.rotation.z = 0; c.armL.rotation.z = 0;
+    c.head.rotation.x = m > 0.05 ? -c.body.rotation.x * 0.6 + Math.abs(sn) * 0.03 : 0;   // 기울인 만큼 고개는 앞을 봄
+    c.armR.rotation.z = m > 0.05 ? 0.12 + (run ? 0.25 : 0) : 0; c.armL.rotation.z = m > 0.05 ? -0.12 - (run ? 0.25 : 0) : 0;
 
     if (c.actionT > 0) {
       c.actionT -= dt;
@@ -1006,6 +1015,26 @@
       const k = (c.hopT % 0.6) / 0.6;
       c.body.position.y += Math.sin(k * Math.PI) * 0.25;
       c.armL.rotation.z = -1.2; c.armR.rotation.z = 1.2;
+    }
+    // 가만히 서 있을 때의 소소한 몸짓 (두리번 · 머리 긁기 · 기지개 · 발 까딱 · 흔들흔들 · 끄덕)
+    if (m < 0.01) {
+      if (c.idleNext === undefined) c.idleNext = 2 + Math.random() * 5;
+      c.idleNext -= dt;
+      if (c.idleNext < 0 && !c.idleGest) { const ks = ['look', 'scratch', 'stretch', 'tap', 'sway', 'nod', 'look', 'hands']; c.idleGest = { k: ks[(Math.random() * ks.length) | 0], t: 0, dur: 1.6 + Math.random() * 1.2 }; c.idleNext = 4 + Math.random() * 7; }
+    } else c.idleGest = null;
+    if (c.idleGest) {
+      const G = c.idleGest; G.t += dt;
+      const e = Math.sin(Math.min(1, G.t / G.dur) * Math.PI), t = G.t;
+      switch (G.k) {
+        case 'look': c.head.rotation.y += Math.sin(t * 2.4) * 0.75 * e; break;
+        case 'scratch': c.armR.rotation.x = -2.5 * e; c.armR.rotation.z = (0.6 + Math.sin(t * 16) * 0.12) * e; c.head.rotation.z += 0.15 * e; break;
+        case 'stretch': c.armL.rotation.z = -2.8 * e; c.armR.rotation.z = 2.8 * e; c.body.scale.y *= 1 + 0.05 * e; c.head.rotation.x = -0.2 * e; break;
+        case 'tap': c.legR.rotation.x = -Math.abs(Math.sin(t * 9)) * 0.3 * e; c.head.rotation.z += Math.sin(t * 9) * 0.04 * e; break;
+        case 'sway': c.body.rotation.z = Math.sin(t * 4) * 0.08 * e; c.head.rotation.z += Math.sin(t * 4 + 0.5) * 0.1 * e; c.armL.rotation.z = -0.3 * e; c.armR.rotation.z = 0.3 * e; break;
+        case 'nod': c.head.rotation.x = Math.sin(t * 7) * 0.14 * e; break;
+        case 'hands': c.armL.rotation.x = -0.9 * e; c.armR.rotation.x = -0.9 * e; c.armL.rotation.z = 0.35 * e; c.armR.rotation.z = -0.35 * e; c.body.rotation.y = Math.sin(t * 2) * 0.1 * e; break;
+      }
+      if (G.t > G.dur) c.idleGest = null;
     }
     c.blinkT -= dt;
     if (c.blinkT < 0) {

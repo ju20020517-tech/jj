@@ -1319,6 +1319,18 @@
     if (msg) emit('toast', (ok ? '✅ ' : '❌ ') + msg);
   }
   Soc.finishQuest = finishQuest;
+  // 퀘스트 포기: 의뢰한 주민이 살짝 서운해함 (친밀도 -2, 신뢰도 -3)
+  Soc.abandonQuest = function (q) {
+    if (!q || q.state !== 'active') return;
+    q.abandoned = true;
+    finishQuest(q, false, `'${q.title}' 퀘스트를 포기했어요`);
+    q.state = 'abandoned';
+    const g = q.giver && q.giver !== P ? byId(q.giver) : null;
+    if (g && !g.child) { addFriend(g.id, P, -2, -3, '퀘스트 포기'); Sim.say(g, L.sty(g, '아… 괜찮아. 다음엔 꼭 도와줘')); Sim.emote(g, '😢'); }
+    if (g && g.balloon) g.balloon = null;
+    if (S().pinQuest === q.id) S().pinQuest = null;
+    emit('quest', q);
+  };
   Soc.activeQuests = () => S().quests.filter(q => q.state === 'active');
 
   // =========================================================

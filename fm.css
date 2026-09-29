@@ -1,11 +1,19 @@
 /* 친구모아 아일랜드 — UI 스타일 */
+.qcard .qbtns button.quit { margin-left: auto; background: #f4ece4; color: #8a6a50; }
+.qcard.abandoned { opacity: .5; }
+/* 방 분위기 패널 */
+.obs-sec.atmo small { display: block; margin: 3px 0; line-height: 1.4; }
+.obs-sec.atmo .sw { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: middle; margin-right: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.15); }
+.atmo-score { float: right; font-size: 12px; background: linear-gradient(90deg, #ffd6e4 var(--p), #f2ece4 var(--p)); border-radius: 10px; padding: 1px 8px; }
+.obs-sec.atmo label { font-size: 12px; }
+.obs-sec.atmo input[type=color] { width: 28px; height: 22px; padding: 0; border: 0; vertical-align: middle; }
 :root {
   --ink: #3b2b20; --paper: #fffaf0; --paper2: #fff3dc; --line: #eadcc2; --accent: #ff8f6a; --accent2: #4fc1e9;
   --pink: #ff8fc8; --red: #ff4d4d; --purple: #9a6bff; --muted: #8a7a68; --shadow: 0 6px 18px rgba(60, 40, 20, 0.18);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #bfe8ff; font-family: 'Jua', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; color: var(--ink); -webkit-tap-highlight-color: transparent; }
-#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; filter: saturate(1.22) contrast(1.05) brightness(1.02); }
+#game { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; touch-action: none; filter: saturate(1.06) brightness(1.02); }
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; }
 [hidden] { display: none !important; }

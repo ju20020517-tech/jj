@@ -9,6 +9,7 @@
   const FM = window.FM, ISLE = window.ISLE;
   const H = ISLE.M.h;
   const { geo, sphere, box, cyl, mesh, soften, lathe } = H;
+  const mat = H.mat;
   const AC = (FM.AC = {});
 
   // 결정적 난수 (텍스처가 매번 같게)
@@ -43,7 +44,7 @@
     g.lineCap = 'round';
     for (let i = 0; i < 150; i++) {
       const x = rnd() * w, y = rnd() * h, s = 3 + rnd() * 4, dark = rnd() < 0.6;
-      wrap(w, h, x, y, (a, b) => { g.strokeStyle = dark ? 'rgba(90,130,70,0.28)' : 'rgba(255,255,255,0.6)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(a - s, b - s); g.lineTo(a, b + s * 0.4); g.lineTo(a + s, b - s); g.stroke(); });
+      wrap(w, h, x, y, (a, b) => { g.strokeStyle = dark ? 'rgba(90,130,70,0.16)' : 'rgba(255,255,255,0.35)'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(a - s, b - s); g.lineTo(a, b + s * 0.4); g.lineTo(a + s, b - s); g.stroke(); });
     }
     for (let i = 0; i < 26; i++) { const x = rnd() * w, y = rnd() * h; wrap(w, h, x, y, (a, b) => { for (let k = 0; k < 3; k++) { const an = k * 2.1; blob(g, a + Math.cos(an) * 2.6, b + Math.sin(an) * 2.6, 2.4, 'rgba(120,170,90,0.45)'); } }); }
   });
@@ -427,6 +428,83 @@
   K.base = function (w, d, h = 0.5, color = 0xd8d0c0, kind = 'stone') { return tbox(w + 0.4, h, d + 0.4, kind, color, 0, -0.02, 0, 0.08, kind === 'marble' ? 2 : 1.2); };
   // 대리석 기둥 (홈 파인 기둥 + 받침/머리)
   K.column = function (h, color = 0xfbf8f2) { const g = new THREE.Group(); g.add(mesh(geo('colSh' + h, () => AC.scaleUV(new THREE.CylinderGeometry(0.28, 0.32, h, 16), 2, h / 1.5)), tm('marble', color), 0, h / 2, 0)); g.add(mesh(box(0.8, 0.22, 0.8, 0.05), tm('marble', color), 0, 0.11, 0)); g.add(mesh(box(0.8, 0.22, 0.8, 0.05), tm('marble', color), 0, h - 0.11, 0)); return g; };
+
+  // ---------- 입체 장식 부품 ----------
+  // 모임지붕 (사각뿔) — 탑, 퇴창, 정자 지붕
+  K.hip = function (w, d, rise, color, kind = 'shingle') {
+    const g = geo(`hip${w},${d},${rise}`, () => { const c = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1); c.rotateY(Math.PI / 4); c.scale(w * 1.02, rise, d * 1.02); c.translate(0, rise / 2, 0); c.computeVertexNormals(); return AC.scaleUV(c, (w + d) / 1.2, rise / 0.8); });
+    return mesh(g, tm(kind, color));
+  };
+  // 돌출 퇴창 (벽 +z 에서 튀어나온 창문 상자 + 작은 지붕)
+  K.bay = function (w, h, dep, kind, color, roofColor, o = {}) {
+    const g = new THREE.Group();
+    g.add(tbox(w, h, dep, kind, color, 0, 0, dep / 2, 0.08, 1));
+    const f = K.window(w - 0.5, h - 0.7, { shutters: false, box: o.box !== false, curtain: o.curtain, frame: o.frame }); f.position.set(0, h / 2, dep + 0.02); g.add(f);
+    for (const s of [-1, 1]) { const sw = K.window(dep - 0.4, h - 0.8, { box: false, curtain: o.curtain, frame: o.frame }); sw.position.set(s * (w / 2 + 0.02), h / 2, dep / 2); sw.rotation.y = s * Math.PI / 2; g.add(sw); }
+    const r = K.hip(w + 0.3, dep * 2 + 0.3, 0.8, roofColor); r.position.set(0, h, 0); g.add(r);
+    g.add(mesh(box(w + 0.1, 0.18, dep + 0.1, 0.05), mat(o.frame || 0xffffff), 0, 0.05, dep / 2));
+    return g;
+  };
+  // 발코니 (바닥판 + 난간 + 화분)
+  K.balcony = function (w, dep = 0.9, color = 0xffffff, o = {}) {
+    const g = new THREE.Group();
+    g.add(tbox(w, 0.16, dep, o.floorKind || 'plank', o.floorColor || 0xc99760, 0, 0, dep / 2, 0.04, 1));
+    const rm = mat(color);
+    g.add(mesh(box(w, 0.08, 0.08, 0.03), rm, 0, 0.95, dep));
+    for (const s of [-1, 1]) g.add(mesh(box(0.08, 0.08, dep, 0.03), rm, s * w / 2, 0.95, dep / 2));
+    const n = Math.max(3, Math.round(w / 0.28));
+    for (let i = 0; i <= n; i++) g.add(mesh(geo('bal', () => new THREE.CylinderGeometry(0.035, 0.05, 0.8, 8)), rm, -w / 2 + i * w / n, 0.52, dep));
+    for (const s of [-1, 1]) for (let i = 1; i < 3; i++) g.add(mesh(geo('bal', () => new THREE.CylinderGeometry(0.035, 0.05, 0.8, 8)), rm, s * w / 2, 0.52, dep * i / 3));
+    if (o.flowers !== false) for (let i = 0; i < Math.round(w / 0.9); i++) { const x = -w / 2 + 0.45 + i * 0.9; g.add(mesh(box(0.34, 0.2, 0.2, 0.05), mat(0xd9a066), x, 1.06, dep)); g.add(mesh(sphere(0.14, 10, 8), mat(0x5fae4a), x, 1.22, dep)); g.add(mesh(sphere(0.07, 8, 6), mat([0xff6f86, 0xffd84a, 0xffffff][i % 3]), x + 0.05, 1.3, dep + 0.06)); }
+    return g;
+  };
+  // 처마 코니스 (계단형 몰딩 + 치아 장식)
+  K.cornice = function (w, d, color = 0xffffff, dentil = true) {
+    const g = new THREE.Group();
+    g.add(mesh(box(w + 0.35, 0.18, d + 0.35, 0.05), mat(color), 0, 0, 0));
+    g.add(mesh(box(w + 0.6, 0.2, d + 0.6, 0.06), mat(color), 0, 0.2, 0));
+    if (dentil) for (let x = -w / 2; x <= w / 2; x += 0.45) { g.add(mesh(box(0.2, 0.16, 0.14, 0.02), mat(shade(color, 0.92)), x, -0.15, d / 2 + 0.2)); }
+    return g;
+  };
+  // 벽기둥 (필라스터) — 받침 + 몸통 + 머리
+  K.pilaster = function (h, color = 0xffffff, kind) {
+    const g = new THREE.Group();
+    g.add(kind ? tbox(0.34, h, 0.16, kind, color, 0, 0, 0, 0.04, 1.2) : mesh(box(0.34, h, 0.16, 0.04), mat(color), 0, h / 2, 0));
+    g.add(mesh(box(0.5, 0.18, 0.26, 0.04), mat(color), 0, 0.09, 0)); g.add(mesh(box(0.5, 0.2, 0.26, 0.04), mat(color), 0, h - 0.1, 0));
+    return g;
+  };
+  // 풍향계 (화살표 + 닭)
+  K.vane = function (color = 0x3a3a44) {
+    const g = new THREE.Group();
+    g.add(mesh(cyl(0.04, 0.04, 1.6, 6), mat(color), 0, 0.8, 0));
+    g.add(mesh(box(1.1, 0.06, 0.06, 0.02), mat(color), 0, 1.3, 0)); g.add(mesh(geo('vaneTip', () => new THREE.ConeGeometry(0.1, 0.25, 6)), mat(color), 0.62, 1.3, 0).rotateZ(-Math.PI / 2));
+    const hen = mesh(sphere(0.18, 10, 8), mat(color), 0, 1.55, 0); hen.scale.set(1.4, 1, 0.3); g.add(hen); g.add(mesh(sphere(0.1, 8, 6), mat(color), 0.2, 1.72, 0));
+    g.add(mesh(sphere(0.08, 8, 6), mat(0xffd23a), 0, 1.62, 0));
+    return g;
+  };
+  // 벽을 타고 오르는 덩굴 (+ 작은 꽃)
+  K.vines = function (h, w = 1.2, flower = 0xff8fb1) {
+    const g = new THREE.Group();
+    for (let i = 0; i < Math.round(h * 3); i++) { const y = 0.3 + i * 0.32, x = Math.sin(i * 1.7) * w * 0.4; const l = mesh(sphere(0.22, 8, 6), tm('leaf', i % 2 ? 0x5fae4a : 0x4e9e44), x, y, 0.06); l.scale.set(1.2, 1, 0.45); g.add(l); if (i % 3 === 1) g.add(mesh(sphere(0.07, 8, 6), mat(flower), x + 0.12, y + 0.05, 0.16)); }
+    return g;
+  };
+  // 매다는 꽃바구니
+  K.basket = function (flower = 0xff6f86) {
+    const g = new THREE.Group();
+    g.add(mesh(cyl(0.015, 0.015, 0.5, 4), mat(0x3a3a44), 0, -0.25, 0));
+    g.add(mesh(geo('bsk', () => new THREE.SphereGeometry(0.26, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2)), tm('plank', 0xb08050), 0, -0.55, 0));
+    g.add(mesh(sphere(0.28, 10, 8), tm('leaf', 0x5fae4a), 0, -0.5, 0));
+    for (let i = 0; i < 6; i++) { const a = i * 1.05; g.add(mesh(sphere(0.07, 8, 6), mat(i % 2 ? flower : 0xffffff), Math.cos(a) * 0.24, -0.42 - (i % 2) * 0.12, Math.sin(a) * 0.24)); }
+    return g;
+  };
+  // 지붕창 (도머)
+  K.dormer = function (color, roofColor, wallKind = 'fishscale') {
+    const g = new THREE.Group();
+    g.add(tbox(1.4, 1.2, 1.4, wallKind, color, 0, 0, 0, 0.05, 1));
+    const r = K.gable(1.4, 1.4, 0.7, roofColor, { over: 0.2, gableWindow: false, wallKind, wallColor: color }); r.rotation.y = Math.PI / 2; r.position.y = 1.2; g.add(r);
+    const w = K.window(0.7, 0.7, { box: false, curtain: '#ffe0a0' }); w.position.set(0, 0.6, 0.72); g.add(w);
+    return g;
+  };
 
   function shade(c, k) { const r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255; return (Math.round(r * k) << 16) | (Math.round(g * k) << 8) | Math.round(b * k); }
   AC.shade = shade;

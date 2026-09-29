@@ -350,11 +350,11 @@
     const giver = q.giver && q.giver !== P ? Sim.byId(q.giver) : null;
     return `<div class="qcard ${q.state} ${q.id === pinnedId ? 'pinned' : ''}" data-q="${q.id}">
       <h4>${esc(J(q.title))}</h4>
-      <div class="qmeta">${giver ? `<span>🙋 의뢰: ${icon(giver)} ${esc(giver.name)}</span>` : ''}<span>${q.day}일차</span>${q.state === 'active' ? `<span>${esc(Gd.timeLeft(q))}</span>` : `<span>${q.state === 'done' ? '✅ 완료' : '❌ 실패'}</span>`}${q.id === pinnedId ? '<span>📌 추적 중</span>' : ''}</div>
+      <div class="qmeta">${giver ? `<span>🙋 의뢰: ${icon(giver)} ${esc(giver.name)}</span>` : ''}<span>${q.day}일차</span>${q.state === 'active' ? `<span>${esc(Gd.timeLeft(q))}</span>` : `<span>${q.state === 'done' ? '✅ 완료' : q.state === 'abandoned' ? '🏳️ 포기' : '❌ 실패'}</span>`}${q.id === pinnedId ? '<span>📌 추적 중</span>' : ''}</div>
       ${q.state === 'active' ? `<div class="qdesc">${esc(J(q.desc || ''))}</div>
       <ol>${steps.map((x, i) => `<li class="${x.done ? 'ok' : i === nowI ? 'now' : ''}">${i === nowI ? '👉 ' : ''}${esc(x.text)}</li>`).join('')}</ol>
       <span class="qreward">🎁 보상: ${esc(Gd.reward(q))}</span>
-      <div class="qbtns">${q.id !== pinnedId ? '<button data-a="pin">📌 화면에 띄우기</button>' : ''}${dest ? '<button class="main" data-a="tp">✨ 바로 가기</button><button data-a="walk">🚶 길 안내</button><button data-a="map">🗺️ 지도</button>' : ''}</div>` : ''}
+      <div class="qbtns">${q.id !== pinnedId ? '<button data-a="pin">📌 화면에 띄우기</button>' : ''}${dest ? '<button class="main" data-a="tp">✨ 바로 가기</button><button data-a="walk">🚶 길 안내</button><button data-a="map">🗺️ 지도</button>' : ''}<button class="quit" data-a="quit">🏳️ 포기하기</button></div>` : ''}
     </div>`;
   }
   function bindQuestBtns(root) {
@@ -362,6 +362,7 @@
       const q = st().quests.find(x => x.id === c.dataset.q); if (!q) return;
       c.querySelectorAll('[data-a]').forEach(b => b.onclick = () => {
         const a = b.dataset.a, dest = FM.Guide.questDest(q);
+        if (a === 'quit') { UI.quitQuest(q); return; }
         FM.Guide.pin(q);
         if (a === 'tp' && dest) FM.Guide.teleport(dest);
         else if (a === 'walk' && dest) FM.Guide.walkTo(dest);
@@ -370,6 +371,14 @@
       });
     });
   }
+  // 퀘스트 포기 (확인 창)
+  UI.quitQuest = function (q) {
+    const g = q.giver && q.giver !== P ? Sim.byId(q.giver) : null;
+    modal('🏳️ 퀘스트 포기', `<p><b>${esc(J(q.title))}</b></p><p>정말 포기할까요?${g ? `<br><small class="muted">${icon(g)} ${esc(g.name)}이(가) 조금 서운해해요 (친밀도 -2 · 신뢰도 -3)</small>` : ''}</p><div class="chips"><button id="qqYes" class="main">포기하기</button><button id="qqNo">계속 할래요</button></div>`, b => {
+      b.querySelector('#qqYes').onclick = () => { closeModal(); Soc.abandonQuest(q); UI.paint(); paintTracker(true); if (curTab === 'quest') UI.tab('quest'); };
+      b.querySelector('#qqNo').onclick = () => closeModal();
+    });
+  };
   function paintQuests(body = $('#sideBody')) {
     const all = st().quests.slice().reverse();
     const act = all.filter(q => q.state === 'active'), old = all.filter(q => q.state !== 'active').slice(0, 20);
@@ -400,7 +409,7 @@
     const html = `<div class="qt-title">📌 <b>${esc(J(q.title))}</b><small>${esc(FM.Guide.timeLeft(q))}</small></div>
       <div class="qt-step">👉 ${esc(next ? next.text : '')}</div>
       ${dir ? `<div class="qt-dir">${dir}</div>` : ''}
-      <div class="qt-btns">${dest ? '<button class="main" data-t="tp">✨ 바로 가기</button><button data-t="walk">🚶 길 안내</button>' : ''}<button data-t="list">📜 자세히</button></div>`;
+      <div class="qt-btns">${dest ? '<button class="main" data-t="tp">✨ 바로 가기</button><button data-t="walk">🚶 길 안내</button>' : ''}<button data-t="list">📜 자세히</button><button data-t="quit" title="퀘스트 포기">🏳️</button></div>`;
     if (html !== trackKey || force) {
       el.innerHTML = html; trackKey = html;
       el.querySelectorAll('[data-t]').forEach(b => b.onclick = () => {
@@ -408,6 +417,7 @@
         if (t === 'tp' && dest) FM.Guide.teleport(dest);
         if (t === 'walk' && dest) FM.Guide.walkTo(dest);
         if (t === 'list') { $('#side').classList.add('open'); UI.tab('quest'); }
+        if (t === 'quit') UI.quitQuest(q);
       });
     }
     el.hidden = false;
@@ -782,6 +792,10 @@
         <div class="obs-sec"><b>🧠 주민 심리 센서</b>${who.length ? who.map(v => `<div class="sensor">${icon(v)} <b>${esc(v.name)}</b> 배고픔 ${pct(v.hunger)}% · ${esc(v.act ? v.act.name : v.moving ? '돌아다니는 중' : '딴짓 중')}<br><small>💭 ${esc(Sim.thought(v))} · 스트레스 ${pct(v.stress)} · 기분 ${pct(v.mood)}</small> <button data-talk="${v.id}">💬</button>${v.act && v.act.id === 'sleep' && v.dream ? ` <button data-dream="${v.id}">🌙 꿈 훔쳐보기</button>` : ''}</div>`).join('') : '<small class="muted">지금은 아무도 없어요.</small>'}</div>
         ${room ? `<div class="obs-sec"><b>🧹 방 청결도</b><div class="bar"><i style="width:${pct(room.clean)}%"></i></div><small>쓰레기 ${room.trash.length}개${room.theme ? ' · 테마: ' + esc(D.THEMES[room.theme].name) : ''}${room.unity ? ` · 테마 통일도 ${room.unity}%` : ''}${room.set ? ' · ✨세트 효과' : ''}${room.react !== undefined ? ' · 반응 ' + D.THEME_REACT.find(r => r.lv === room.react).name : ''}</small>
           <div class="chips"><button id="obVac">🌀 신의 청소기</button>${owner && !owner.child ? '<button id="obOrder">🧹 "방 좀 치워!"</button>' : ''}</div></div>
+        ${owner && !owner.child && !room.theme && D.ATMO_L1[owner.keys.L1] ? (() => { const A1 = D.ATMO_L1[owner.keys.L1], A4 = D.ATMO_L4[owner.keys.L4]; const sc = Ev.atmoScore(owner, room); return `<div class="obs-sec atmo"><b>🎨 방 분위기</b> <span class="atmo-score" style="--p:${sc}%">취향 적합도 <b>${sc}%</b></span>
+          <small>베이스(메인 성격 · ${esc(A1.name)}): <span class="sw" style="background:${FM.PM.css(A1.palette[0])}"></span><span class="sw" style="background:${FM.PM.css(A1.palette[1])}"></span> ${esc(A1.pname)} · ${esc(A1.tone)}</small>
+          <small>오버레이(특이 취향 · ${esc(A4.name)}): ${esc(A4.pname)} 무늬 · ${esc(A4.sname)}</small>
+          <div class="chips"><select id="obPat"><option value="">무늬 없음</option>${Object.entries(D.ATMO_PATTERNS).map(([k, n]) => `<option value="${k}" ${room.wallStyle === k ? 'selected' : ''}>🧩 ${n}</option>`).join('')}</select><label>벽 <input type="color" id="obW1" value="${FM.PM.css(room.wall || 0xf4efe6)}"></label><label>포인트 <input type="color" id="obW2" value="${FM.PM.css(room.wall2 || 0xff8fb1)}"></label><button id="obAtmoReset">↺ 주인 취향대로</button></div></div>`; })() : ''}
         <div class="obs-sec"><b>🎛️ 환경 조작 패널</b>
           <div class="chips"><button id="obLight">💡 조명 ${room.lightOn === false ? 'OFF' : 'ON'}</button><select id="obLc">${Object.entries(D.LIGHT_COLORS).map(([k, x]) => `<option value="${k}" ${room.light === k ? 'selected' : ''}>${x.name}</option>`).join('')}</select><select id="obBgm">${Object.entries(D.ROOM_BGM).map(([k, n]) => `<option value="${k}" ${room.bgm === k ? 'selected' : ''}>🎵 ${n}</option>`).join('')}</select></div>
           <div class="chips"><button id="obEdit">🛠️ 방 꾸미기 (가구 즉시 이동)</button><button id="obCode">🔗 인테리어 코드</button></div></div>` : ''}
@@ -795,7 +809,14 @@
     $('#obVac').onclick = () => { const n = Ev.vacuum(iid); UI.toast(`🌀 쓰레기 ${n}개를 빨아들였어요!`); g.rebuildInterior(); paintObs(); };
     if ($('#obOrder')) $('#obOrder').onclick = () => { Soc.playerChoose(owner, 'cleanOrder'); setTimeout(() => g.rebuildInterior(), 6000); };
     $('#obLight').onclick = () => { room.lightOn = room.lightOn === false; paintObs(); };
-    $('#obLc').onchange = e => { room.light = e.target.value; };
+    const atmoChanged = (rebuild) => { room.atmoRev = (room.atmoRev || 1) + 1; room.atmoByPlayer = true; if (rebuild) g.rebuildInterior(); paintObs(); };
+    $('#obLc').onchange = e => { room.light = e.target.value; atmoChanged(false); };
+    if ($('#obPat')) {
+      $('#obPat').onchange = e => { room.wallStyle = e.target.value || null; const A4 = Object.values(D.ATMO_L4).find(a => 'p_' + a.pattern === room.wallStyle); room.particles = A4 ? A4.particle : null; room.ambience = A4 ? A4.sound : null; atmoChanged(true); };
+      $('#obW1').onchange = e => { room.wall = parseInt(e.target.value.slice(1), 16); atmoChanged(true); };
+      $('#obW2').onchange = e => { room.wall2 = parseInt(e.target.value.slice(1), 16); atmoChanged(true); };
+      $('#obAtmoReset').onclick = () => { const A1 = D.ATMO_L1[owner.keys.L1], A4 = D.ATMO_L4[owner.keys.L4]; Object.assign(room, { wall: A1.palette[0], wall2: A1.palette[1], light: A1.light, wallStyle: 'p_' + A4.pattern, particles: A4.particle, ambience: A4.sound }); atmoChanged(true); };
+    }
     $('#obBgm').onchange = e => { room.bgm = e.target.value; };
     $('#obEdit').onclick = () => UI.openRoomEditor(iid);
     $('#obCode').onclick = () => UI.codeModal(iid);
@@ -822,6 +843,7 @@
     const room = s.rooms[edIid];
     if (room) {
       room.lastDecor = Sim.time.day();
+      if (room.edited) { room.atmoRev = (room.atmoRev || 1) + 1; room.atmoByPlayer = true; }
       const set = Ev.checkSet(edIid);
       // 주민 방을 꾸며주었을 때의 반응
       const owner = s.villagers.find(v => v.home === edIid && !v.child);
@@ -1332,6 +1354,7 @@
     if (!FM.Audio.on) return;
     const s = st(), g = G(), p = s.player;
     const h = Sim.time.hour();
+    { const aiid = g.view === 'observe' ? g.obs : p.loc !== 'island' ? p.loc : null; const rm = aiid && s.rooms[aiid]; FM.Audio.ambience && FM.Audio.ambience(rm && !rm.theme && rm.ambience ? rm.ambience : null); }
     for (const b of Object.values(activeBgm)) {
       const pl = b.place && MAP.P[b.place];
       if (!pl || (p.loc === 'island' && Math.hypot(pl.x - p.x, pl.z - p.z) < 45) || (g.view === 'observe')) return FM.Audio.play(b.key);

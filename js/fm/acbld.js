@@ -505,4 +505,72 @@
     g.userData.theme = (PM.VILLA_THEMES[ext] || {}).name;
     return g;
   };
+
+  // =========================================================
+  // 입체 장식 단계 — 퇴창 · 발코니 · 벽기둥 · 코니스 · 풍향계 · 덩굴 · 꽃바구니 · 도머
+  // =========================================================
+  const at = (g, o, x, y, z, ry = 0) => { o.position.set(x, y, z); o.rotation.y = ry; g.add(o); return o; };
+  const lanternPost = () => { const g = new THREE.Group(); g.add(tbox(0.45, 0.25, 0.45, 'stone', 0xd8d0c4, 0, 0, 0, 0.05, 1)); g.add(mesh(cyl(0.1, 0.12, 0.8, 8), tm('stone', 0xd8d0c4), 0, 0.65, 0)); const lamp = mesh(box(0.42, 0.34, 0.42, 0.04), glow(0xffd890), 0, 1.2, 0); lamp.userData.noBake = true; g.add(lamp); g.add(mesh(geo('lanRoof', () => new THREE.ConeGeometry(0.42, 0.3, 4)), tm('stone', 0xc8c0b4), 0, 1.52, 0).rotateY(Math.PI / 4)); return g; };
+  const barrel = () => mesh(geo('barrel', () => AC.scaleUV(new THREE.CylinderGeometry(0.34, 0.3, 0.8, 14), 2, 1)), tm('plank', 0xb07a4a));
+  const pennant = (c) => { const g = new THREE.Group(); g.add(mesh(cyl(0.04, 0.04, 2, 6), mat(0x8a8a90), 0, 1, 0)); const f = mesh(geo('pen', () => { const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(0.9, 0.22); s.lineTo(0, 0.44); s.closePath(); return new THREE.ShapeGeometry(s); }), mat(c), 0.02, 1.5, 0); f.material.side = THREE.DoubleSide; g.add(f); return g; };
+  const DECO = {
+    cafe: (g, p) => {
+      const { w, d } = p.bld;
+      at(g, K.bay(2.4, 2.2, 0.8, 'siding', 0xfff4e2, 0xff6a58, { curtain: '#ffe0a0' }), -w / 2, 0.4, 0.3, -Math.PI / 2);
+      at(g, K.vane(), -w / 4, 3.6 + 0.4 + 2.8, 0);
+      for (const x of [-w / 2 + 0.4, w / 2 - 0.4]) at(g, K.basket(0xff6f86), x, 3.4, d / 2 + 0.3);
+      at(g, K.vines(3.2, 1.2, 0xffffff), w / 2 - 0.3, 0.4, d / 2 + 0.02);
+    },
+    apartment: (g, p) => {
+      const { w, d, h } = p.bld; const xs = [-10.5, -3.5, 3.5, 10.5];
+      for (let f = 2; f <= 5; f++) for (let n = 0; n < 4; n++) if ((f + n) % 2 === 0) at(g, K.balcony(4.2, 0.85, 0xffffff, { floorKind: 'stone', floorColor: 0xe8e0d4 }), xs[n], (f - 1) * 3.3 + 0.36, d / 2 + 0.18);
+      for (const x of [-14, -7, 0, 7, 14]) at(g, K.pilaster(h - 3.4, 0xfffaf2, 'marble'), x, 3.35, d / 2 + 0.1);
+      at(g, K.cornice(w, d, 0xfffaf2), 0, h + 0.15, 0);
+      for (const x of [-12.5, 12.5]) at(g, K.vines(3, 1.4), x, 0, d / 2 + 0.1);
+    },
+    school: (g, p) => {
+      const { w, d } = p.bld;
+      at(g, K.vane(0x5a5a64), 0, 4.2 + 0.4 + 5.9, d / 2 - 1.2);
+      for (const x of [-w / 2 + 0.5, w / 2 - 0.5]) at(g, K.vines(3.4, 1.0, 0xffd84a), x, 0.4, d / 2 + 0.03);
+      at(g, K.bay(2.6, 2.3, 0.7, 'siding', 0xfff4d6, 0xff8f6a, { curtain: '#ffe8a0' }), w / 2, 0.45, 0, Math.PI / 2);
+    },
+    library: (g, p) => {
+      const { w, d } = p.bld;
+      at(g, K.cornice(w, d, 0xfbf8f2), 0, 7.5 + 0.4, 0);
+      for (const z of [-2, 2]) at(g, K.vines(5, 1.4, 0xb69cff), -w / 2 - 0.02, 0.4, z, -Math.PI / 2);
+    },
+    workshop: (g, p) => {
+      const { w, d } = p.bld;
+      const shed = new THREE.Group(); shed.position.set(w / 2 + 1.2, 0, -0.5);
+      shed.add(tbox(2.4, 2.4, d - 2, 'plank', 0xa8784a, 0, 0.4, 0, 0.05, 1));
+      const rf = tbox(2.9, 0.18, d - 1.6, 'metal', 0x8a9aa8, 0.1, 2.75, 0, 0.04, 1); rf.rotation.z = -0.25; shed.add(rf);
+      for (let i = 0; i < 3; i++) at(shed, barrel(), 1.5, 0.8, -1 + i * 0.75);
+      g.add(shed);
+      at(g, K.vane(), w / 4, 3.8 + 0.4 + 3.0, 0);
+    },
+    teahouse: (g, p) => { const { w, d } = p.bld; for (const x of [-w / 2 + 0.2, w / 2 - 0.2]) at(g, lanternPost(), x, 0.3, d / 2 + 1.6); },
+    restaurant: (g, p) => {
+      const { w, d } = p.bld; const red = p.id === 'pub';
+      for (let i = 0; i < 9; i++) { const l = mesh(sphere(0.16, 10, 8), glow(red ? 0xff5a4a : 0xfff0c0), -w / 2 + 0.6 + i * (w - 1.2) / 8, 3.4 + 0.45 - Math.sin(i / 8 * Math.PI) * 0.35, d / 2 + 1.1); l.scale.y = 1.25; l.userData.noBake = true; g.add(l); }
+      if (red) at(g, K.balcony(3.6, 0.7, 0xd8453a, { floorColor: 0x8a3a2a }), 0, 2.6, d / 2 + 0.05);
+    },
+    cityhall: (g, p) => { const { w, d, h } = p.bld; at(g, K.cornice(w, d, 0xfbf8f2), 0, h - 2.1, 0); for (const x of [-w / 2 - 1.5, w / 2 + 1.5]) at(g, K.planter(0xf0ece4, 0xff8fb1), x, 0, d / 2 + 3.2); },
+    terminal: (g, p) => { const { w, d } = p.bld; [[-w / 2 - 0.8, 0xff6f61], [-w / 2 - 0.8 + 0.01, 0xffd84a], [w / 2 + 0.8, 0x4fc1e9]].forEach(([x, c], i) => at(g, pennant(c), x, 0, d / 2 - i * 0.8)); },
+    cathedral: (g, p) => { const { w, d } = p.bld; for (const x of [-w / 2 + 1.2, w / 2 - 1.2]) at(g, K.vines(6, 1.6, 0xffffff), x, 0.4, d / 2 + 0.04); },
+    shop: (g, p) => { const { w, d, h } = p.bld; at(g, tbox(1.4, 0.8, 1, 'metal', 0xdfe6f0, 0, 0, 0, 0.05, 1), -w / 4, h + 0.3, -1); for (let i = 0; i < 5; i++) g.add(mesh(box(0.05, 0.6, 0.9, 0.01), mat(0x9aa3ad), -w / 4 - 0.5 + i * 0.25, h + 0.72, -1)); },
+    villa: (g, p, ext) => {
+      const inner = g.children[0]; if (!inner || !VILLA_LOOK[ext]) return;
+      const L = VILLA_LOOK[ext]; const { w, d } = p.bld; const hh = p.bld.h - 2.2;
+      if (ext === 'log') { at(inner, K.dormer(0xc98a52, L.roof, 'log'), -w / 4, hh + 0.5, d / 4); at(inner, K.vane(), w / 4, hh + 0.4 + 2.6, 0); for (let i = 0; i < 6; i++) { const l = mesh(cyl(0.16, 0.16, 1.2, 8), tm('bark', 0x9a6a3e), -w / 2 - 0.5, 0.5 + Math.floor(i / 3) * 0.3, -1 + (i % 3) * 0.34 + Math.floor(i / 3) * 0.17); l.rotation.x = Math.PI / 2; inner.add(l); } }
+      if (ext === 'chalet') { at(inner, K.bay(2.2, 2.2, 0.7, 'fishscale', L.color, L.roof, { curtain: '#ffffff' }), w / 2, 0.45, -0.5, Math.PI / 2); for (const x of [-1.1, 1.1]) at(inner, K.basket(0xff8fb1), x, 2.7, d / 2 + 1.35); at(inner, K.dormer(L.color, L.roof), 0, hh + 0.5, d / 4 + 0.2); }
+      if (ext === 'med') { at(inner, K.balcony(w, 0.01, 0xffffff, { flowers: true }), 0, hh + 0.8, -d / 2 + 0.3); at(inner, K.vines(3.4, 1.6, 0xff4fb0), -w / 2 + 0.4, 0.4, d / 2 + 0.03); at(inner, K.vines(3.4, 1.6, 0xff4fb0), w / 2 - 0.4, 0.4, d / 2 + 0.03); }
+      if (ext === 'glass') { for (const x of [-w / 2 + 1.5, 0, w / 2 - 1.5]) at(inner, K.pilaster(hh, 0xffffff), x, 0.4, d / 2 + 0.1); at(inner, K.cornice(w, d, 0xffffff, false), 0, hh + 0.35, 0); }
+      if (ext === 'castle') { [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]].forEach(([x, z], i) => at(inner, pennant([0xff6f86, 0x4fc1e9, 0xffd84a, 0x8ee07a][i]), x, hh + 4.2, z)); at(inner, K.vines(4, 1.6, 0xff6f86), 0, 0.4, d / 2 + 0.04); }
+      if (ext === 'container') { const st2 = new THREE.Group(); st2.position.set(w / 2 + 0.6, 0.4, 0); for (let i = 0; i < 7; i++) st2.add(tbox(0.9, 0.12, 0.5, 'metal', 0x2f4b6e, 0, i * 0.52, -d / 2 + 1 + i * 0.5, 0.02, 1)); inner.add(st2); at(inner, K.balcony(w, 0.01, 0x2f4b6e, { flowers: false }), 0, hh + 0.85, -d / 2 + 0.2); const port = mesh(geo('port', () => new THREE.TorusGeometry(0.45, 0.1, 8, 20)), mat(0x2f4b6e), -w / 4, 2.4, d / 2 + 0.08); inner.add(port); }
+    },
+  };
+  for (const [k, fn] of Object.entries(DECO)) {
+    const orig = BLD[k]; if (!orig) continue;
+    BLD[k] = (p, ext) => { const g = orig(p, ext); try { fn(g, p, ext); } catch (e) { console.error('deco', k, e); } return g; };
+  }
 })();

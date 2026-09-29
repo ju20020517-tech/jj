@@ -26,9 +26,9 @@
     islandScene = new THREE.Scene();
     intScene = new THREE.Scene();
     intScene.background = new THREE.Color(0x3a2a34);
-    intScene.add(new THREE.HemisphereLight(0xffeedd, 0x5a4048, 0.6));
-    intScene.add(new THREE.AmbientLight(0xffe4cc, 0.22));
-    const dl = new THREE.DirectionalLight(0xffe2c0, 0.38); dl.position.set(3, 8, 6); intScene.add(dl);
+    intScene.add(new THREE.HemisphereLight(0xffeedd, 0x6a5058, 0.42));
+    intScene.add(new THREE.AmbientLight(0xffe4cc, 0.1));
+    const dl = new THREE.DirectionalLight(0xffe2c0, 0.3); dl.position.set(3, 8, 6); intScene.add(dl);
     G.intScene = intScene; G.islandScene = islandScene; G.camera = camera; G.renderer = renderer;
     resize();
     window.addEventListener('resize', resize);

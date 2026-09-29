@@ -35,6 +35,51 @@
     milky = new THREE.Mesh(new THREE.PlaneGeometry(1500, 260), new THREE.MeshBasicMaterial({ map: mw, transparent: true, opacity: 0, depthWrite: false, fog: false, side: THREE.DoubleSide }));
     milky.position.set(0, 520, -200); milky.rotation.set(-1.1, 0.3, 0.5);
     scene.add(milky);
+    makeSkyDeco();
+  }
+  // 하늘 꾸미기: 몽실몽실 구름 · 열기구 · 갈매기
+  function makeSkyDeco() {
+    const cg = new THREE.Group(); cg.name = 'clouds';
+    const puffs = [];
+    for (let i = 0; i < 26; i++) {
+      const a = i / 26 * Math.PI * 2 + Math.random() * 0.2, r = 150 + Math.random() * 260, y = 70 + Math.random() * 70;
+      const cx = Math.cos(a) * r, cz = Math.sin(a) * r, size = 7 + Math.random() * 9, n = 5 + (Math.random() * 4 | 0);
+      for (let k = 0; k < n; k++) {
+        const t = k / (n - 1) - 0.5;
+        puffs.push([cx + t * size * 2.6 + (Math.random() - 0.5) * size * 0.6, y + (1 - Math.abs(t) * 1.6) * size * 0.45 + Math.random() * size * 0.2, cz + (Math.random() - 0.5) * size * 0.9, size * (0.65 + (0.5 - Math.abs(t)) * 0.7 + Math.random() * 0.2)]);
+      }
+    }
+    const cm = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xaeb8c8, fog: false });
+    const ci = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 12), cm, puffs.length);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s3 = new THREE.Vector3(), p3 = new THREE.Vector3();
+    puffs.forEach(([x, y, z, r], i) => { p3.set(x, y, z); s3.set(r, r * 0.72, r * 0.9); m4.compose(p3, q, s3); ci.setMatrixAt(i, m4); });
+    cg.add(ci); scene.add(cg);
+    dyn.clouds = cg; dyn.cloudMat = cm;
+    // 열기구 3개
+    dyn.balloons = [];
+    const stripes = [['#ff8fb1', '#fff4d6'], ['#7ab8ff', '#ffffff'], ['#ffd84a', '#ff8f6a']];
+    stripes.forEach(([c1, c2], i) => {
+      const b = new THREE.Group();
+      const tex = PM.ctex('balloon' + i, 256, 64, (g, w, h) => { for (let x = 0; x < w; x += 32) { g.fillStyle = (x / 32) % 2 ? c2 : c1; g.fillRect(x, 0, 32, h); } });
+      const env = new THREE.Mesh(new THREE.LatheGeometry([[0.01, -3.2], [1.2, -2.6], [3, -0.8], [3.4, 1], [2.8, 2.8], [0.01, 3.6]].map(([x, y]) => new THREE.Vector2(x, y)), 24), H.soften(new THREE.MeshLambertMaterial({ map: tex, fog: false })));
+      b.add(env);
+      for (const [x, z] of [[-0.5, -0.5], [0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]]) b.add(mesh(cyl(0.02, 0.02, 2, 4), mat(0x8a5a3b), x, -4.2, z));
+      b.add(mesh(box(1.3, 0.9, 1.3, 0.1), mat(0xc99760), 0, -5.5, 0));
+      const ang = i / 3 * Math.PI * 2 + 0.6, rad = 90 + i * 25;
+      b.userData = { ang, rad, h: 48 + i * 9, sp: 0.012 + i * 0.004 };
+      b.scale.setScalar(1.6);
+      scene.add(b); dyn.balloons.push(b);
+    });
+    // 갈매기 (V자 날개)
+    dyn.gulls = [];
+    for (let i = 0; i < 7; i++) {
+      const gg = new THREE.Group();
+      const wm = mat(0xffffff);
+      const l = mesh(box(1.2, 0.06, 0.35, 0.03), wm, -0.55, 0, 0), r = mesh(box(1.2, 0.06, 0.35, 0.03), wm, 0.55, 0, 0);
+      gg.add(l); gg.add(r); gg.add(mesh(sphere(0.18), wm, 0, 0, 0.1));
+      gg.userData = { l, r, ang: Math.random() * 6.28, rad: 60 + Math.random() * 70, h: 26 + Math.random() * 14, sp: 0.08 + Math.random() * 0.05, cx: (Math.random() - 0.5) * 60, cz: 40 + Math.random() * 40 };
+      scene.add(gg); dyn.gulls.push(gg);
+    }
   }
 
   // ---------------------------------------------------------
@@ -51,7 +96,7 @@
     const col = new Float32Array(pos.count * 3);
     const surf = new Float32Array(pos.count * 2);
     const c = new THREE.Color();
-    const G1 = new THREE.Color(0x6fd24a), G2 = new THREE.Color(0x5cc244), HG = new THREE.Color(0x8cdc5c), SAND = new THREE.Color(0xf6e6b4), ROCK = new THREE.Color(0xd2a47a), ROCK2 = new THREE.Color(0xc0906a), UNDER = new THREE.Color(0x7fd6d8), LAWN = new THREE.Color(0x9ee07a);
+    const G1 = new THREE.Color(0x76c653), G2 = new THREE.Color(0x66b84a), HG = new THREE.Color(0x88cc62), SAND = new THREE.Color(0xecd8a6), ROCK = new THREE.Color(0xd2a47a), ROCK2 = new THREE.Color(0xc0906a), UNDER = new THREE.Color(0x7fd6d8), LAWN = new THREE.Color(0x9ee07a);
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i), z = pos.getZ(i);
       const y = T.height(x, z);
@@ -218,7 +263,7 @@
       g.add(m);
     }
     // 광장 대리석 바닥
-    const pl = new THREE.Mesh(new THREE.CircleGeometry(14, 48), H.soften(new THREE.MeshLambertMaterial({ map: PM.ctex('plaza2', 512, 512, (c, w, h) => { c.fillStyle = '#e8dcc6'; c.fillRect(0, 0, w, h); const cx = w / 2; for (let ring = 0; ring < 12; ring++) { const r0 = 18 + ring * 20, n = Math.round(r0 * 0.35) + 6; for (let i = 0; i < n; i++) { const a0 = i / n * Math.PI * 2, a1 = (i + 1) / n * Math.PI * 2; const v = 225 + ((i * 7 + ring * 13) % 25); c.fillStyle = ring % 3 === 2 ? `rgb(${v - 30},${v - 60},${v - 70})` : `rgb(${v},${v - 10},${v - 30})`; c.beginPath(); c.arc(cx, cx, r0 + 17, a0 + 0.02, a1 - 0.02); c.arc(cx, cx, r0 + 1, a1 - 0.02, a0 + 0.02, true); c.closePath(); c.fill(); } } }) }), 0.1));
+    const pl = new THREE.Mesh(new THREE.CircleGeometry(14, 48), H.soften(new THREE.MeshLambertMaterial({ color: 0xe4d6c0, map: PM.ctex('plaza2', 512, 512, (c, w, h) => { c.fillStyle = '#e8dcc6'; c.fillRect(0, 0, w, h); const cx = w / 2; for (let ring = 0; ring < 12; ring++) { const r0 = 18 + ring * 20, n = Math.round(r0 * 0.35) + 6; for (let i = 0; i < n; i++) { const a0 = i / n * Math.PI * 2, a1 = (i + 1) / n * Math.PI * 2; const v = 225 + ((i * 7 + ring * 13) % 25); c.fillStyle = ring % 3 === 2 ? `rgb(${v - 30},${v - 60},${v - 70})` : `rgb(${v},${v - 10},${v - 30})`; c.beginPath(); c.arc(cx, cx, r0 + 17, a0 + 0.02, a1 - 0.02); c.arc(cx, cx, r0 + 1, a1 - 0.02, a0 + 0.02, true); c.closePath(); c.fill(); } } }) }), 0.1));
     pl.rotation.x = -Math.PI / 2; pl.position.set(0, 6.08, 10); pl.receiveShadow = true; g.add(pl);
     // 부두 데크
     for (const b of T.FOOTBRIDGES) { const deck = mesh(box(b.x1 - b.x0, 0.3, b.z1 - b.z0, 0.05), mat(0xc99760), (b.x0 + b.x1) / 2, (b.y !== undefined ? b.y : T.groundY((b.x0 + b.x1) / 2, (b.z0 + b.z1) / 2)) - 0.15, (b.z0 + b.z1) / 2); g.add(deck); if (b.pier) for (let z = b.z0 + 1; z < b.z1; z += 3) for (const x of [b.x0 + 0.3, b.x1 - 0.3]) g.add(mesh(cyl(0.2, 0.2, 3), mat(0x8a5a3b), x, (b.y || 1) - 1.5, z)); }
@@ -436,19 +481,21 @@
     const { minX, maxX, minZ, maxZ } = MAP.SIZE;
     for (let x = minX; x < maxX; x += 1.25) for (let z = minZ; z < maxZ; z += 1.25) {
       const px = x + (Math.random() - 0.5) * 1.1, pz = z + (Math.random() - 0.5) * 1.1;
-      if (Math.random() < 0.3) continue;
+      // 여기저기 작은 풀숲으로만 (균일하게 깔지 않음)
+      const clump = Math.sin(px * 0.21 + 1.3) * Math.cos(pz * 0.19) + Math.sin(px * 0.07 - pz * 0.09) * 0.8;
+      if (Math.random() > (clump > 0.9 ? 0.55 : 0.03)) continue;
       const y = T.height(px, pz);
       if (y < 0.5 || T.inWater(px, pz) || T.surface(px, pz) === 'sand') continue;
       const e = 0.6, slope = Math.max(Math.abs(T.height(px + e, pz) - T.height(px - e, pz)), Math.abs(T.height(px, pz + e) - T.height(px, pz - e))) / (2 * e);
       if (slope > 0.5) continue;
       if (Math.hypot(px, pz - 10) < 15 || T.blockedByBuilding(px, pz, 0.8) || nearRoad(segs, px, pz)) continue;
       pts.push([px, y, pz]);
-      if (pts.length > 14000) break;
+      if (pts.length > 4200) break;
     }
     const m = sway(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), 0.28, 'grass');
     const inst = new THREE.InstancedMesh(g, m, pts.length);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s3 = new THREE.Vector3(), p3 = new THREE.Vector3(), c = new THREE.Color();
-    pts.forEach(([x, y, z], i) => { const k = 0.8 + Math.random() * 0.7; p3.set(x, y - 0.02, z); q.setFromEuler(new THREE.Euler(0, Math.random() * 6.28, 0)); s3.set(k, k * (0.8 + Math.random() * 0.5), k); m4.compose(p3, q, s3); inst.setMatrixAt(i, m4); inst.setColorAt(i, c.setHSL(0.27 + Math.random() * 0.04, 0.45, 0.72 + Math.random() * 0.1)); });
+    pts.forEach(([x, y, z], i) => { const k = 0.7 + Math.random() * 0.45; p3.set(x, y - 0.02, z); q.setFromEuler(new THREE.Euler(0, Math.random() * 6.28, 0)); s3.set(k, k * (0.8 + Math.random() * 0.5), k); m4.compose(p3, q, s3); inst.setMatrixAt(i, m4); inst.setColorAt(i, c.setHSL(0.27 + Math.random() * 0.04, 0.45, 0.72 + Math.random() * 0.1)); });
     inst.receiveShadow = true;
     scene.add(inst);
     W.grassCount = pts.length;
@@ -614,7 +661,7 @@
   // ---------------------------------------------------------
   // 시간/날씨 적용 & 매 프레임 갱신
   // ---------------------------------------------------------
-  const cDay = { top: new THREE.Color(0x4fb4ff), bottom: new THREE.Color(0xd8f2ff) };
+  const cDay = { top: new THREE.Color(0x72c0f2), bottom: new THREE.Color(0xe4f4fc) };
   const cSet = { top: new THREE.Color(0x8a5a9a), bottom: new THREE.Color(0xffa865) };
   const cNight = { top: new THREE.Color(0x161838), bottom: new THREE.Color(0x44345e) };
   const cDawn = { top: new THREE.Color(0x7ab4f0), bottom: new THREE.Color(0xffd8b0) };
@@ -658,6 +705,7 @@
     rainPts.visible = weather === 'rain';
     dyn.leaves.visible = weather === 'windy';
     W.nightness = night;
+    if (dyn.cloudMat) { const sunset = (h > 16.5 && h < 20) ? 1 - Math.abs(h - 18.3) / 1.8 : 0; dyn.cloudMat.color.set(0xffffff).lerp(new THREE.Color(0xffb89a), Math.max(0, sunset) * 0.8).lerp(new THREE.Color(0x3a3a58), night * 0.85); dyn.cloudMat.emissive.set(0xaeb8c8).multiplyScalar(1 - night * 0.8); }
     FM.AC.setNight(Math.max(0, night - 0.2) * 0.9);
     W.sunsetGlow = h >= 18 && h < 19 ? 1 : 0;
   };
@@ -677,6 +725,9 @@
     // 차량
     for (const c of dyn.cars) { c.userData.t = (c.userData.t + dt * 0.02 * c.userData.dir + 1) % 1; const z = 40 + c.userData.t * 44; c.position.set(c.userData.lane, T.height(c.userData.lane, z) + 0.05, z); c.rotation.y = c.userData.dir > 0 ? 0 : Math.PI; }
     // 비둘기
+    if (dyn.clouds) dyn.clouds.rotation.y = t * 0.003;
+    for (const b of dyn.balloons || []) { const u = b.userData; u.ang += dt * u.sp * 0.3; b.position.set(Math.cos(u.ang) * u.rad, u.h + Math.sin(t * 0.3 + u.rad) * 2, Math.sin(u.ang) * u.rad); b.rotation.y = t * 0.05; }
+    for (const g2 of dyn.gulls || []) { const u = g2.userData; u.ang += dt * u.sp; g2.position.set(u.cx + Math.cos(u.ang) * u.rad, u.h + Math.sin(t + u.rad) * 1.5, u.cz + Math.sin(u.ang) * u.rad); g2.rotation.y = -u.ang; const f = Math.sin(t * 7 + u.rad) * 0.45; u.l.rotation.z = f; u.r.rotation.z = -f; }
     for (const b of dyn.birds) { if (b.userData.flee > 0) { b.userData.flee -= dt; b.position.y += dt * 4; b.position.x += dt * 3; if (b.userData.flee <= 0) b.position.copy(b.userData.home); } else b.position.y = b.userData.home.y + Math.abs(Math.sin(t * 6 + b.userData.home.x)) * 0.05; }
     // 강아지
     for (const p of dyn.pets) { p.t += dt; const a = p.t * 0.5; p.c.root.position.set(p.home.x + Math.cos(a) * 3, p.home.y, p.home.z + Math.sin(a * 1.3) * 2); p.c.root.rotation.y = a + Math.PI / 2; ISLE.M.animate(p.c, dt, 0.6); }

@@ -178,7 +178,7 @@
       const c = m.c;
       c.body.rotation.set(0, 0, 0); c.body.position.set(0, 0, 0); c.legL.rotation.z = 0; c.legR.rotation.z = 0;
       const moving = !!e.moving;
-      const spd = moving ? (e.run || e.state === 'RUN' ? 1 : 0.6) * Math.min(3, Math.max(0.5, (1 + ((e.stats && e.stats.speed) || 0) / 100))) : 0;
+      const spd = moving ? (e.run || e.state === 'RUN' ? 1.2 : 0.6 * Math.min(1.5, Math.max(0.6, (1 + ((e.stats && e.stats.speed) || 0) / 100)))) : 0;
       ISLE.M.animate(c, dt * (moving ? Math.min(3, FM.Sim.get().speed) ** 0.3 : 1), spd);
       const pose = moving ? null : (e.pose || null);
       if (pose !== m.lastPose) { m.poseT = 0; m.lastPose = pose; }
@@ -201,7 +201,9 @@
       }
       if (b) m.bal.position.y = 1.9 + Math.sin(st.realT * 3) * 0.06;
       const em = e.emote && e.emote.until > st.realT ? e.emote.e : null;
-      if (em !== m.emoKey) { m.emoKey = em; m.emo.visible = !!em; if (em) { m.emo.material.map = emojiTex(em); m.emo.material.needsUpdate = true; } }
+      if (em !== m.emoKey) { m.emoKey = em; m.emo.visible = !!em; m.emoT = 0; if (em) { m.emo.material.map = emojiTex(em); m.emo.material.needsUpdate = true; } }
+      // 이모티콘에 맞춘 감정 몸짓 (장면 포즈가 없을 때)
+      if (em && !moving && !(e.pose && e.sceneId)) { m.emoT = (m.emoT || 0) + dt; FM.Anim.POSES._emoGesture(c, em, m.emoT); }
       if (em) m.emo.position.y = 1.55 + Math.sin(st.realT * 5) * 0.05;
       r.visible = !(e.child && e.child.stage === 'BABY' && viewLoc === 'island');
     }
