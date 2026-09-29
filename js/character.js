@@ -38,7 +38,21 @@
     otter:    { name: '수달',   icon: '🦦', ears: 'small', muzzle: 'dog', tail: 'thin', fur: 0x8a5a3b, fur2: 0xe8d0b0, ear: 0x6a4028, marking: 'face', markColor: 0xe8d0b0 },
     polar:    { name: '북극곰', icon: '🐻‍❄️', ears: 'round', muzzle: 'bear', tail: 'stub', fur: 0xf6f8ff, fur2: 0xffffff, ear: 0xdfe6f0 },
     lamb:     { name: '아기양', icon: '🐏', ears: 'side', muzzle: 'sheep', tail: 'puff', fur: 0x5a4a52, fur2: 0xfff4f0, ear: 0x5a4a52, wool: true },
+    lion:     { name: '사자',   icon: '🦁', ears: 'round', muzzle: 'cat', tail: 'thin', fur: 0xf2b456, fur2: 0xfff0cc, ear: 0xc07a2a, mane: 0xc0662a },
+    hedgehog: { name: '고슴도치', icon: '🦔', ears: 'small', muzzle: 'mouse', tail: null, fur: 0xf6dcc0, fur2: 0xfff4e6, ear: 0xe8b8a0, spines: 0x8a6448 },
+    shiba:    { name: '시바견', icon: '🐕', ears: 'fox', muzzle: 'dog', tail: 'curl', fur: 0xf0a050, fur2: 0xfff6ea, ear: 0xfff6ea, marking: 'face', markColor: 0xfff6ea },
+    alpaca:   { name: '알파카', icon: '🦙', ears: 'side', muzzle: 'sheep', tail: 'puff', fur: 0xfff3e2, fur2: 0xffffff, ear: 0xf0d8c0, wool: true, head: [1.0, 1.02, 1.0] },
+    owl:      { name: '부엉이', icon: '🦉', ears: 'small', muzzle: 'duck', tail: 'flat', fur: 0xa07850, fur2: 0xf6e6cc, ear: 0x7a5a38, beak: 0xffb13d, marking: 'face', markColor: 0xf6e6cc },
+    seal:     { name: '물범',   icon: '🦭', ears: null, muzzle: 'dog', tail: 'flat', fur: 0xdfe6ee, fur2: 0xffffff, head: [1.12, 0.94, 1.02] },
   };
+  // 종마다 체구가 조금씩 다름 (1 = 보통)
+  const SIZE = {
+    human: 1, cat: 0.96, dog: 1, bear: 1.12, tanuki: 0.98, rabbit: 0.92, hamster: 0.8, mouse: 0.8, squirrel: 0.86,
+    duck: 0.9, pig: 1.03, koala: 0.95, sheep: 1, frog: 0.88, penguin: 0.93, fox: 0.97, deer: 1.06, panda: 1.1,
+    tiger: 1.1, wolf: 1.07, cow: 1.1, monkey: 0.97, chick: 0.78, otter: 0.9, polar: 1.16, lamb: 0.88,
+    lion: 1.12, hedgehog: 0.8, shiba: 0.95, alpaca: 1.08, owl: 0.9, seal: 0.95,
+  };
+  for (const k in SPECIES) SPECIES[k].size = SIZE[k] || 1;
   // 입이 주둥이 위에 입체로 붙는 종
   const MOUTH_3D = { dog: 1, bear: 1, fox: 1, deer: 1 };
 
@@ -236,6 +250,9 @@
           const c = hex(soft ? 0xffa8b8 : l.blush);
           grd.addColorStop(0, c + (soft ? '88' : 'dd')); grd.addColorStop(0.6, c + (soft ? '44' : '77')); grd.addColorStop(1, c + '00');
           g.fillStyle = grd; ellipse(g, x, h * 0.66, 52, 36);
+          // 먼작귀처럼 볼에 빗금 ///
+          g.strokeStyle = hex(shade(soft ? 0xffa8b8 : l.blush, 0.82)) + 'cc'; g.lineWidth = 5; g.lineCap = 'round';
+          for (const dx of [-16, 0, 16]) { g.beginPath(); g.moveTo(x + dx + 6, h * 0.66 - 11); g.lineTo(x + dx - 6, h * 0.66 + 11); g.stroke(); }
         }
       }
 
@@ -256,48 +273,50 @@
       if (l.species !== 'frog') {
         const ink = hex(l.eyeColor);
         const lid = hex(l.marking === 'mask' ? l.markColor : base);
-        const arc = (x, lw = 14) => { g.strokeStyle = '#2b201c'; g.lineWidth = lw; g.beginPath(); g.moveTo(x - 30, ey + 10); g.quadraticCurveTo(x, ey - 26, x + 30, ey + 10); g.stroke(); };
+        const arc = (x, lw = 12) => { g.strokeStyle = '#1f1714'; g.lineWidth = lw; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 24, ey + 8); g.quadraticCurveTo(x, ey - 22, x + 24, ey + 8); g.stroke(); };
         const oval = (x, rx, ry, withStar) => {
           if (l.marking === 'mask') { g.fillStyle = '#fff'; ellipse(g, x, ey, rx + 7, ry + 7); }
+          // 먼작귀 스타일: 새까만 콩 눈 + 위쪽 동그란 하이라이트
           const grd = g.createLinearGradient(0, ey - ry, 0, ey + ry);
-          grd.addColorStop(0, '#1d1512'); grd.addColorStop(0.55, '#2b201c'); grd.addColorStop(1, ink);
+          grd.addColorStop(0, '#16100e'); grd.addColorStop(0.75, '#1f1714'); grd.addColorStop(1, ink);
           g.fillStyle = grd; ellipse(g, x, ey, rx, ry);
           g.fillStyle = '#fff';
-          if (withStar) star(g, x - rx * 0.3, ey - ry * 0.35, rx * 0.45);
-          else { ellipse(g, x - rx * 0.3, ey - ry * 0.36, rx * 0.42, ry * 0.34); circle(g, x - rx * 0.05, ey - ry * 0.02, rx * 0.1); }
-          circle(g, x + rx * 0.36, ey + ry * 0.42, rx * 0.2);
+          const inward = x < w / 2 ? 1 : -1;
+          if (withStar) star(g, x + inward * rx * 0.1, ey - ry * 0.4, rx * 0.5);
+          else circle(g, x + inward * rx * 0.12, ey - ry * 0.42, rx * 0.42);
+          circle(g, x - inward * rx * 0.3, ey + ry * 0.38, rx * 0.15);
         };
         ex.forEach((x, i) => {
           if (blink && l.eyes !== 'happy') { g.strokeStyle = '#2b201c'; g.lineWidth = 12; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 28, ey + 4); g.quadraticCurveTo(x, ey + 18, x + 28, ey + 4); g.stroke(); return; }
           switch (l.eyes) {
             case 'happy': arc(x); break;
-            case 'wink': if (i === 1) arc(x); else oval(x, 36, 46); break;
+            case 'wink': if (i === 1) arc(x); else oval(x, 27, 35); break;
             case 'sparkle':
-              oval(x, 38, 46);
-              g.strokeStyle = '#2b201c'; g.lineWidth = 6;
-              for (const a of [-0.5, -0.2]) { const s = i === 0 ? -1 : 1; g.beginPath(); g.moveTo(x + s * Math.cos(a) * 38, ey + Math.sin(a) * 46); g.lineTo(x + s * Math.cos(a) * 52, ey + Math.sin(a) * 58); g.stroke(); }
+              oval(x, 28, 36);
+              g.fillStyle = '#fff'; circle(g, x + (i === 0 ? 8 : -8), ey + 2, 4);
+              g.strokeStyle = '#2b201c'; g.lineWidth = 5;
+              for (const a of [-0.5, -0.2]) { const s = i === 0 ? -1 : 1; g.beginPath(); g.moveTo(x + s * Math.cos(a) * 32, ey + Math.sin(a) * 40); g.lineTo(x + s * Math.cos(a) * 44, ey + Math.sin(a) * 52); g.stroke(); }
               break;
             case 'round':
-              g.fillStyle = '#fff'; ellipse(g, x, ey, 36, 38);
-              g.strokeStyle = '#2b201c'; g.lineWidth = 6; g.beginPath(); g.ellipse(x, ey, 36, 38, 0, 0, Math.PI * 2); g.stroke();
-              g.fillStyle = ink; circle(g, x + (i === 0 ? 6 : -6), ey + 6, 16);
-              g.fillStyle = '#fff'; circle(g, x + (i === 0 ? 1 : -11), ey, 5);
+              // 동글동글 큰 콩 눈 (하이라이트 두 개)
+              oval(x, 29, 34);
+              g.fillStyle = '#fff'; circle(g, x + (i === 0 ? -9 : 9), ey - 4, 6);
               break;
             case 'sleepy':
-              oval(x, 32, 38);
-              g.fillStyle = lid; g.fillRect(x - 46, ey - 50, 92, 50);
+              oval(x, 25, 32);
+              g.fillStyle = lid; g.fillRect(x - 40, ey - 44, 80, 44);
               g.strokeStyle = '#2b201c'; g.lineWidth = 9; g.beginPath(); g.moveTo(x - 36, ey); g.lineTo(x + 36, ey); g.stroke();
               break;
             case 'smug': {
-              oval(x, 30, 38);
+              oval(x, 25, 32);
               const s = i === 0 ? -1 : 1;
               g.fillStyle = lid;
               g.beginPath(); g.moveTo(x - 50, ey - 60); g.lineTo(x + 50, ey - 60); g.lineTo(x + 50, ey - 10 + s * -12); g.lineTo(x - 50, ey - 10 - s * -12); g.closePath(); g.fill();
               g.strokeStyle = '#2b201c'; g.lineWidth = 9; g.beginPath(); g.moveTo(x - 36, ey - 10 - s * -9); g.lineTo(x + 36, ey - 10 + s * -9); g.stroke();
               break;
             }
-            case 'star': oval(x, 34, 42, true); break;
-            default: oval(x, 36, 46);
+            case 'star': oval(x, 28, 36, true); break;
+            default: oval(x, 27, 35);
           }
         });
       }
@@ -373,6 +392,7 @@
     const skin = human ? l.skin : l.fur;
     const skin2 = human ? l.skin : l.fur2;
     const root = new THREE.Group();
+    root.scale.setScalar(sp.size || 1);
     const body = new THREE.Group();
     // 체형 (키 · 통통함) — 주민마다 조금씩 다름
     const shapeG = new THREE.Group();
@@ -504,6 +524,38 @@
       // 몸에도 복슬복슬
       for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; body.add(mesh(sphere(0.07), mat(l.fur2), Math.cos(a) * 0.25, 0.47, Math.sin(a) * 0.2)); }
     }
+    if (sp.mane) {
+      // 사자 갈기: 얼굴 둘레 복슬 뭉치
+      const mm = mat(l.mane || sp.mane);
+      for (let i = 0; i < 14; i++) {
+        const a = i / 14 * Math.PI * 2;
+        const b = mesh(sphere(0.14), mm, Math.cos(a) * 0.4 * hs[0], 0.02 + Math.sin(a) * 0.36 * hs[1], -0.1);
+        b.scale.set(1, 1, 0.8);
+        head.add(b);
+      }
+      head.add(mesh(sphere(0.36), mm, 0, 0.02, -0.16));
+    }
+    if (sp.spines) {
+      // 고슴도치 가시: 머리 뒤와 등
+      const sm = mat(sp.spines);
+      const cone = geo('spine', () => new THREE.ConeGeometry(0.06, 0.2, 7));
+      for (let r = 0; r < 4; r++) for (let i = 0; i < 7; i++) {
+        const a = (i / 6 - 0.5) * 2.4, e = 0.25 + r * 0.32;
+        const dir = new THREE.Vector3(Math.sin(a) * Math.cos(e), Math.sin(e) * 0.9 + 0.1, -Math.cos(a) * Math.cos(e) - 0.2).normalize();
+        const m = new THREE.Mesh(cone, sm);
+        m.position.copy(dir.clone().multiplyScalar(HEAD_R * 0.98));
+        m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+        head.add(m);
+      }
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 7 - 0.5) * 2.2;
+        const m = new THREE.Mesh(cone, sm);
+        const dir = new THREE.Vector3(Math.sin(a), 0.35, -Math.cos(a)).normalize();
+        m.position.set(dir.x * 0.24, 0.36, dir.z * 0.22);
+        m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+        body.add(m);
+      }
+    }
     if (l.species === 'deer' && l.antlers) {
       for (const s of [-1, 1]) {
         const ant = new THREE.Group();
@@ -524,7 +576,7 @@
     root.traverse(o => { if (o.isMesh && o !== face) o.castShadow = true; });
 
     return {
-      root, body, head, legL, legR, armL, armR, face, faceTex: tFace, blinkTex: tBlink, look: l,
+      root, body, head, legL, legR, armL, armR, face, faceTex: tFace, blinkTex: tBlink, look: l, size: sp.size || 1,
       phase: 0, blinkT: 2 + Math.random() * 3, actionT: 0, idleT: Math.random() * 10,
       lastRot: 0, headYaw: 0, talkT: 0, waveT: 0,
     };
@@ -1046,12 +1098,33 @@
     }
   }
 
+  // 털색 변주: 종 고유색을 살짝 흔들거나, 파스텔 색으로 바꿈 → 같은 종도 겹치지 않게
+  const FUR_ALT = [0xffffff, 0xfff1e0, 0xfff3b0, 0xffe07a, 0xffcc3a, 0xffb36b, 0xff9a4a, 0xe8a070, 0xd9a066, 0xc08348,
+    0x9a6440, 0x6e4a36, 0x4a3a34, 0x2b2b30, 0x6a6f7a, 0x9aa3ad, 0xcfd6de, 0xa9c6e8, 0x8fb8ff, 0xb3b9ff, 0xc9b3ff,
+    0xe0b8ff, 0xffb3e0, 0xff8fa0, 0xffc2c7, 0xffd6c9, 0xb8e8a0, 0x7ccf6a, 0x8fd3cc, 0x7fd8e8, 0xfff8e8, 0xf4e0ff];
+  const mixC = (a, b, t) => { const c = (x, s) => (x >> s) & 255; return [16, 8, 0].reduce((o, s) => o | (Math.round(c(a, s) + (c(b, s) - c(a, s)) * t) << s), 0); };
+  const hsl = (c, dh, ds, dl) => {
+    const col = new THREE.Color(c), o = {}; col.getHSL(o);
+    col.setHSL((o.h + dh + 1) % 1, Math.min(1, Math.max(0, o.s + ds)), Math.min(0.95, Math.max(0.12, o.l + dl)));
+    return col.getHex();
+  };
+  function furVariant(sp) {
+    const d = SPECIES[sp], r = Math.random();
+    let fur;
+    if (r < 0.4) fur = hsl(d.fur, (Math.random() - 0.5) * 0.06, (Math.random() - 0.5) * 0.2, (Math.random() - 0.5) * 0.16);
+    else fur = hsl(FUR_ALT[(Math.random() * FUR_ALT.length) | 0], (Math.random() - 0.5) * 0.04, 0, (Math.random() - 0.5) * 0.08);
+    const out = { fur, fur2: mixC(fur, 0xffffff, 0.55 + Math.random() * 0.3) };
+    if (d.markColor !== undefined && Math.random() < 0.5) out.markColor = hsl(d.markColor, (Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.2);
+    if (d.mane) out.mane = mixC(fur, 0x5a2a10, 0.35 + Math.random() * 0.3);
+    return out;
+  }
+
   function randomLook() {
     const pick = arr => arr[(Math.random() * arr.length) | 0];
     const keys = o => Object.keys(o);
     const sp = Math.random() < 0.1 ? 'human' : pick(keys(SPECIES).filter(k => k !== 'human'));
     let l = withSpecies(normalizeLook({}), sp);
-    if (Math.random() < 0.5 && sp !== 'human') { l.fur = pick(PALETTE.fur); l.fur2 = pick([0xffffff, 0xfff6e0, 0xfff0f4, l.fur2]); }
+    if (sp !== 'human') Object.assign(l, furVariant(sp));
     Object.assign(l, {
       eyes: pick(keys(OPT.eyes)), brows: pick(['none', 'none', 'thin', 'thick', 'dots', 'angry', 'worried']),
       mouth: pick(['smile', 'w', 'open', 'grin', 'tooth', 'flat', 'pout']), eyeColor: pick(PALETTE.eye),
@@ -1077,5 +1150,6 @@
   ISLE.normalizeLook = normalizeLook;
   ISLE.withSpecies = withSpecies;
   ISLE.randomLook = randomLook;
+  ISLE.furVariant = furVariant;
   ISLE.CREATOR_KEY = 'cozy-island-creator-v1';
 })();

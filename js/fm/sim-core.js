@@ -479,11 +479,31 @@
       ARTISTIC: { top: ['apron', 'aloha'], pattern: ['dots', 'stripe2', 'star'], cloth: [0x4fc1c9, 0xff8fb1, 0xffd84a], hat: ['beret'], acc: ['scarf'], hair: ['curly', 'afro', 'sidepart'] },
       ANXIOUS: { top: ['sweater', 'hoodie'], pattern: ['plain', 'dots'], cloth: [0xfff4d6, 0xcfd6de, 0x8fd3ff], brows: ['worried'], eyes: ['round'], acc: ['scarf'], height: [0.9, 0.98] },
     },
+    // 생활 리듬 → 소품
+    L2: {
+      DILIGENT: { acc: ['tie', 'satchel'], hat: ['none', 'cap'] }, SLOTH: { hat: ['nightcap', 'none'], eyes: ['sleepy'], top: ['hoodie'] },
+      CURIOUS: { acc: ['backpack', 'satchel'], glasses: ['round'], eyes: ['round', 'sparkle'] }, HOMEBODY: { top: ['sweater', 'hoodie'], acc: ['scarf'], pattern: ['snow', 'plaid'] },
+      WANDERER: { acc: ['backpack'], hat: ['bucket', 'straw'] }, BUSYBODY: { acc: ['satchel'], mouth: ['open', 'grin'] },
+      NIGHT_OWL: { hat: ['headphones', 'beanie'], cloth: [0x2f4b6e, 0x3a3a3a, 0xb69cff], pattern: ['star'] }, EARLY_BIRD: { hat: ['cap', 'headband'], cloth: [0xffd84a, 0xfff4d6, 0x8ee07a] },
+    },
+    // 말투 → 표정 · 색감
+    L3: {
+      WARM: { cloth: [0xffb13d, 0xfff4d6, 0xff8fb1], mouth: ['smile', 'w'], eyes: ['happy', 'dot'] }, FORMAL: { top: ['vest'], acc: ['bowtie', 'tie'], pattern: ['plain'] },
+      CYNICAL: { eyes: ['smug'], mouth: ['flat'], cloth: [0x3a3a3a, 0x55624a] }, CUTE: { hat: ['bow', 'flower'], eyes: ['sparkle', 'dot'], mouth: ['w'], pattern: ['heart', 'dots'], glasses: ['heart', 'none'] },
+      PRANKSTER: { eyes: ['wink'], mouth: ['grin', 'tooth'], pattern: ['stripe2', 'dots'] }, DREAMY: { eyes: ['star', 'sparkle'], hat: ['halo', 'flower'], cloth: [0xc9b3ff, 0x8fd3ff, 0xffc6de] },
+      PASSIONATE: { cloth: [0xff6f61, 0xffb13d], brows: ['thick'], mouth: ['grin', 'open'], hat: ['headband'] }, SHY: { eyes: ['round', 'dot'], brows: ['worried'], acc: ['scarf'], mouth: ['w'] },
+    },
+    // 취미 → 아이템
     L4: {
-      MUSIC: { hat: ['headphones'] }, FASHION: { glasses: ['sun', 'heart'], acc: ['necklace', 'cape'] }, FITNESS: { hat: ['headband'] }, STUDY: { glasses: ['round'] },
-      OCCULT: { hat: ['horns', 'halo'], acc: ['cape'], eyes: ['star'] }, GARDEN: { hat: ['straw', 'flower'] }, FOOD: { top: ['apron'] }, CLEAN: { top: ['apron'] }, GOSSIP: { acc: ['satchel'] }, FISHING: { hat: ['bucket'] },
+      MUSIC: { hat: ['headphones'], pattern: ['star', 'stripe'] }, FASHION: { glasses: ['sun', 'heart'], acc: ['necklace', 'cape'], hat: ['beret', 'bow'] },
+      FITNESS: { hat: ['headband', 'cap'], top: ['tee'], bottom: ['shorts'] }, STUDY: { glasses: ['round', 'square'], acc: ['satchel'] },
+      OCCULT: { hat: ['horns', 'halo'], acc: ['cape'], eyes: ['star'], cloth: [0x2b2b30, 0xb69cff] }, GARDEN: { hat: ['straw', 'flower'], top: ['apron'], pattern: ['leaf', 'flower'] },
+      FOOD: { top: ['apron'], hat: ['beanie', 'none'] }, CLEAN: { top: ['apron'], hat: ['headband'] }, GOSSIP: { acc: ['satchel', 'necklace'] },
+      FISHING: { hat: ['bucket', 'straw'], top: ['vest', 'aloha'], acc: ['backpack'] },
     },
   };
+  // 색을 살짝 흔들어 같은 성격끼리도 옷 색이 겹치지 않게
+  const jitterC = c => { const r = ((c >> 16) & 255), g = ((c >> 8) & 255), b = c & 255, j = () => ((Math.random() - 0.5) * 36) | 0, k = x => Math.min(255, Math.max(0, x + j())); return (k(r) << 16) | (k(g) << 8) | k(b); };
   function styleByPersonality(l, keys) {
     const apply = (st, p) => {
       if (!st || !chance(p)) return;
@@ -501,8 +521,12 @@
       if (st.height) l.height = +rnd(...st.height).toFixed(2);
       if (st.width) l.width = +rnd(...st.width).toFixed(2);
     };
-    apply(STYLE.L1[keys.L1], 0.85);
-    apply(STYLE.L4[keys.L4], 0.6);
+    apply(STYLE.L1[keys.L1], 1);
+    apply(STYLE.L2[keys.L2], 0.45);
+    apply(STYLE.L3[keys.L3], 0.6);
+    apply(STYLE.L4[keys.L4], 0.85);
+    l.shirt = jitterC(l.shirt); l.shirt2 = jitterC(l.shirt2); l.pants = jitterC(l.pants);
+    if (l.hat !== 'none' && l.hat !== 'halo') l.hatColor = jitterC(l.hatColor);
     if (l.top === 'dress') l.bottom = 'none';
   }
   Sim.styleByPersonality = styleByPersonality;
@@ -514,9 +538,20 @@
     if (!o.look && window.ISLE && ISLE.withSpecies) {
       // 이미 섬에 많은 종은 피해서 다양하게
       const count = {}; for (const v of (S ? S.villagers : [])) count[v.look && v.look.species] = (count[v.look && v.look.species] || 0) + 1;
-      if (look.species === 'human' && chance(0.6) || (count[look.species] || 0) >= 2) {
-        const sps = Object.keys(ISLE.SPECIES).filter(k => k !== 'human' && !(count[k] >= 1));
-        if (sps.length) { const keep = Object.assign({}, look); look = ISLE.withSpecies(look, pick(sps)); if (chance(0.4)) { look.fur = keep.fur; look.fur2 = keep.fur2; } }
+      // 아직 없는(가장 적은) 종을 우선 → 섬에 같은 종이 겹치지 않게
+      if (look.species === 'human' && chance(0.6) || (count[look.species] || 0) >= 1) {
+        const all = Object.keys(ISLE.SPECIES).filter(k => k !== 'human');
+        const min = Math.min(...all.map(k => count[k] || 0));
+        const sps = all.filter(k => (count[k] || 0) === min);
+        look = ISLE.withSpecies(look, pick(sps));
+        if (ISLE.furVariant) Object.assign(look, ISLE.furVariant(look.species));
+      }
+      // 같은 종이 있으면 털색이 확실히 다르도록 다시 뽑기
+      const dist = (a, b) => Math.abs(((a >> 16) & 255) - ((b >> 16) & 255)) + Math.abs(((a >> 8) & 255) - ((b >> 8) & 255)) + Math.abs((a & 255) - (b & 255));
+      for (let t = 0; t < 12 && ISLE.furVariant; t++) {
+        const clash = (S ? S.villagers : []).some(v => v.look && v.look.species === look.species && dist(v.look.fur, look.fur) < 90);
+        if (!clash) break;
+        Object.assign(look, ISLE.furVariant(look.species));
       }
       styleByPersonality(look, keys);
     }

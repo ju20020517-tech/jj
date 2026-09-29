@@ -118,7 +118,7 @@
     overlays(c, e);
     const scale = e.child ? { BABY: 0.45, TODDLER: 0.58, CHILD: 0.76 }[e.child.stage] : 1;
     const hf = e.child && e.child.dna ? e.child.dna.phenotype.height_factor || 1 : 1;
-    c.root.scale.setScalar(scale * hf);
+    c.root.scale.setScalar(scale * hf * (c.size || 1));
     const bal = new THREE.Sprite(new THREE.SpriteMaterial({ depthTest: false, transparent: true }));
     bal.scale.set(0.9, 0.9, 1); bal.position.y = 1.85; bal.visible = false; bal.renderOrder = 20;
     c.root.add(bal);
