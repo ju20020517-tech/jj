@@ -661,6 +661,13 @@
     for (const v of S.villagers) { derive(v); v.talkingToPlayer = false; v.followUse = null; v.route = null; v.sceneId = null; v.act = null; v.bubble = null; if (v.loc === 'metro') { v.loc = 'island'; const st = MAP.STATIONS.C; v.x = st.x; v.z = st.z + 1; } }
     S.fx = [];
     if (!S.rooms) S.rooms = {};
+    // 예전 저장: 손대지 않은 주민 방은 성격에 맞는 레퍼런스 스타일 방으로 새로 꾸밈
+    if (FM.RoomKit) for (const v of S.villagers) {
+      const r = v.home && S.rooms[v.home];
+      if (!r || r.roomStyle !== undefined || r.theme || r.edited || r.atmoByPlayer || v.child) continue;
+      const { w, d } = Sim.interiorSize(v.home);
+      Object.assign(r, FM.RoomKit.styleRoom(FM.RoomKit.pickStyle(v.keys || {}, 0), w, d));
+    }
     ensurePlayerRoom();
     FM.Soc && FM.Soc.onLoad && FM.Soc.onLoad();
     emit('villagers');

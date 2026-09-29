@@ -126,7 +126,8 @@
     const g = new THREE.Group();
     if (!F) { g.add(mesh(box(0.5, 0.5, 0.5), mat(0xff00ff), 0, 0.25, 0)); return g; }
     const built = F.parts.map(p => { const m = partMesh(p, opts); g.add(m); return m; });
-    furnDetail(F, g, built);
+    if (F.build) { F.build(g, opts); bake(g); }
+    else furnDetail(F, g, built);
     g.userData.type = type;
     return g;
   };

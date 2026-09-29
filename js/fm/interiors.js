@@ -114,7 +114,7 @@
   const hashStr = t => { let h = 2166136261; for (const c of String(t)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
   function mixColor(a, b, k) { const r = (x, s) => (x >> s) & 255; const m = s => Math.round(r(a, s) * (1 - k) + r(b, s) * k) << s; return m(16) | m(8) | m(0); }
 
-  function defaultRoom(v, w, d, door) {
+  function defaultRoom(v, w, d, door, opts = {}) {
     const home = v.home && I[v.home];
     if (!w) { w = home && !home.player ? home.w : 8; d = home && !home.player ? home.d : 6; }
     if (!door && home && home.door && !home.player) door = home.door;
@@ -177,10 +177,14 @@
     for (let i = 0; i < (B.trash || 0); i++) trash.push({ kind: ['snack', 'dust', 'clothes'][i % 3], x: +((rnd() - 0.5) * (w - 2)).toFixed(2), z: +((rnd() - 0.2) * (d - 2)).toFixed(2) });
     // 동적 방 분위기: 메인 성격 = 베이스 벽지 색 & 조명 / 특이 취향 = 벽지 무늬 & 파티클 & 앰비언스
     const AT1 = FM.D.ATMO_L1[keys.L1], AT4 = FM.D.ATMO_L4[keys.L4];
+    // 주민 방: 성격 조합에 맞는 레퍼런스 스타일(코티지/아쿠아/핑크/개러지/로프트)로 통째 꾸밈
+    const RK = FM.RoomKit;
+    const styleId = opts.style || (RK && v.id !== 'P' && !opts.plain ? RK.pickStyle(keys, hashStr(v.id || v.name || '')) : null);
+    const sty = styleId ? RK.styleRoom(styleId, w, d) : null;
     return Object.assign({
       theme: null, wall, wallStyle: A.wallStyle, floor: A.floor, floorColor: mixColor(A.floorColor, 0xffffff, rnd() * 0.2), light: B.light || (A.light === 'warm' && C.light) || A.light, lightOn: true,
       bgm: C.bgm || 'none', furn, trash, clean: 100 - trash.length * 8, pattern: null, patternFace: null, set: null, style: [keys.L1, keys.L2, keys.L3, keys.L4].join('+'),
-    }, AT1 ? { wall: AT1.palette[0], wall2: AT1.palette[1], light: AT1.light } : {}, AT4 ? { wallStyle: 'p_' + AT4.pattern, particles: AT4.particle, ambience: AT4.sound } : {}, { atmo: { l1: keys.L1, l4: keys.L4 }, atmoRev: 1 });
+    }, AT1 ? { wall: AT1.palette[0], wall2: AT1.palette[1], light: AT1.light } : {}, AT4 ? { wallStyle: 'p_' + AT4.pattern, particles: AT4.particle, ambience: AT4.sound } : {}, { atmo: { l1: keys.L1, l4: keys.L4 }, atmoRev: 1 }, sty ? Object.assign(sty, { trash }) : {});
   }
   // 테마 방 (인테리어 티켓)
   function themeRoom(themeId, w = 8, d = 6) {

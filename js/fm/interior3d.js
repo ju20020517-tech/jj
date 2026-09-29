@@ -34,6 +34,7 @@
         case 'candy': for (let x = -h; x < w; x += 40) { g.fillStyle = 'rgba(255,255,255,0.45)'; g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 20, 0); g.lineTo(x + 20 + h, h); g.lineTo(x + h, h); g.fill(); } break;
         case 'water': for (let i = 0; i < 30; i++) { g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 3; g.beginPath(); const y = Math.random() * h; g.moveTo(0, y); for (let x = 0; x <= w; x += 16) g.lineTo(x, y + Math.sin(x / 20) * 5); g.stroke(); } break;
         case 'mat': for (let y = 0; y < h; y += 128) for (let x = 0; x < w; x += 128) { g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 4; g.strokeRect(x, y, 128, 128); } break;
+        case 'slate': for (let y = 0; y < h; y += 32) for (let x = 0; x < w; x += 32) { g.fillStyle = `rgba(${((x * 7 + y * 3) % 5) < 2 ? '255,255,255,0.05' : '0,0,0,0.08'})`; g.fillRect(x + 1, y + 1, 30, 30); g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(x, y, 32, 1.5); g.fillRect(x, y, 1.5, 32); } break;
         case 'sand': for (let i = 0; i < 900; i++) { g.fillStyle = dark; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); } break;
       }
     }, [2, 2]);
@@ -213,6 +214,7 @@
   I3.drawAtmoPattern = drawAtmoPattern;
   const MODERN = { heart: 'hearts', stripe: 'books', wainscot: 'plain', dots: 'polka', star: 'sacred', leaf: 'vine', brick: 'whitebrick', splatter: 'terrazzo', check: 'gingham', plain: 'plain' };
   function wallTex(theme, color, color2) {
+    if (theme && theme.startsWith('st_')) theme = 'plain';
     if (!theme || MODERN[theme]) theme = 'p_' + (MODERN[theme || 'plain']);
     if (theme.startsWith('p_')) color = refineWall(color);
     const css = PM.css(color);
@@ -273,6 +275,7 @@
     group.add(mesh(box(w, 0.05, 0.14, 0.02), tm, 0, WALL_H - 0.15, -d / 2 + 0.07));
     for (const sx of [-1, 1]) { group.add(mesh(box(0.1, 0.12, d, 0.03), tm, sx * (w / 2 - 0.05), WALL_H - 0.06, 0)); group.add(mesh(box(0.14, 0.05, d, 0.02), tm, sx * (w / 2 - 0.07), WALL_H - 0.15, 0)); }
     if (I.kind !== 'room' || themeId) return;
+    if (room.roomStyle && FM.RoomKit && FM.RoomKit.STYLES[room.roomStyle]) return styleShell(group, room, w, d, tm);
     // 징두리 판벽 (벽 아래쪽 0.95m) + 걸레받이 위 몰딩 + 굽도리 액자 패널
     const pane = mixC(wallCol, dark ? 0x000000 : 0xffffff, dark ? 0.25 : 0.55);
     const pm = mat(pane), frameM = mat(mixC(pane, dark ? 0xffffff : 0x7a5a3a, 0.12));
@@ -319,6 +322,17 @@
     const side = new THREE.Group(); side.position.set(-w / 2 + 0.05, 1.75, -0.2); side.rotation.y = Math.PI / 2;
     buildWindow(side, 1.0, 1.0, room, seed + 1, false);
     group.add(side);
+  }
+  // 레퍼런스 스타일 방의 구조물 (나무 기둥·보 / 콘크리트 기둥 / 판벽 몰딩)
+  function styleShell(group, room, w, d, tm) {
+    const S = FM.RoomKit.STYLES[room.roomStyle];
+    if (S.beams) {   // 코티지: 모서리 · 벽 가운데 원목 기둥 + 위쪽 보
+      const bm = mat(S.beams);
+      for (const [x, z] of [[-w / 2 + 0.08, -d / 2 + 0.08], [w / 2 - 0.08, -d / 2 + 0.08], [-w / 2 + 0.08, 0], [w / 2 - 0.08, 0]]) group.add(mesh(box(0.16, WALL_H, 0.16, 0.02), bm, x, WALL_H / 2, z));
+      group.add(mesh(box(w, 0.16, 0.14, 0.02), bm, 0, 2.55, -d / 2 + 0.08));
+      for (const sx of [-1, 1]) group.add(mesh(box(0.14, 0.16, d, 0.02), bm, sx * (w / 2 - 0.08), 2.55, 0));
+    }
+    if (S.pillar) { const cm = mat(0x9a9ca0); group.add(mesh(box(0.5, WALL_H, 0.5, 0.02), cm, -w / 2 + 0.25, WALL_H / 2, -d / 2 + 0.25)); group.add(mesh(box(w, 0.3, 0.3, 0.02), cm, 0, WALL_H - 0.15, -d / 2 + 0.15)); }
   }
   // 커튼 달린 창문 (곡선 윗단 · 창틀 · 창턱 화분)
   function buildWindow(win, ww, hh, room, seed, withSky = true) {
@@ -403,10 +417,17 @@
     // 무늬 한 장 ≈ 1.4m 로 촘촘하게 (벽 크기별로 반복 수 조절)
     const TILE = 1.4;
     const fineWall = !(room.patterns && room.patterns.wall) && !themeId;
-    const wallMat = (len) => { if (!fineWall) return H.soften(new THREE.MeshLambertMaterial({ map: wallMap, side: THREE.DoubleSide }), 0.1); const t = wallMap.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(Math.max(1, Math.round(len / TILE)), WALL_H / TILE); return H.soften(new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }), 0.1); };
-    const wm = wallMat(w), wmSide = wallMat(d);
+    // 레퍼런스 스타일 벽 (st_*): 벽마다 다른 재질 가능 (뒤 / 왼쪽 / 오른쪽)
+    const stMat = (style, len) => {
+      const W = FM.RoomKit && FM.RoomKit.wallTexture(style.slice(3)); if (!W) return null;
+      const t = W.tex.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W.tileW ? Math.max(1, Math.round(len / W.tileW)) : 1, 1);
+      return H.soften(new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }), 0.1);
+    };
+    const stOK = st => !themeId && !(room.patterns && room.patterns.wall) && st && st.startsWith('st_');
+    const wallMat = (len, st) => { if (stOK(st)) { const m = stMat(st, len); if (m) return m; } if (!fineWall) return H.soften(new THREE.MeshLambertMaterial({ map: wallMap, side: THREE.DoubleSide }), 0.1); const t = wallMap.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(Math.max(1, Math.round(len / TILE)), WALL_H / TILE); return H.soften(new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }), 0.1); };
+    const wm = wallMat(w, room.wallStyle), wmL = wallMat(d, room.wallStyleL || room.wallStyle), wmR = wallMat(d, room.wallStyleR || room.wallStyle);
     const back = new THREE.Mesh(new THREE.PlaneGeometry(w, WALL_H), wm); back.position.set(0, WALL_H / 2, -d / 2); back.receiveShadow = true; group.add(back);
-    for (const s of [-1, 1]) { const side = new THREE.Mesh(new THREE.PlaneGeometry(d, WALL_H), wmSide); side.position.set(s * w / 2, WALL_H / 2, 0); side.rotation.y = -s * Math.PI / 2; side.receiveShadow = true; group.add(side); side.name = 'sideWall'; }
+    for (const s of [-1, 1]) { const side = new THREE.Mesh(new THREE.PlaneGeometry(d, WALL_H), s < 0 ? wmL : wmR); side.position.set(s * w / 2, WALL_H / 2, 0); side.rotation.y = -s * Math.PI / 2; side.receiveShadow = true; group.add(side); side.name = 'sideWall'; }
     // 걸레받이
     const bb = mat(0xffffff);
     group.add(mesh(box(w, 0.12, 0.06, 0.02), bb, 0, 0.06, -d / 2 + 0.03));
@@ -414,7 +435,7 @@
     // 몰딩 · 징두리 판벽 · 러그 · 가랜드 (세련되고 아기자기하게)
     decorShell(group, I, room, themeId, w, d, res);
     // 창문 틀 (뒷벽) / 스카이라인
-    if (I.kind === 'room' || I.skyline) {
+    if ((I.kind === 'room' && !room.roomStyle) || I.skyline) {
       const win = new THREE.Group(); win.position.set(I.skyline ? 0 : -w / 4, 1.7, -d / 2 + 0.05);
       const sky = new THREE.Mesh(new THREE.PlaneGeometry(I.skyline ? w - 1 : 1.6, I.skyline ? 1.8 : 1.1), new THREE.MeshBasicMaterial({ map: I.skyline ? PM.ctex('skyline', 512, 128, (g, W2, H2) => { g.fillStyle = '#1a1a3a'; g.fillRect(0, 0, W2, H2); for (let x = 0; x < W2; x += 22) { const hh = 30 + Math.random() * 80; g.fillStyle = '#0a0a1a'; g.fillRect(x, H2 - hh, 18, hh); g.fillStyle = '#ffe9a8'; for (let y = H2 - hh + 6; y < H2; y += 10) if (Math.random() < 0.5) g.fillRect(x + 4, y, 3, 3); } }) : null, color: I.skyline ? 0xffffff : (FM.W.nightness > 0.5 ? 0x1a2040 : 0x9fd6ff) }));
       win.add(sky);

@@ -1446,7 +1446,16 @@
     if (!A1 || !A4) return null;
     const wall = room.wall !== undefined ? room.wall : 0xf4efe6;
     const color = Math.max(0, 1 - Math.min(...A1.palette.map(p => colDist(wall, p))) / 160);
-    const pattern = room.wallStyle === 'p_' + A4.pattern ? 1 : (room.wallStyle || '').startsWith('p_') ? 0.25 : 0.1;
+    let pattern = room.wallStyle === 'p_' + A4.pattern ? 1 : (room.wallStyle || '').startsWith('p_') ? 0.25 : 0.1;
+    // 레퍼런스 스타일 방: 벽 색·무늬 대신 "스타일이 성격에 얼마나 맞는지"로 평가
+    if (room.roomStyle && FM.RoomKit && (room.wallStyle || '').startsWith('st_')) {
+      const fit = FM.RoomKit.styleFit(v.keys, room.roomStyle);
+      const light = room.light === A1.light ? 1 : ['warm', 'sunset', 'mood', 'rosy', 'study', 'pastel'].includes(room.light) ? 0.45 : 0.15;
+      let sc = Math.round(100 * (0.75 * fit + 0.25 * light));
+      const loud = ['party', 'redneon', 'neon', 'holo', 'bright'].includes(room.light);
+      if ((v.keys.L1 === 'INTROVERT' || v.keys.L1 === 'ANXIOUS') && loud) sc = 0;
+      return Math.max(0, Math.min(100, sc));
+    }
     const light = room.light === A1.light ? 1 : ['warm', 'sunset', 'mood', 'rosy', 'study', 'pastel'].includes(room.light) ? 0.45 : 0.15;
     let score = Math.round(100 * (0.4 * color + 0.35 * pattern + 0.25 * light));
     // 최악의 조합: 조용한/심약한 주민 + 화려한 파티 조명·파티 색
