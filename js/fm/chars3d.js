@@ -163,7 +163,7 @@
       // 위치
       let y;
       if (viewLoc === 'island') y = T.groundY(e.x, e.z);
-      else y = (opts.floorY || 0);
+      else y = (opts.floorY || 0) + (FM.levelY ? FM.levelY(loc, e.x, e.z) : 0);   // 복층 · 계단 높이
       if (e.act && e.act.y) y += e.act.y;
       if (e.status && e.status.floatUntil && e.status.floatUntil > st.time) y += 1 + Math.sin(st.realT * 2) * 0.2;
       if (opts.spaceFloat) y += 0.35 + Math.sin(st.realT * 1.5 + e.x) * 0.25;        // 우주 기지 세트: 중력 50% 감소

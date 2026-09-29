@@ -106,7 +106,7 @@
     if (sh) {
       L.dir.position.set(sh.pos[0], sh.pos[1], sh.pos[2]); L.dir.target.position.set(sh.at ? sh.at[0] : 0, 0, sh.at ? sh.at[1] : 0);
       if (!L.dir.target.parent) intScene.add(L.dir.target);
-      L.dir.shadow.mapSize.set(1024, 1024); const c = L.dir.shadow.camera; c.left = -7; c.right = 7; c.top = 7; c.bottom = -7; c.near = 0.5; c.far = 40; c.updateProjectionMatrix();
+      L.dir.shadow.mapSize.set(1024, 1024); const c = L.dir.shadow.camera, ext = Math.max(7, Math.max(G.interior.w || 0, G.interior.d || 0) * 0.62); c.left = -ext; c.right = ext; c.top = ext; c.bottom = -ext; c.near = 0.5; c.far = 50; c.updateProjectionMatrix();
       L.dir.shadow.bias = -0.0012; L.dir.shadow.normalBias = 0.02; L.dir.shadow.radius = sh.soft || 4;
       if (L.dir.shadow.map) { L.dir.shadow.map.dispose(); L.dir.shadow.map = null; }
       // 벽 · 바닥은 그림자를 드리우지 않음 (창빛이 벽에 막히지 않게) — 가구만

@@ -9,7 +9,7 @@
   const { mat, geo, sphere, box, cyl, capsule, mesh } = H;
   const I3 = (FM.Int3D = {});
 
-  const WALL_H = 3;
+  let WALL_H = 3;   // 실내마다 I.wallH 로 변경 (복층 도서관 등)
   function floorTex(kind, color) {
     const css = PM.css(color);
     return PM.ctex(`floor:${kind}:${color}`, 256, 256, (g, w, h) => {
@@ -403,6 +403,7 @@
   // 빌드
   // ---------------------------------------------------------
   I3.build = function (iid) {
+    WALL_H = (FM.INTERIORS[iid] && FM.INTERIORS[iid].wallH) || 3;
     const st = FM.Sim.get();
     const I = FM.INTERIORS[iid];
     const room = st.rooms[iid] || I;
@@ -463,7 +464,7 @@
       if (f.type === 'photo_crush') { const owner = st.villagers.find(v => v.home === iid); const tgt = f.target || (owner && owner.crush && owner.crush.target); if (tgt) opts.faceTex = faceTex(tgt); }
       const o = PM.furniture(f.type, opts);
       if (pattern && !f.img && !F.parts.some(p => (p[8] || '').includes('pic'))) o.traverse(m => { if (m.isMesh && m.userData.main) { m.material = new THREE.MeshLambertMaterial({ map: pattern }); } });
-      o.position.set(f.x, 0, f.z);
+      o.position.set(f.x, f.y || 0, f.z);   // f.y: 복층(2층) 가구
       o.rotation.y = (f.rot || 0) * Math.PI / 180;
       o.userData.furnIdx = idx;
       o.traverse(m => { m.userData.furnIdx = idx; });
@@ -481,7 +482,7 @@
       // 가구 자체 발광 (스탠드 · 무드등 · 네온 · 창빛)
       if (F.lamp) for (const [lx, ly, lz, col, inten, dist] of F.lamp) {
         const r = (f.rot || 0) * Math.PI / 180, wx = f.x + lx * Math.cos(r) + lz * Math.sin(r), wz = f.z - lx * Math.sin(r) + lz * Math.cos(r);
-        lampList.push({ x: wx, y: ly, z: wz, col, inten, dist });
+        lampList.push({ x: wx, y: ly + (f.y || 0), z: wz, col, inten, dist });
       }
     });
     // 램프 빛은 밝은 순으로 최대 5개 (모바일 성능)
