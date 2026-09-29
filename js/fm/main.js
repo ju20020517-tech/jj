@@ -370,7 +370,7 @@
     if (p.using && p.loc !== 'island') {
       if (!f.followUse) {
         const cand = Sim.furnUses(p.loc).filter(u => !Sim.useOcc[u.key] && Math.hypot(u.x - p.x, u.z - p.z) < 4.5).sort((a, b) => (a.F.id === p.using.type ? -1 : 0) - (b.F.id === p.using.type ? -1 : 0) || Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z))[0];
-        if (cand) { Sim.useOcc[cand.key] = f.id; f.useKey = cand.key; f.followUse = cand; f.x = cand.x; f.z = cand.z; f.ry = cand.ry; f.pose = cand.u.pose; f.act = { id: 'follow_' + cand.u.act, name: cand.F.name, t: 999, y: cand.u.y || 0 }; f.state = 'INTERACT_OBJ'; Sim.emote(f, '😆'); }
+        if (cand) { Sim.useOcc[cand.key] = f.id; f.useKey = cand.key; f.followUse = cand; f.x = cand.x; f.z = cand.z; f.ry = cand.ry; f.pose = cand.u.pose; f.act = { id: 'follow_' + cand.u.act, name: cand.F.name, t: 999, y: cand.u.y || 0, seatH: cand.u.seatH || 0, bed: cand.u.pose === 'sleep' ? cand.F.bed || null : null }; f.state = 'INTERACT_OBJ'; Sim.emote(f, '😆'); }
         else f.followUse = 'none';
       }
       if (f.followUse && f.followUse !== 'none') return;
@@ -487,7 +487,15 @@
   function playerAction(kind) {
     const st = Sim.get(), p = st.player;
     if (G.view === 'observe' || p.busy) return;
-    if (kind === 'sit') { p.sitting = !p.sitting; p.pose = p.sitting ? 'sit' : null; Ev.onPlayerAction('sit'); return; }
+    if (kind === 'sit') {
+      p.sitting = !p.sitting; p.pose = p.sitting ? 'sit' : null;
+      // 근처에 빈 벤치가 있으면 벤치에 제대로 앉기
+      if (p.sitting && p.loc === 'island') {
+        const b = Sim.SPOTS.find(s => s.seat && !s.lie && !s.occ && s.tags.includes('bench') && Math.hypot(s.x - p.x, s.z - p.z) < 2);
+        if (b) { p.x = b.x; p.z = b.z; if (b.face !== undefined) p.ry = b.face; p.act = { id: 'P_sit', y: 0, seatH: b.tags.includes('cafe') ? 0.48 : 0.49 }; }
+      } else if (!p.sitting && p.act && p.act.id === 'P_sit') p.act = null;
+      Ev.onPlayerAction('sit'); return;
+    }
     if (kind === 'fish') {
       if (!p.inv.rod) return FM.UI.toast('낚싯대가 필요해요 (쇼핑몰)');
       if (!nearWater(p.x, p.z) && p.loc === 'island') return FM.UI.toast('물가에서 낚시할 수 있어요');

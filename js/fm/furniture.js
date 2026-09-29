@@ -295,6 +295,35 @@
   def('cafe_table', '카페 테이블', 'venue', 0, 1.2, 1.4, [['c', 0.45, 0.05, 0, 0, 0.74, 0, WH], ['c', 0.04, 0.72, 0, 0, 0.36, 0, GR]],
     { use: [{ pose: 'drink', dx: 0, dz: 0.75, face: 180, act: 'cafe', prop: 'teacup' }, { pose: 'drink', dx: 0, dz: -0.75, face: 0, act: 'cafe', prop: 'teacup' }], tags: ['cafe', 'table'] });
 
+  // ---------------- 앉는 높이 / 침대 정보 (포즈가 가구에 딱 맞도록) ----------------
+  const partTop = p => { const [sh, a, b, , , y] = p; return y + (sh === 'b' || sh === 'c' || sh === 'k' ? b / 2 : sh === 's' ? a * (b || 1) : sh === 'C' ? b / 2 : 0); };
+  const covers = (p, x, z) => { const [sh, a, , c, px, , pz] = p; const hw = sh === 'b' ? a / 2 : a, hd = sh === 'b' ? c / 2 : a; return Math.abs(x - px) <= hw + 0.02 && Math.abs(z - pz) <= hd + 0.02; };
+  const SEAT_POSES = ['sit', 'eat', 'drink', 'read', 'write', 'peel', 'massage', 'type', 'game', 'pray'];
+  for (const f of Object.values(F)) {
+    const tags = f.tags || [];
+    if (tags.includes('bed')) {
+      // 매트리스 윗면: 가운데를 덮는 1m 아래 파츠 중 가장 높은 곳
+      let top = 0.1;
+      for (const p of f.parts) if (covers(p, 0, 0) && partTop(p) < 1.0) top = Math.max(top, partTop(p));
+      const blanket = f.parts.find(p => p[0] === 'b' && p[6] > 0.2 && p[2] < 0.2 && partTop(p) <= top + 0.01 && !(p[8] || '').includes('m'));
+      f.bed = { top, headZ: -f.d / 2 + 0.66, color: blanket ? blanket[7] : 0x8fd3ff };
+    }
+    if (!f.use) continue;
+    const seatLike = tags.includes('chair') || tags.includes('sofa') || tags.includes('bench');
+    const tableSeat = tags.includes('table') || tags.includes('cafe') || tags.includes('school') || tags.includes('desk');
+    for (const u of f.use) {
+      if (!SEAT_POSES.includes(u.pose)) continue;
+      if (seatLike) {
+        let h = 0;
+        for (const p of f.parts) if (covers(p, u.dx, u.dz - 0.05) && partTop(p) < 0.8) h = Math.max(h, partTop(p));
+        u.seatH = h || 0.47;
+      } else if (tableSeat && !u.y) {
+        // 테이블/책상 앞에는 동글 스툴을 자동으로 놓고 그 위에 앉음
+        u.stool = true; u.seatH = 0.46;
+      }
+    }
+  }
+
   // 레이어 이름
   FM.FURN = F;
   FM.FURN_LAYERS = { rest: '휴식 가구', work: '작업/수납 가구', smart: '스마트 오브젝트', wall: '벽걸이 & 소품', light: '조명 & 앰비언스', misc: '기타', yard: '마당 시설', venue: '공용 시설' };

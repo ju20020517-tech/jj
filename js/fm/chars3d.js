@@ -183,7 +183,11 @@
       const pose = moving ? null : (e.pose || null);
       if (pose !== m.lastPose) { m.poseT = 0; m.lastPose = pose; }
       m.poseT += dt;
+      c.rs = r.scale.y; c.hh = c.look.height || 1; c.ww = c.look.width || 1;
+      c.seatH = !moving && e.act && e.act.seatH || 0;
+      c.bed = !moving && e.act && e.act.bed || null;
       if (!moving) FM.Anim.apply(c, e, m.poseT);
+      else if (c.blanket && c.blanket.visible) FM.Anim.apply(c, {}, 0);
       // 짝사랑 시선 고정 (Head Tracking): 몸은 딴 곳, 고개는 대상 주민
       if (e.crush && e.crush.target && !moving) { const t = e.crush.target === 'P' ? st.player : FM.Sim.byId(e.crush.target); if (t && t.loc === e.loc && Math.hypot(t.x - e.x, t.z - e.z) < 10) { let a = Math.atan2(t.x - e.x, t.z - e.z) - r.rotation.y; a = Math.atan2(Math.sin(a), Math.cos(a)); c.head.rotation.y = Math.max(-1.3, Math.min(1.3, a)); } }
       // 손 소품

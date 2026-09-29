@@ -9,8 +9,18 @@
   const A = {};
   const arms = (c, lx, lz, rx, rz) => { c.armL.rotation.x = lx; c.armL.rotation.z = lz; c.armR.rotation.x = rx; c.armR.rotation.z = rz; };
   const legs = (c, l, r) => { c.legL.rotation.x = l; c.legR.rotation.x = r; };
-  const sitBase = (c, t) => { legs(c, -1.45, -1.45); c.body.position.y = -0.2; };
-  const lieBase = (c) => { c.body.rotation.x = -PI / 2; c.body.position.y = 0.32; c.body.position.z = -0.35; legs(c, 0, 0); };
+  // 엉덩이(몸통 아래 ≈ body 기준 0.11)를 좌석 높이(월드)에 맞춤. seatH 0 = 바닥에 앉기
+  const HIP = 0.11, SHAPE_Y = 0.07;
+  const bodyYFor = (c, worldY) => (worldY / (c.rs || 1) - SHAPE_Y) / (c.hh || 1) - HIP;
+  const sitBase = (c, t) => {
+    const sh = c.seatH || 0;
+    if (sh > 0) { legs(c, -1.3, -1.3); c.body.position.y = bodyYFor(c, sh + 0.01); c.body.position.z = 0.04; }
+    else { legs(c, -1.5, -1.5); c.body.position.y = bodyYFor(c, 0.02); }
+    c.seated = true;
+  };
+  // 누울 때는 몸 가운데가 제자리에 오도록 (머리가 벽 너머로 넘어가지 않게)
+  const lieBase = (c) => { c.body.rotation.x = -PI / 2; c.body.position.y = 0.32; c.body.position.z = 0.46; legs(c, 0, 0); c.lying = true; };
+  A._sitBase = sitBase;
 
   A.stand = () => {};
   A.look = (c, t) => { c.head.rotation.y = S(t * 0.8) * 0.5; };
@@ -59,7 +69,26 @@
   A.sit = (c, t) => { sitBase(c); arms(c, -0.6, -0.1, -0.6, 0.1); };
   A.sadSit = (c, t) => { sitBase(c); c.head.rotation.x = 0.5; arms(c, -1.3, 0.2, -1.3, -0.2); };
   A.lie = (c, t) => { lieBase(c); arms(c, -3, 0, -3, 0); };
-  A.sleep = (c, t) => { lieBase(c); c.body.position.y = 0.55; arms(c, 0, -0.1, 0, 0.1); c.body.scale.y *= 1 + S(t * 1.6) * 0.02; };
+  // 침대: 머리는 베개 위, 몸은 매트리스 위, 이불을 어깨까지 덮고 새근새근
+  A.sleep = (c, t) => {
+    lieBase(c);
+    const bed = c.bed, rs = c.rs || 1, ww = c.ww || 1;
+    if (bed) {
+      c.body.position.z = bed.headZ / (rs * ww) + 0.93;
+      c.body.position.y = ((bed.top + 0.22 * rs) / rs - SHAPE_Y) / (c.hh || 1);
+    } else c.body.position.y = 0.4;
+    arms(c, 0, -0.08, 0, 0.08);
+    // 베개에 고개를 살짝 숙여 기대고(귀가 벽으로 안 넘어가게), 가끔 고개를 돌려 뒤척임
+    c.head.rotation.x = 0.5;
+    c.head.rotation.y = S(t * 0.15) > 0.3 ? 0.3 : S(t * 0.15) < -0.3 ? -0.3 : 0;
+    const br = 1 + S(t * 1.6) * 0.025;
+    if (c.blanket) {
+      c.blanket.visible = true;
+      c.blanket.scale.set(1, 1, br);
+      if (bed && c.blanket.userData.col !== bed.color) { c.blanket.userData.quilt.color.setHex(bed.color); c.blanket.userData.col = bed.color; }
+    }
+    c.face.material.map = c.blinkTex; c.eyesShut = true;
+  };
   A.nap = A.lie;
   A.cheer = (c, t) => { arms(c, 0, -2.6 - S(t * 10) * 0.3, 0, 2.6 + S(t * 10) * 0.3); c.body.position.y = Math.abs(S(t * 8)) * 0.15; };
   A.mirror = (c, t) => { arms(c, 0, -0.6, -1.6, -0.2); c.head.rotation.y = S(t * 1.5) * 0.4; };
@@ -166,10 +195,24 @@
   FM.Anim = {
     POSES: A,
     apply(c, v, t) {
+      c.seated = false; c.lying = false;
+      if (c.blanket) c.blanket.visible = false;
+      if (c.shape) c.shape.rotation.y = 0;
+      if (c.eyesShut) { c.face.material.map = c.faceTex; c.eyesShut = false; }
       const p = v.pose || (v.moving ? null : STATE_POSE[v.state]);
       if (!p) return;
       const f = A[p];
       if (f) f(c, t);
+      // 의자/벤치/소파 위: 어떤 포즈든 좌석 위에 제대로 앉힘
+      const sh = c.seatH || 0;
+      if (sh > 0) {
+        if (c.lying) {
+          // 벤치 위 낮잠: 좌석 위에 눕고, 벤치 방향(옆으로 긴 쪽)으로 돌려 눕힘
+          c.body.position.y += sh / ((c.rs || 1) * (c.hh || 1));
+          if (c.shape) c.shape.rotation.y = PI / 2;
+        } else if (!c.seated && !NO_SEAT[p]) sitBase(c, t);
+      }
     },
   };
+  const NO_SEAT = { stand: 1, float: 1, levitateDance: 1, dance: 1, cheer: 1, jog: 1, bounce: 1, swim: 1, hangWall: 1 };
 })();

@@ -6,7 +6,7 @@
   'use strict';
   const FM = window.FM, ISLE = window.ISLE, PM = FM.PM, D = FM.D;
   const H = ISLE.M.h;
-  const { mat, sphere, box, cyl, mesh } = H;
+  const { mat, geo, sphere, box, cyl, capsule, mesh } = H;
   const I3 = (FM.Int3D = {});
 
   const WALL_H = 3;
@@ -16,7 +16,17 @@
       g.fillStyle = css; g.fillRect(0, 0, w, h);
       const dark = 'rgba(0,0,0,0.12)', light = 'rgba(255,255,255,0.15)';
       switch (kind) {
-        case 'wood': case 'log': for (let y = 0; y < h; y += 32) { g.fillStyle = dark; g.fillRect(0, y, w, 2); for (let x = (y / 32 % 2) * 64; x < w; x += 128) g.fillRect(x, y, 2, 32); } break;
+        case 'wood': case 'log':
+          // 판자마다 결·밝기가 조금씩 다른 원목 마루
+          for (let y = 0; y < h; y += 32) for (let x = -((y / 32) % 3) * 42; x < w; x += 128) {
+            const k = ((x * 13 + y * 7) % 5) - 2;
+            g.fillStyle = k > 0 ? `rgba(255,255,255,${k * 0.05})` : `rgba(90,50,20,${-k * 0.05})`; g.fillRect(x, y, 128, 32);
+            g.strokeStyle = 'rgba(90,50,20,0.1)'; g.lineWidth = 1;
+            for (let i = 0; i < 3; i++) { const gy = y + 7 + i * 8 + ((x + i * 5) % 4); g.beginPath(); g.moveTo(x + 4, gy); g.bezierCurveTo(x + 40, gy - 3, x + 80, gy + 3, x + 124, gy); g.stroke(); }
+            g.fillStyle = dark; g.fillRect(x, y, 2, 32);
+          }
+          for (let y = 0; y < h; y += 32) { g.fillStyle = dark; g.fillRect(0, y, w, 2); }
+          break;
         case 'tile': for (let y = 0; y < h; y += 64) for (let x = 0; x < w; x += 64) { g.fillStyle = ((x + y) / 64) % 2 ? dark : light; g.fillRect(x, y, 64, 64); } break;
         case 'marble': for (let i = 0; i < 8; i++) { g.strokeStyle = 'rgba(150,150,170,0.3)'; g.lineWidth = 2; g.beginPath(); let x = Math.random() * w, y = 0; g.moveTo(x, y); while (y < h) { x += (Math.random() - 0.5) * 40; y += 16; g.lineTo(x, y); } g.stroke(); } g.strokeStyle = dark; for (let i = 0; i <= w; i += 128) { g.strokeRect(i, 0, 128, 128); g.strokeRect(i, 128, 128, 128); } break;
         case 'carpet': for (let i = 0; i < 1400; i++) { g.fillStyle = Math.random() < 0.5 ? dark : light; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); } break;
@@ -124,6 +134,110 @@
       }
     }, [2, 1]);
   }
+  // ---------------------------------------------------------
+  // 방 껍데기 꾸미기
+  // ---------------------------------------------------------
+  const mixC = (a, b, t) => { const c = (x, sh) => (x >> sh) & 255; return [16, 8, 0].reduce((o, sh) => o | (Math.round(c(a, sh) + (c(b, sh) - c(a, sh)) * t) << sh), 0); };
+  const PASTEL = [0xffc6d9, 0xffe6a0, 0xbfe3ff, 0xc8efc0, 0xdcc8ff, 0xffd2b0];
+  function rugTex(base, edge, kind) {
+    return PM.ctex(`rug:${base}:${edge}:${kind}`, 256, 256, (g, W2, H2) => {
+      g.clearRect(0, 0, W2, H2);
+      const cx = W2 / 2, cy = H2 / 2;
+      const el = (r, col) => { g.fillStyle = col; g.beginPath(); g.ellipse(cx, cy, cx * r, cy * r, 0, 0, Math.PI * 2); g.fill(); };
+      el(0.99, PM.css(edge)); el(0.9, PM.css(base)); el(0.84, PM.css(mixC(base, 0xffffff, 0.35)));
+      g.fillStyle = PM.css(edge);
+      if (kind === 0) for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2; g.beginPath(); g.arc(cx + Math.cos(a) * cx * 0.62, cy + Math.sin(a) * cy * 0.62, 6, 0, Math.PI * 2); g.fill(); }
+      else if (kind === 1) for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, x = cx + Math.cos(a) * cx * 0.55, y = cy + Math.sin(a) * cy * 0.55; g.beginPath(); g.moveTo(x, y + 7); g.bezierCurveTo(x - 12, y - 2, x - 5, y - 11, x, y - 4); g.bezierCurveTo(x + 5, y - 11, x + 12, y - 2, x, y + 7); g.fill(); }
+      else { g.strokeStyle = PM.css(edge); g.lineWidth = 4; for (const r of [0.66, 0.5]) { g.beginPath(); g.ellipse(cx, cy, cx * r, cy * r, 0, 0, Math.PI * 2); g.stroke(); } }
+      g.fillStyle = PM.css(mixC(edge, 0xffffff, 0.3)); g.beginPath(); g.ellipse(cx, cy, cx * 0.2, cy * 0.2, 0, 0, Math.PI * 2); g.fill();
+    });
+  }
+  function decorShell(group, I, room, themeId, w, d, res) {
+    const wallCol = room.wall || I.wall || 0xf4efe6;
+    const dark = lum(wallCol) < 0.35;
+    const trimCol = dark ? mixC(wallCol, 0x000000, 0.35) : 0xfffaf2;
+    const tm = mat(trimCol);
+    // 천장 몰딩 (모든 실내)
+    group.add(mesh(box(w, 0.12, 0.1, 0.03), tm, 0, WALL_H - 0.06, -d / 2 + 0.05));
+    group.add(mesh(box(w, 0.05, 0.14, 0.02), tm, 0, WALL_H - 0.15, -d / 2 + 0.07));
+    for (const sx of [-1, 1]) { group.add(mesh(box(0.1, 0.12, d, 0.03), tm, sx * (w / 2 - 0.05), WALL_H - 0.06, 0)); group.add(mesh(box(0.14, 0.05, d, 0.02), tm, sx * (w / 2 - 0.07), WALL_H - 0.15, 0)); }
+    if (I.kind !== 'room' || themeId) return;
+    // 징두리 판벽 (벽 아래쪽 0.95m) + 걸레받이 위 몰딩 + 굽도리 액자 패널
+    const pane = mixC(wallCol, dark ? 0x000000 : 0xffffff, dark ? 0.25 : 0.55);
+    const pm = mat(pane), frameM = mat(mixC(pane, dark ? 0xffffff : 0x7a5a3a, 0.12));
+    const WH = 0.95;
+    group.add(mesh(box(w - 0.02, WH, 0.04, 0.01), pm, 0, WH / 2, -d / 2 + 0.03));
+    for (const sx of [-1, 1]) group.add(mesh(box(0.04, WH, d - 0.02, 0.01), pm, sx * (w / 2 - 0.03), WH / 2, 0));
+    group.add(mesh(box(w, 0.06, 0.09, 0.02), tm, 0, WH, -d / 2 + 0.05));
+    for (const sx of [-1, 1]) group.add(mesh(box(0.09, 0.06, d, 0.02), tm, sx * (w / 2 - 0.05), WH, 0));
+    const nB = Math.max(3, Math.round(w / 1.0)), nS = Math.max(3, Math.round(d / 1.0));
+    for (let i = 0; i < nB; i++) {
+      const x = -w / 2 + (i + 0.5) * w / nB;
+      for (const [fw, fh, fy] of [[w / nB - 0.22, 0.05, 0.78], [w / nB - 0.22, 0.05, 0.3]]) group.add(mesh(box(fw, fh, 0.03, 0.01), frameM, x, fy, -d / 2 + 0.06));
+      for (const sx of [-1, 1]) group.add(mesh(box(0.05, 0.53, 0.03, 0.01), frameM, x + sx * (w / nB - 0.22) / 2, 0.54, -d / 2 + 0.06));
+    }
+    for (const side of [-1, 1]) for (let i = 0; i < nS; i++) {
+      const z = -d / 2 + (i + 0.5) * d / nS, px = side * (w / 2 - 0.06);
+      for (const fy of [0.78, 0.3]) group.add(mesh(box(0.03, 0.05, d / nS - 0.22, 0.01), frameM, px, fy, z));
+      for (const sz of [-1, 1]) group.add(mesh(box(0.03, 0.53, 0.05, 0.01), frameM, px, 0.54, z + sz * (d / nS - 0.22) / 2));
+    }
+    // 동글 러그 (카펫 바닥이 아니면)
+    const seed = [...(I.id || 'r')].reduce((a, ch) => a + ch.charCodeAt(0), 0);
+    if (room.floor !== 'carpet') {
+      const base = room.wall2 !== undefined && room.wall2 !== null ? mixC(room.wall2, 0xffffff, 0.35) : PASTEL[seed % PASTEL.length];
+      const edge = mixC(base, 0x6a4a3a, 0.25);
+      const rug = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(3.6, w * 0.45), Math.min(2.4, d * 0.42)), new THREE.MeshLambertMaterial({ map: rugTex(base, edge, seed % 3), transparent: true, depthWrite: false }));
+      rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.012, 0.4); rug.receiveShadow = true; rug.renderOrder = 1;
+      group.add(rug);
+    }
+    // 뒷벽 위 꼬마전구 가랜드 (두 번 늘어짐)
+    const bulbs = [];
+    const swag = (x0, x1) => {
+      const n = 9;
+      for (let i = 0; i <= n; i++) {
+        const t = i / n, x = x0 + (x1 - x0) * t, y = WALL_H - 0.3 - Math.sin(t * Math.PI) * 0.32;
+        const col = PASTEL[(i + seed) % PASTEL.length];
+        const b = mesh(sphere(0.045), PM.glowMat(mixC(col, 0xffffff, 0.2)), x, y, -d / 2 + 0.1, false);
+        b.scale.y = 1.25; group.add(b); bulbs.push(b);
+        if (i < n) { const x2 = x0 + (x1 - x0) * (i + 1) / n, y2 = WALL_H - 0.3 - Math.sin((i + 1) / n * Math.PI) * 0.32; const len = Math.hypot(x2 - x, y2 - y); const wire = mesh(cyl(0.006, 0.006, len), mat(0x6a5a4a), (x + x2) / 2, (y + y2) / 2 + 0.04, -d / 2 + 0.09, false); wire.rotation.z = Math.atan2(y2 - y, x2 - x) - Math.PI / 2; group.add(wire); }
+      }
+    };
+    swag(-w / 2 + 0.3, 0); swag(0, w / 2 - 0.3);
+    res.bulbs = bulbs;
+    // 옆벽 작은 창문 (왼쪽)
+    const side = new THREE.Group(); side.position.set(-w / 2 + 0.05, 1.75, -0.2); side.rotation.y = Math.PI / 2;
+    buildWindow(side, 1.0, 1.0, room, seed + 1, false);
+    group.add(side);
+  }
+  // 커튼 달린 창문 (곡선 윗단 · 창틀 · 창턱 화분)
+  function buildWindow(win, ww, hh, room, seed, withSky = true) {
+    const sky = new THREE.Mesh(new THREE.PlaneGeometry(ww, hh), new THREE.MeshBasicMaterial({ map: PM.ctex('winsky', 128, 128, (g, W2, H2) => { const gr = g.createLinearGradient(0, 0, 0, H2); gr.addColorStop(0, '#8fd0ff'); gr.addColorStop(1, '#e6f6ff'); g.fillStyle = gr; g.fillRect(0, 0, W2, H2); g.fillStyle = 'rgba(255,255,255,0.9)'; for (const [x, y, r] of [[30, 40, 14], [46, 36, 18], [62, 42, 12], [92, 80, 10], [104, 76, 14]]) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); } g.fillStyle = '#9ad67a'; g.beginPath(); g.ellipse(64, H2 + 30, 90, 50, 0, 0, Math.PI * 2); g.fill(); }), color: FM.W && FM.W.nightness > 0.5 ? 0x2a3060 : 0xffffff }));
+    win.add(sky);
+    const fm = mat(0xffffff);
+    for (const [x, y, fw, fh] of [[0, hh / 2 + 0.04, ww + 0.16, 0.1], [0, -hh / 2 - 0.04, ww + 0.16, 0.1], [-ww / 2 - 0.04, 0, 0.1, hh + 0.12], [ww / 2 + 0.04, 0, 0.1, hh + 0.12], [0, 0, 0.05, hh], [0, 0.05, ww, 0.05]]) win.add(mesh(box(fw, fh, 0.08, 0.02), fm, x, y, 0.03));
+    // 창턱 + 화분
+    win.add(mesh(box(ww + 0.35, 0.06, 0.24, 0.02), fm, 0, -hh / 2 - 0.1, 0.1));
+    const pot = new THREE.Group(); pot.position.set(ww * 0.28, -hh / 2 - 0.07, 0.12);
+    pot.add(mesh(cyl(0.07, 0.055, 0.12), mat(0xe8845a), 0, 0.06, 0));
+    for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; const lf = mesh(sphere(0.06), mat(0x6cc36a), Math.cos(a) * 0.05, 0.17, Math.sin(a) * 0.05); lf.scale.set(0.7, 1.3, 0.7); pot.add(lf); }
+    pot.add(mesh(sphere(0.035), mat(PASTEL[seed % PASTEL.length] === 0xc8efc0 ? 0xff8fb1 : PASTEL[seed % PASTEL.length]), 0, 0.24, 0));
+    win.add(pot);
+    // 커튼 (주름진 천 + 봉 + 묶음 끈)
+    const cc = room.wall2 !== undefined && room.wall2 !== null ? mixC(room.wall2, 0xffffff, 0.3) : PASTEL[(seed + 3) % PASTEL.length];
+    const cm = mat(cc);
+    win.add(mesh(cyl(0.02, 0.02, ww + 0.9), mat(0xd9b44a), 0, hh / 2 + 0.2, 0.14).rotateZ(Math.PI / 2));
+    for (const sx of [-1, 1]) {
+      win.add(mesh(sphere(0.04), mat(0xd9b44a), sx * (ww / 2 + 0.47), hh / 2 + 0.2, 0.14));
+      for (let k = 0; k < 3; k++) {
+        const fold = mesh(capsule(0.06, hh + 0.05), cm, sx * (ww / 2 + 0.1 + k * 0.1), -0.02, 0.16 + (k % 2) * 0.03);
+        fold.rotation.z = -sx * 0.08; fold.scale.set(1, 1, 0.7); win.add(fold);
+      }
+      win.add(mesh(geo('tieback', () => new THREE.TorusGeometry(0.16, 0.022, 6, 16)), mat(0xfffaf2), sx * (ww / 2 + 0.2), -hh * 0.15, 0.18).rotateX(Math.PI / 2));
+    }
+    // 가리비 모양 발란스
+    for (let i = 0; i < 7; i++) { const sc = mesh(sphere(0.1), cm, -ww / 2 - 0.15 + i * (ww + 0.3) / 6, hh / 2 + 0.12, 0.17); sc.scale.set(1.1, 0.7, 0.4); win.add(sc); }
+  }
+
   // DIY 무늬 (dataURL) → 텍스처
   const patCache = new Map();
   function patTex(dataUrl) {
@@ -182,13 +296,16 @@
     const bb = mat(0xffffff);
     group.add(mesh(box(w, 0.12, 0.06, 0.02), bb, 0, 0.06, -d / 2 + 0.03));
     for (const s of [-1, 1]) group.add(mesh(box(0.06, 0.12, d, 0.02), bb, s * (w / 2 - 0.03), 0.06, 0));
+    // 몰딩 · 징두리 판벽 · 러그 · 가랜드 (세련되고 아기자기하게)
+    decorShell(group, I, room, themeId, w, d, res);
     // 창문 틀 (뒷벽) / 스카이라인
     if (I.kind === 'room' || I.skyline) {
       const win = new THREE.Group(); win.position.set(I.skyline ? 0 : -w / 4, 1.7, -d / 2 + 0.05);
       const sky = new THREE.Mesh(new THREE.PlaneGeometry(I.skyline ? w - 1 : 1.6, I.skyline ? 1.8 : 1.1), new THREE.MeshBasicMaterial({ map: I.skyline ? PM.ctex('skyline', 512, 128, (g, W2, H2) => { g.fillStyle = '#1a1a3a'; g.fillRect(0, 0, W2, H2); for (let x = 0; x < W2; x += 22) { const hh = 30 + Math.random() * 80; g.fillStyle = '#0a0a1a'; g.fillRect(x, H2 - hh, 18, hh); g.fillStyle = '#ffe9a8'; for (let y = H2 - hh + 6; y < H2; y += 10) if (Math.random() < 0.5) g.fillRect(x + 4, y, 3, 3); } }) : null, color: I.skyline ? 0xffffff : (FM.W.nightness > 0.5 ? 0x1a2040 : 0x9fd6ff) }));
       win.add(sky);
+      if (I.kind === 'room' && !I.skyline && !themeId) { win.remove(sky); buildWindow(win, 1.6, 1.1, room, 7); group.add(win); win.userData.fancy = true; }
       const frameCol = theme && themeId === 'hanok' ? 0x8a5a3b : themeId === 'prison' ? 0x55595f : 0xffffff;
-      if (!I.skyline) for (const [x, y, ww, hh] of [[0, 0.58, 1.8, 0.1], [0, -0.58, 1.8, 0.1], [-0.85, 0, 0.1, 1.2], [0.85, 0, 0.1, 1.2], [0, 0, 0.06, 1.1]]) win.add(mesh(box(ww, hh, 0.08, 0.02), mat(frameCol), x, y, 0.02));
+      if (!I.skyline && !win.userData.fancy) for (const [x, y, ww, hh] of [[0, 0.58, 1.8, 0.1], [0, -0.58, 1.8, 0.1], [-0.85, 0, 0.1, 1.2], [0.85, 0, 0.1, 1.2], [0, 0, 0.06, 1.1]]) win.add(mesh(box(ww, hh, 0.08, 0.02), mat(frameCol), x, y, 0.02));
       if (themeId === 'prison' && !I.skyline) for (let i = -2; i <= 2; i++) win.add(mesh(cyl(0.02, 0.02, 1.1), mat(0x55595f), i * 0.3, 0, 0.05));
       group.add(win);
     }
@@ -311,6 +428,7 @@
     const st = FM.Sim.get();
     const room = st.rooms[res.iid];
     if (res.caustic) { res.caustic.offset.x += dt * 0.05; res.caustic.offset.y += dt * 0.03; }
+    if (res.bulbs) res.bulbs.forEach((b, i) => { const k = 1 + Math.sin(t * 2.2 + i * 1.7) * 0.18; b.scale.set(k, k * 1.25, k); });
     if (res.bubbles) { const a = res.bubbles.geometry.attributes.position; for (let i = 0; i < a.count; i++) { let y = a.getY(i) + dt * 0.6; if (y > 3) y = 0; a.setY(i, y); } a.needsUpdate = true; }
     for (const o of res.floatObjs) o.position.y = 0.3 + Math.sin(t * 1.2 + o.position.x) * 0.2;
     // 노래방: 조명이 어두워지며 미러볼이 돌아감

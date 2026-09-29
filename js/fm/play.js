@@ -64,7 +64,7 @@
     Play.stop(true);
     p.x = u.x; p.z = u.z; p.ry = u.ry;
     p.sitting = true; p.pose = u.u.pose || 'stand'; p.prop = u.u.prop || null;
-    p.act = { id: 'P_' + (u.u.act || 'use'), y: u.u.y || 0 };
+    p.act = { id: 'P_' + (u.u.act || 'use'), y: u.u.y || 0, seatH: u.u.seatH || 0, bed: u.u.pose === 'sleep' ? u.F.bed || null : null };
     p.useKey = u.key; Sim.useOcc[u.key] = 'P';
     p.using = { act: u.u.act, type: u.F.id, iid: u.iid, t: 0 };
     effect(u);

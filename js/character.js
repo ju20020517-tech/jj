@@ -201,6 +201,18 @@
     }, [2, 1]);
   }
 
+  // 이불 누빔 무늬 (흰 바탕에 누빔선 + 작은 하트/점) — 색은 material.color 로 입힘
+  function quiltTex() {
+    return canvasTex('quilt', 128, 128, (g, w, h) => {
+      g.fillStyle = '#eaeaea'; g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(0,0,0,0.13)'; g.lineWidth = 2; g.setLineDash([5, 4]);
+      for (let i = 0; i <= w; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(w, i); g.stroke(); }
+      g.setLineDash([]);
+      g.fillStyle = 'rgba(255,255,255,0.9)';
+      for (let y = 16; y < h; y += 32) for (let x = 16; x < w; x += 32) { if ((x + y) / 32 % 2) heart(g, x, y, 5); else circle(g, x, y, 3.5); }
+    }, [2, 2]);
+  }
+
   // 얼굴: 머리 앞쪽을 덮는 구면 조각에 입히는 투명 텍스처
   function faceTex(l, blink) {
     const sp = SPECIES[l.species];
@@ -573,10 +585,19 @@
     buildAcc(body, l);
     buildTail(body, l, sp);
 
+    // 잘 때 덮는 이불 (몸 기준 — 눕는 포즈에서만 보임)
+    const blanket = new THREE.Group();
+    const quilt = new THREE.MeshLambertMaterial({ map: quiltTex(), color: 0x8fd3ff });
+    blanket.add(mesh(box(0.98, 0.7, 0.5, 0.2), quilt, 0, 0.2, 0.06));
+    blanket.add(mesh(box(1.0, 0.14, 0.54, 0.07), mat(0xfffaf2), 0, 0.55, 0.07));
+    blanket.visible = false;
+    blanket.userData.quilt = quilt;
+    body.add(blanket);
+
     root.traverse(o => { if (o.isMesh && o !== face) o.castShadow = true; });
 
     return {
-      root, body, head, legL, legR, armL, armR, face, faceTex: tFace, blinkTex: tBlink, look: l, size: sp.size || 1,
+      root, shape: shapeG, body, head, legL, legR, armL, armR, face, faceTex: tFace, blinkTex: tBlink, look: l, size: sp.size || 1, blanket,
       phase: 0, blinkT: 2 + Math.random() * 3, actionT: 0, idleT: Math.random() * 10,
       lastRot: 0, headYaw: 0, talkT: 0, waveT: 0,
     };

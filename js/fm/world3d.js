@@ -549,9 +549,9 @@
       if (s.tags.includes('hammock')) { if (!dyn._ham) { dyn._ham = 1; place(PM.decor('hammock'), -103.5, 15); } continue; }
       if (s.tags.includes('swing')) { if (!dyn._sw) { dyn._sw = 1; place(PM.decor('swing'), -71, 12.6); } continue; }
       if (s.tags.includes('sunbed')) { place(PM.decor('sunbed'), s.x, s.z, face); continue; }
-      if (s.tags.includes('cafe') && s.seat) { place(PM.decor('chair'), s.x, s.z, face + Math.PI); continue; }
+      if (s.tags.includes('cafe') && s.seat) { place(PM.decor('chair'), s.x, s.z, face); continue; }
       if (s.tags.includes('pocha')) continue;
-      if (s.seat && (s.tags.includes('bench') || s.tags.includes('campfire') || s.tags.includes('garden'))) { const b = PM.decor('bench'); place(b, s.x, s.z, face + Math.PI); continue; }
+      if (s.seat && (s.tags.includes('bench') || s.tags.includes('campfire') || s.tags.includes('garden'))) { const b = PM.decor('bench'); place(b, s.x, s.z, face); continue; }
     }
     for (const [x, z] of [[21.2, 13.5], [28.2, 13.5], [21.2, 17.5], [28.2, 17.5]]) place(PM.decor('cafeTable'), x, z);
     place(PM.decor('boat'), -96, 27.5, 0.4, 5.7);

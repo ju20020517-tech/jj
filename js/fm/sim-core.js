@@ -990,6 +990,8 @@
     v.prop = extra.prop !== undefined ? extra.prop : (A.prop || heldItem(v, v.state));
     if (A.emote && chance(0.6)) Sim.emote(v, A.emote);
     if (v.spot && v.spot.face !== undefined) v.ry = v.spot.face;
+    // 섬의 벤치/카페 의자에 앉으면 좌석 높이에 맞춰 앉음
+    if (v.loc === 'island' && v.spot && v.spot.seat && !v.spot.lie && v.spot.tags.includes('bench') && v.act.seatH === undefined && Math.hypot(v.x - v.spot.x, v.z - v.spot.z) < 0.8) v.act.seatH = v.spot.tags.includes('cafe') ? 0.48 : 0.49;
     if (v.useTarget && v.useTarget.ry !== undefined) v.ry = v.useTarget.ry;
     FM.bus.emit('act', { v, id });
     if (FM.Ev && FM.Ev.onAct) FM.Ev.onAct(v, id);
@@ -1295,7 +1297,7 @@
       const u = v.useTarget;
       v.x = u.x; v.z = u.z; v.ry = u.ry;
       const a = pa || u.u.act;
-      const extra = { state: v.loc === v.home ? 'HOME_LIFE' : (u.u.pose === 'sit' || u.u.pose === 'eat' || u.u.pose === 'drink' ? 'SIT_REST' : 'INTERACT_OBJ'), pose: u.u.pose, dur: rnd(6, 14), name: (D.ACTIONS[a] || {}).name || u.F.name, prop: u.u.prop || null, y: u.u.y || 0 };
+      const extra = { state: v.loc === v.home ? 'HOME_LIFE' : (u.u.pose === 'sit' || u.u.pose === 'eat' || u.u.pose === 'drink' ? 'SIT_REST' : 'INTERACT_OBJ'), pose: u.u.pose, dur: rnd(6, 14), name: (D.ACTIONS[a] || {}).name || u.F.name, prop: u.u.prop || null, y: u.u.y || 0, seatH: u.u.seatH || 0, bed: u.F.bed && u.u.pose === 'sleep' ? u.F.bed : null };
       if (a === 'sleep') { extra.dur = 30; extra.state = 'HOME_LIFE'; }
       startAct(v, a, extra);
       FM.Ev && FM.Ev.onFurn && FM.Ev.onFurn(v, u, a);

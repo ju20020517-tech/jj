@@ -125,10 +125,79 @@
     const F = FM.FURN[type];
     const g = new THREE.Group();
     if (!F) { g.add(mesh(box(0.5, 0.5, 0.5), mat(0xff00ff), 0, 0.25, 0)); return g; }
-    for (const p of F.parts) g.add(partMesh(p, opts));
+    const built = F.parts.map(p => { const m = partMesh(p, opts); g.add(m); return m; });
+    furnDetail(F, g, built);
     g.userData.type = type;
     return g;
   };
+
+  // ---------------------------------------------------------
+  // 가구 디테일 (자동): 스툴, 베개·이불 접힘·침대 다리, 소파 쿠션·쿠션볼·다리, 의자 방석
+  // ---------------------------------------------------------
+  const PASTEL = [0xffd6e0, 0xfff0b8, 0xd6f0ff, 0xdff5d0, 0xeadcff, 0xffe2c8];
+  const hashStr = t => { let h = 0; for (const ch of t) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); };
+  const topOf = p => { const [sh, a, b, , , y] = p; return y + (sh === 's' ? a * (b || 1) : b / 2); };
+  const botOf = p => { const [sh, a, b, , , y] = p; return y - (sh === 's' ? a * (b || 1) : b / 2); };
+  const shadeC = (c, k) => { const f = x => Math.min(255, Math.max(0, Math.round(x * k))); return (f((c >> 16) & 255) << 16) | (f((c >> 8) & 255) << 8) | f(c & 255); };
+  function stool(g, x, z, col) {
+    const s = new THREE.Group(); s.position.set(x, 0, z);
+    const cush = mesh(sphere(0.21), mat(col), 0, 0.43, 0); cush.scale.set(1, 0.3, 1); s.add(cush);
+    s.add(mesh(cyl(0.2, 0.2, 0.05), mat(0xc99a6a), 0, 0.39, 0));
+    for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2; const l = mesh(cyl(0.022, 0.03, 0.4), mat(0xa87a4a), Math.cos(a) * 0.13, 0.19, Math.sin(a) * 0.13); l.rotation.set(Math.sin(a) * 0.12, 0, -Math.cos(a) * 0.12); s.add(l); }
+    s.add(mesh(geo('stoolRing', () => new THREE.TorusGeometry(0.12, 0.012, 6, 20)), mat(0xa87a4a), 0, 0.16, 0).rotateX(Math.PI / 2));
+    g.add(s);
+  }
+  function furnDetail(F, g, built) {
+    const tags = F.tags || [], parts = F.parts;
+    const accent = PASTEL[hashStr(F.id) % PASTEL.length], accent2 = PASTEL[(hashStr(F.id) + 2) % PASTEL.length];
+    // 테이블 앞 동글 스툴
+    for (const u of F.use || []) if (u.stool) stool(g, u.dx, u.dz, accent);
+    const mains = parts.map((p, i) => [p, built[i]]).filter(([p]) => (p[8] || '').includes('m') && p[0] === 'b');
+    if (F.bed) {
+      const b = F.bed;
+      // 통통한 베개 두 개
+      const pw = Math.min(0.42, F.w * 0.22);
+      for (const sx of F.w > 1.6 ? [-1, 1] : [0]) {
+        const pl = mesh(sphere(0.3), mat(0xfffdf8), sx * pw * 0.95, b.top + 0.07, b.headZ - 0.06);
+        pl.scale.set(pw / 0.3 * 0.95, 0.3, 0.62); g.add(pl);
+      }
+      // 이불 윗단 접힘 (흰 띠) + 누빔 단추
+      const bl = parts.find(p => p[0] === 'b' && p[6] > 0.2 && p[2] < 0.2 && !(p[8] || '').includes('m') && Math.abs(topOf(p) - b.top) < 0.02);
+      if (bl) {
+        g.add(mesh(box(bl[1] + 0.03, bl[2] + 0.05, 0.2, 0.04), mat(0xfffaf2), bl[4], bl[5] + 0.01, bl[6] - bl[3] / 2 + 0.1));
+        for (let i = 0; i < 3; i++) for (let k = 0; k < 2; k++) g.add(mesh(sphere(0.025), mat(shadeC(bl[7], 0.8)), bl[4] + (i - 1) * bl[1] * 0.3, topOf(bl) + 0.005, bl[6] + (k - 0.2) * bl[3] * 0.35, false));
+        // 침대 끝에 걸친 담요
+        g.add(mesh(box(bl[1] * 0.98, 0.05, 0.4, 0.02), mat(accent), bl[4], topOf(bl) + 0.02, bl[6] + bl[3] / 2 - 0.25));
+      }
+      // 동글 나무 다리
+      const fr = mains[0];
+      if (fr && botOf(fr[0]) > 0.04) {
+        const [, a, , c, x, , z] = fr[0], h = botOf(fr[0]);
+        for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(mesh(cyl(0.05, 0.07, h), mat(0xa87a4a), x + sx * (a / 2 - 0.1), h / 2, z + sz * (c / 2 - 0.1)));
+      }
+    }
+    if (tags.includes('sofa') && mains.length >= 1) {
+      const [sp, sm] = mains[0];
+      const [, a, b, c, x, y, z] = sp, top = y + b / 2;
+      // 방석 두 칸 (소파 재질 그대로)
+      for (const sx of [-1, 1]) g.add(mesh(box(a / 2 - 0.2, 0.1, c - 0.3, 0.05), sm.material, x + sx * a / 4, top + 0.02, z + 0.08));
+      // 쿠션볼 (양 끝)
+      for (const [sx, col] of [[-1, accent], [1, accent2]]) { const cu = mesh(sphere(0.2), mat(col), x + sx * (a / 2 - 0.35), top + 0.22, z - c / 2 + 0.26); cu.scale.set(1, 0.95, 0.45); cu.rotation.z = sx * 0.25; g.add(cu); }
+      if (y - b / 2 > 0.04) for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(mesh(cyl(0.035, 0.025, y - b / 2), mat(0x8a5a3b), x + sx * (a / 2 - 0.1), (y - b / 2) / 2, z + sz * (c / 2 - 0.1)));
+      else for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(mesh(cyl(0.04, 0.03, 0.08), mat(0x8a5a3b), x + sx * (a / 2 - 0.12), 0.04, z + sz * (c / 2 - 0.12)));
+      // 등받이 윗단 파이핑
+      if (mains[1]) { const [bp] = mains[1]; g.add(mesh(capsule(0.035, Math.max(0.1, bp[1] - 0.2)), mat(shadeC(sp[7], 0.85)), bp[4], bp[5] + bp[2] / 2, bp[6] + 0.02).rotateZ(Math.PI / 2)); }
+    }
+    if (tags.includes('chair') && mains.length && !tags.includes('sofa')) {
+      const [sp] = mains[0];
+      if (sp[1] <= 1.0) { const cu = mesh(sphere(0.3), mat(accent), sp[4], sp[5] + sp[2] / 2 + 0.03, sp[6] + 0.02); cu.scale.set(sp[1] * 0.4 / 0.3 * 1.05, 0.14, sp[3] * 0.4 / 0.3); g.add(cu); }
+    }
+    if (tags.includes('bench') && mains.length) {
+      const [sp] = mains[0];
+      // 벤치 방석 두 개
+      for (const sx of [-1, 1]) { const cu = mesh(sphere(0.3), mat(sx < 0 ? accent : accent2), sp[4] + sx * sp[1] * 0.22, sp[5] + sp[2] / 2 + 0.03, sp[6] + 0.02); cu.scale.set(0.7, 0.13, 0.62); g.add(cu); }
+    }
+  }
 
   // ---------------------------------------------------------
   // 손에 쥐는 소품
