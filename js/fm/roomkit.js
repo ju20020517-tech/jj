@@ -14,6 +14,7 @@
   const { mat, geo, sphere, box, cyl, capsule, mesh, soften } = H;
   const F = FM.FURN;
   const PI = Math.PI;
+  const REV = 2;   // 스타일 방 구성 버전 (올라가면 손대지 않은 방은 새 구성으로 갱신)
   const css = PM.css;
 
   // ---------------------------------------------------------
@@ -466,6 +467,46 @@
   def('k_metal_bed', '싱글 메탈 침대', 'rest', 1600, 1.1, 2.1, g => { const k = K(g); k.b(1.0, 0.1, 2.0, 0x2b2b30, 0, 0.32, 0, 0.02); for (const x of [-0.5, 0.5]) for (const z of [-0.98, 0.98]) k.c(0.02, 0.02, 0.35, 0x2b2b30, x, 0.17, z); k.b(0.96, 0.16, 1.95, 0xf4f6f8, 0, 0.45, 0, 0.05); k.b(1.0, 0.1, 1.2, 0x8fb0d0, 0, 0.55, 0.35, 0.04); k.b(0.6, 0.12, 0.3, 0xffffff, 0, 0.6, -0.75, 0.05); k.b(1.0, 0.7, 0.04, 0x2b2b30, 0, 0.62, -1.0, 0.01); }, { grade: 1, bed: { top: 0.56, headZ: -0.39, color: 0x8fb0d0 }, use: [{ pose: 'sleep', dx: 0, dz: 0, face: 0, act: 'sleep' }], tags: ['bed'] });
   def('k_concrete_box', '콘크리트 수납 박스', 'work', 500, 0.7, 0.55, g => { const k = K(g); k.b(0.66, 0.5, 0.5, 0x7a7c80, 0, 0.25, 0, 0.02); k.b(0.3, 0.15, 0.3, 0x2b2b30, 0.1, 0.57, 0, 0.02); }, {});
 
+  // ===================== 채움 소품 (방이 휑하지 않게) =====================
+  const cushion = (id, name, c1, c2) => def(id, name, 'rest', 300, 0.6, 0.6, g => { const k = K(g); k.s(0.26, c1, 0, 0.08, 0, 1, 0.32, 1); k.s(0.26, c2, 0, 0.1, 0, 0.55, 0.3, 0.55); k.s(0.02, c1, 0, 0.19, 0); }, { use: [{ pose: 'sit', dx: 0, dz: 0, face: 0, act: 'sit', seatH: 0.17 }], tags: ['chair'] });
+  cushion('k_cushion_green', '초록 방석', 0x9ac070, 0xcfe6a8); cushion('k_cushion_blue', '파랑 방석', 0x7aa8e8, 0xc8e0ff); cushion('k_cushion_pink', '핑크 방석', 0xff9ab4, 0xffd8e2); cushion('k_cushion_gray', '회색 방석', 0x55585e, 0x8a8e94);
+  const basket = (id, name, c) => def(id, name, 'misc', 500, 0.6, 0.6, g => { const k = K(g); k.add(mesh(lathe2('bskt', [[0.18, 0], [0.24, 0.1], [0.26, 0.34]]), T.woodgrain(0xd8b078), 0, 0, 0)); k.t(0.26, 0.02, 0xc89a60, 0, 0.34, 0).rotation.x = PI / 2; const bl = k.s(0.2, c, 0.02, 0.38, 0, 1.1, 0.5, 1); bl.rotation.z = 0.3; k.b(0.25, 0.3, 0.05, c, 0.18, 0.3, 0.08, 0.05).rotation.z = -0.6; }, {});
+  basket('k_basket_green', '담요 바구니 (초록)', 0xb8d890); basket('k_basket_pink', '담요 바구니 (핑크)', 0xffc0cc); basket('k_basket_blue', '담요 바구니 (파랑)', 0xa8c8f0);
+  def('k_books_floor', '바닥 책 더미', 'misc', 300, 0.5, 0.4, g => { const k = K(g); [0xc0392b, 0x3a6a4a, 0xe8c070, 0x3a5a8a, 0xfff4e0].forEach((c, i) => { const b = k.b(0.34 - i * 0.02, 0.06, 0.26, c, Math.sin(i * 2) * 0.02, 0.03 + i * 0.06, 0, 0.01); b.rotation.y = Math.sin(i * 3) * 0.2; }); P.mug(k, 0.02, 0.3, 0, 0xffffff); }, { tags: ['books'] });
+  def('k_plant_trio', '작은 화분 삼총사', 'misc', 500, 0.6, 0.4, g => { const k = K(g); P.plant(k, -0.16, 0, 0, 1.1, 0xe8845a, 0x6cc36a); P.plant(k, 0.05, 0, 0.05, 0.8, 0xf4f0ea, 0x4a9a4a); P.plant(k, 0.2, 0, -0.04, 0.95, 0x5a8aa0, 0x7cd06a); }, { tags: ['plant'] });
+  def('k_fiddle', '떡갈고무나무', 'misc', 900, 0.6, 0.6, g => { const k = K(g); k.c(0.18, 0.14, 0.34, T.woodgrain(0xd8b078), 0, 0.17, 0); k.c(0.025, 0.03, 1.2, 0x6a4a2a, 0, 0.9, 0); for (let i = 0; i < 12; i++) { const a = i * 2.4, y = 0.8 + i * 0.07; const l = k.s(0.12, i % 2 ? 0x3f7a3a : 0x4f9a4a, Math.cos(a) * 0.16, y, Math.sin(a) * 0.16, 0.9, 1.2, 0.25); l.rotation.y = -a; l.rotation.z = Math.cos(a) * 0.4; } }, { tags: ['plant'] });
+  // 조명 소품
+  def('k_paper_lantern', '종이 등불 스탠드', 'light', 800, 0.5, 0.5, g => { const k = K(g); k.c(0.13, 0.15, 0.04, T.woodgrain(WOOD2), 0, 0.02, 0); k.c(0.015, 0.015, 0.5, WOOD2, 0, 0.27, 0); k.s(0.22, glow(0xfff0c8), 0, 0.72, 0, 1, 1.25, 1); for (let y = 0.5; y < 0.95; y += 0.08) k.t(0.2 * Math.sin(Math.acos((y - 0.72) / 0.28)) + 0.01, 0.006, 0xd8b078, 0, y, 0).rotation.x = PI / 2; }, { tags: ['light'], lamp: [[0, 0.75, 0, 0xffc880, 0.9, 4]] });
+  def('k_jelly_lamp', '해파리 무드등', 'light', 900, 0.5, 0.5, g => { const k = K(g); k.c(0.14, 0.16, 0.08, 0xf4f8fa, 0, 0.04, 0); k.add(mesh(geo('jbell', () => new THREE.SphereGeometry(0.22, 24, 12, 0, PI * 2, 0, PI / 2)), glow(0xb8a0ff), 0, 0.72, 0)); for (let i = 0; i < 8; i++) { const a = i / 8 * PI * 2; for (let j = 0; j < 5; j++) k.s(0.018, glow(j % 2 ? 0xd8c8ff : 0x9ad8ff), Math.cos(a) * 0.14 + Math.sin(j + i) * 0.02, 0.66 - j * 0.1, Math.sin(a) * 0.14); } k.c(0.01, 0.01, 0.62, 0xdfe6ee, 0, 0.35, 0); }, { tags: ['light'], lamp: [[0, 0.7, 0, 0xa890ff, 0.9, 4]] });
+  def('k_fishbowl', '어항 스탠드', 'misc', 900, 0.5, 0.5, g => { const k = K(g); k.c(0.03, 0.03, 0.7, 0xf4f8fa, 0, 0.35, 0); k.c(0.18, 0.2, 0.03, 0xf4f8fa, 0, 0.015, 0); k.c(0.14, 0.14, 0.03, 0xf4f8fa, 0, 0.7, 0); k.add(mesh(sphere(0.2), glass(0x8fe0ff), 0, 0.9, 0)); k.s(0.18, glow(0x3a8ad0), 0, 0.86, 0, 1, 0.75, 1).material = new THREE.MeshBasicMaterial({ color: 0x3a8ad0, transparent: true, opacity: 0.55 }); k.s(0.04, 0xff8a3a, 0.04, 0.9, 0.05, 1.4, 1, 0.6); k.s(0.03, 0xffd84a, -0.06, 0.84, -0.02, 1.4, 1, 0.6); P.plant(k, -0.05, 0.72, 0, 0.5, 0x6a5a4a, 0x4ac06a); }, { tags: ['fish'], lamp: [[0, 0.9, 0, 0x4ab0ff, 0.6, 3]] });
+  def('k_heart_lamp', '하트 무드등 협탁', 'light', 800, 0.5, 0.45, g => { const k = K(g); k.b(0.44, 0.5, 0.4, 0xffe0e8, 0, 0.25, 0, 0.04); k.b(0.38, 0.12, 0.02, 0xffc8d6, 0, 0.36, 0.2, 0.02); const hs = new THREE.Shape(); hs.moveTo(0, -0.1); hs.bezierCurveTo(-0.2, 0.02, -0.12, 0.16, 0, 0.07); hs.bezierCurveTo(0.12, 0.16, 0.2, 0.02, 0, -0.1); k.add(mesh(geo('hlamp', () => new THREE.ExtrudeGeometry(hs, { depth: 0.08, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02 })), glow(0xffb0c8), 0, 0.68, -0.04)); k.s(0.035, 0xfff4e8, 0.08, 0.53, 0.05); }, { tags: ['light'], lamp: [[0, 0.72, 0, 0xff90b0, 0.8, 3.5]] });
+  def('k_rose_table', '장미 꽃병 사이드 테이블', 'work', 700, 0.5, 0.5, g => { const k = K(g); k.c(0.22, 0.22, 0.03, 0xfaf6ee, 0, 0.55, 0); k.c(0.03, 0.04, 0.55, 0xfaf6ee, 0, 0.27, 0); k.c(0.14, 0.16, 0.03, 0xfaf6ee, 0, 0.015, 0); k.c(0.05, 0.06, 0.18, glass(0xe0f0ff), 0, 0.66, 0); for (let i = 0; i < 6; i++) k.s(0.045, [0xe84a6a, 0xff8fa8, 0xfff0f0][i % 3], Math.cos(i) * 0.06, 0.8 + (i % 2) * 0.05, Math.sin(i) * 0.06); }, { tags: ['plant'] });
+  def('k_plush_pile', '인형 더미', 'misc', 900, 0.8, 0.6, g => { const k = K(g); P.plush(k, -0.15, 0, 0, 0xffc8d4, 'bear', 1.3); P.plush(k, 0.2, 0, 0.05, 0xfff4f0, 'bunny', 1.1); P.plush(k, 0.02, 0, 0.2, 0xfff0a0, 'bear', 0.8); }, { tags: ['plush'], use: [{ pose: 'hug', dx: 0, dz: 0.6, face: 180, act: 'hug_doll' }] });
+  def('k_tire_stack', '타이어 스툴', 'rest', 500, 0.7, 0.7, g => { const k = K(g); for (let i = 0; i < 2; i++) k.t(0.25, 0.1, 0x1a1a22, 0, 0.1 + i * 0.2, 0).rotation.x = PI / 2; k.c(0.26, 0.26, 0.04, 0xd83030, 0, 0.42, 0); }, { use: [{ pose: 'sit', dx: 0, dz: 0, face: 0, act: 'sit', seatH: 0.44 }], tags: ['chair'] });
+  def('k_ball_basket', '공 바구니', 'misc', 700, 0.6, 0.6, g => { const k = K(g); for (let i = 0; i < 8; i++) { const a = i / 8 * PI * 2; k.c(0.01, 0.01, 0.5, 0x9aa3ad, Math.cos(a) * 0.24, 0.25, Math.sin(a) * 0.24); } k.t(0.24, 0.012, 0x9aa3ad, 0, 0.5, 0).rotation.x = PI / 2; k.t(0.24, 0.012, 0x9aa3ad, 0, 0.05, 0).rotation.x = PI / 2; [[0xff8a3a, 0.12], [0xffffff, 0.1], [0xffd84a, 0.11], [0x3a6ad0, 0.1]].forEach(([c, r], i) => k.s(r, c, Math.cos(i * 1.7) * 0.1, 0.12 + (i >> 1) * 0.18, Math.sin(i * 1.7) * 0.1)); }, { tags: ['gym'] });
+  def('k_cooler', '스포츠 쿨러', 'misc', 500, 0.6, 0.4, g => { const k = K(g); k.b(0.56, 0.36, 0.36, 0x3a6ad0, 0, 0.18, 0, 0.05); k.b(0.58, 0.08, 0.38, 0xf4f4f4, 0, 0.4, 0, 0.04); k.t(0.12, 0.015, 0xf4f4f4, 0, 0.44, 0, PI); }, {});
+  def('k_arc_lamp', '아크 플로어 램프', 'light', 1200, 0.8, 0.5, g => { const k = K(g); k.b(0.3, 0.06, 0.3, 0x1a1a1e, 0, 0.03, 0, 0.02); k.c(0.018, 0.018, 1.7, 0x1a1a1e, 0, 0.85, 0); k.t(0.3, 0.018, 0x1a1a1e, 0.3, 1.7, 0, PI); k.c(0.01, 0.01, 0.1, 0x1a1a1e, 0.6, 1.66, 0); k.add(mesh(geo('arcshade', () => new THREE.SphereGeometry(0.16, 20, 10, 0, PI * 2, 0, PI / 2)), M(0x1a1a1e), 0.6, 1.5, 0)); k.s(0.06, glow(0xffe0b0), 0.6, 1.47, 0); }, { tags: ['light'], lamp: [[0.6, 1.35, 0, 0xffc890, 1.0, 4.5]] });
+  def('k_vinyl_crate', '레코드 크레이트', 'misc', 700, 0.5, 0.4, g => { const k = K(g); k.b(0.46, 0.34, 0.36, T.woodgrain(0xa87a58), 0, 0.17, 0, 0.01); for (let i = 0; i < 7; i++) { const r = k.b(0.02, 0.3, 0.3, [0x1a1a1e, 0xe84a3a, 0x3a5a8a, 0xffd84a][i % 4], -0.15 + i * 0.05, 0.3, 0, 0.005); r.rotation.z = 0.12; } }, { tags: ['music'] });
+  // 벽 채움
+  def('k_pressed_frame', '압화 액자', 'wall', 500, 0.4, 0.1, g => { const k = K(g); k.b(0.36, 0.46, 0.03, T.woodgrain(WOOD), 0, 1.8, 0.02, 0.01); k.p(0.28, 0.38, picMat('pressed', (c, w, h) => { c.fillStyle = '#fbf6e8'; c.fillRect(0, 0, w, h); c.strokeStyle = '#7a9a5a'; c.lineWidth = 3; c.beginPath(); c.moveTo(64, 120); c.lineTo(64, 40); c.stroke(); for (let i = 0; i < 5; i++) { c.fillStyle = ['#e8a060', '#f0c070', '#d08870'][i % 3]; c.beginPath(); c.arc(64 + (i % 2 ? 14 : -14), 40 + i * 14, 8, 0, 7); c.fill(); } }), 0, 1.8, 0.04); }, { wall: true, tags: ['frame'] });
+  def('k_wall_planter', '벽걸이 화분', 'wall', 500, 0.4, 0.3, g => { const k = K(g); k.b(0.04, 0.04, 0.2, 0x3a3a3a, 0, 1.95, 0.1); k.c(0.1, 0.08, 0.14, 0xe8845a, 0, 1.8, 0.22); for (let i = 0; i < 7; i++) k.s(0.045, 0x5fae5a, Math.sin(i) * 0.08, 1.9 - (i % 3) * 0.12, 0.25, 1, 1.3, 0.6); }, { wall: true, tags: ['plant'] });
+  def('k_wood_clock', '원목 벽시계', 'wall', 500, 0.4, 0.1, g => { const k = K(g); k.c(0.16, 0.16, 0.05, T.woodgrain(WOOD2), 0, 2.1, 0.03).rotation.x = PI / 2; k.p(0.26, 0.26, picMat('wclk', (c, w, h) => { c.fillStyle = '#fffaf0'; c.beginPath(); c.arc(64, 64, 62, 0, 7); c.fill(); c.strokeStyle = '#5a3a2a'; c.lineWidth = 5; c.beginPath(); c.moveTo(64, 64); c.lineTo(64, 28); c.moveTo(64, 64); c.lineTo(90, 72); c.stroke(); }), 0, 2.1, 0.06); }, { wall: true });
+  def('k_shell_shelf', '조개 벽선반', 'wall', 600, 0.8, 0.3, g => { const k = K(g); k.b(0.8, 0.04, 0.22, 0xffffff, 0, 1.9, 0.11, 0.01); [[0xfff0e8, -0.25], [0xffd0c0, 0], [0xf4f8ff, 0.25]].forEach(([c, x]) => { const sh = k.s(0.07, c, x, 1.97, 0.11, 1, 0.8, 0.5); sh.rotation.x = -0.5; }); k.add(mesh(sphere(0.06), glass(0xc8f0ff), 0.12, 1.98, 0.1)); }, { wall: true });
+  def('k_neon_wave', '물결 네온', 'wall', 700, 0.9, 0.1, g => { const k = K(g); for (let i = 0; i < 9; i++) k.s(0.03, glow(0x6ae0ff), -0.4 + i * 0.1, 2.35 + Math.sin(i * 1.1) * 0.06, 0.05); }, { wall: true, tags: ['light'], lamp: [[0, 2.3, 0.3, 0x5ad0ff, 0.5, 3]] });
+  def('k_heart_mirror', '하트 벽거울', 'wall', 600, 0.5, 0.1, g => { const k = K(g); const hs = new THREE.Shape(); hs.moveTo(0, -0.2); hs.bezierCurveTo(-0.36, 0.04, -0.22, 0.3, 0, 0.14); hs.bezierCurveTo(0.22, 0.3, 0.36, 0.04, 0, -0.2); k.add(mesh(geo('hmir', () => new THREE.ExtrudeGeometry(hs, { depth: 0.03, bevelEnabled: true, bevelSize: 0.03, bevelThickness: 0.02 })), M(0xffb0c4), 0, 1.75, 0.01)); const m = k.add(mesh(geo('hmir2', () => new THREE.ShapeGeometry(hs)), glass(0xe8f4ff), 0, 1.75, 0.07)); m.scale.set(0.8, 0.8, 1); }, { wall: true, tags: ['mirror'] });
+  def('k_neon_bolt', '번개 네온 사인', 'wall', 700, 0.5, 0.1, g => { const k = K(g); const bs = new THREE.Shape(); bs.moveTo(0.05, 0.25); bs.lineTo(-0.1, 0); bs.lineTo(0.01, 0); bs.lineTo(-0.05, -0.25); bs.lineTo(0.12, 0.04); bs.lineTo(0.01, 0.04); bs.lineTo(0.05, 0.25); k.add(mesh(geo('bolt', () => new THREE.ShapeGeometry(bs)), glow(0xffe14a), 0, 2.1, 0.04)); }, { wall: true, tags: ['light'], lamp: [[0, 2.1, 0.3, 0xffd040, 0.5, 3]] });
+  def('k_band_poster', '밴드 포스터', 'wall', 500, 0.5, 0.1, g => { const k = K(g); k.p(0.46, 0.64, picMat('band', (c, w, h) => { c.fillStyle = '#1a1a1e'; c.fillRect(0, 0, w, h); c.fillStyle = '#e84a3a'; c.font = 'bold 26px sans-serif'; c.textAlign = 'center'; c.fillText('ROCK', 64, 40); c.strokeStyle = '#f4f4f4'; c.lineWidth = 4; c.beginPath(); c.arc(64, 84, 22, 0, 7); c.stroke(); c.fillStyle = '#f4f4f4'; c.fillRect(60, 60, 8, 40); }), 0, 1.9, 0.03); }, { wall: true, tags: ['frame'] });
+
+  // 기존 키트 가구의 실제 발광 (가구 위치에서 색 있는 빛)
+  const LAMP = {
+    k_lava_lamp: [[0, 0.8, 0, 0xc8ff70, 0.9, 3.5]], k_fringe_lamp: [[0, 1.4, 0, 0xffb0c0, 0.9, 4.5]], k_nightstand_lamp: [[0, 0.9, 0, 0xffc8b8, 0.7, 3.5]], k_geo_pendant: [[0, 2.2, 0, 0xffc890, 0.8, 5]],
+    k_aqua_ledge: [[-0.85, 0.9, 0.3, 0xd8ecff, 0.7, 3.5], [0.4, 1.4, 0.2, 0x3a8aff, 0.9, 6]], k_glow_vines: [[0, 2.3, 0.4, 0x9aff90, 0.35, 3]], k_white_desk_pc: [[-0.1, 1.1, 0.3, 0x9ad8ff, 0.4, 2.5]],
+    k_noren: [[0, 1.5, 0.5, 0xfff0c8, 0.6, 4]], k_white_window: [[0, 1.6, 0.5, 0xfff4e8, 0.5, 4]], k_city_window: [[0, 1.6, 0.6, 0xffa070, 0.9, 6]], k_blinds_window: [[0, 1.6, 0.4, 0xfff0d8, 0.4, 3]],
+    k_neon_tube: [[0, 1.8, 0.3, 0x5ac8ff, 0.6, 3.5]], k_neon_clock: [[0, 2.4, 0.3, 0xff5050, 0.45, 3]], k_crt_tv: [[0, 0.8, 0.5, 0x8ab0ff, 0.45, 3]], k_big_tv: [[0, 1.75, 0.4, 0xffe0b0, 0.4, 3]], k_wall_tv: [[0, 2.1, 0.4, 0x6aa0ff, 0.35, 3]],
+    k_trophy_cabinet: [[0, 1.3, 0.35, 0xffe0a0, 0.45, 2.5]], k_nightstand_rec: [[0, 1.0, 0.2, 0xffd8a0, 0.3, 2.5]],
+  };
+  for (const [id, l] of Object.entries(LAMP)) if (F[id]) F[id].lamp = l;
+
   function lathe2(key, pts) { return geo('rkl' + key, () => new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(Math.max(0.001, x), y)), 24)); }
 
   // ---------------------------------------------------------
@@ -523,6 +564,38 @@
     },
   };
 
+  // 분위기 (실내 전체 조명 톤) + 채움 소품 + 기본 배치 보강
+  Object.assign(STYLES.cottage, {
+    mood: { main: 0.75, hemi: [0xfff0d0, 0x8a6a40, 0.46], amb: [0xffdca8, 0.12], dir: [0xffe8b8, 0.36], bg: 0x3a2e24 },
+    fill: ['k_plant_trio', 'k_basket_green', 'k_books_floor', 'k_cushion_green', 'k_fiddle', 'k_paper_lantern', 'k_stool_can', 'k_cushion_green', 'k_plant_trio', 'k_books_floor'],
+    wallFill: ['k_pressed_frame', 'k_wall_planter', 'k_wood_clock', 'k_hang_ivy', 'k_pressed_frame', 'k_dried_garland'],
+  });
+  STYLES.cottage.furn.push(f('k_paper_lantern', 0.2, 2.3), f('k_basket_green', -2.05, -2.7), f('k_books_floor', 2.2, -2.55), f('k_wood_clock', -2.5, -2.94), f('k_pressed_frame', -3.94, -0.8, 90));
+  Object.assign(STYLES.aqua, {
+    mood: { main: 0.12, lamp: 0.42, hemi: [0x4a78d0, 0x0a1430, 0.17], amb: [0x2a4a98, 0.08], dir: [0x8ab0ff, 0.05], bg: 0x070e1e },
+    fill: ['k_jelly_lamp', 'k_cushion_blue', 'k_fishbowl', 'k_basket_blue', 'k_fiddle', 'k_books_floor', 'k_cushion_blue', 'k_plant_trio', 'k_palm_pot'],
+    wallFill: ['k_shell_shelf', 'k_neon_wave', 'k_fish_school', 'k_hang_terrarium', 'k_glow_vines'],
+  });
+  STYLES.aqua.furn.push(f('k_jelly_lamp', -3.4, -0.2), f('k_fishbowl', 1.55, -2.7), f('k_cushion_blue', 0.9, 0.6), f('k_shell_shelf', -3.94, -1.0, 90), f('k_neon_wave', 3.94, 2.3, -90));
+  Object.assign(STYLES.pink, {
+    mood: { main: 0.8, hemi: [0xffe4ec, 0x8a5a50, 0.44], amb: [0xffd0dc, 0.13], dir: [0xfff0e0, 0.3], bg: 0x3a2630 },
+    fill: ['k_heart_lamp', 'k_cushion_pink', 'k_rose_table', 'k_basket_pink', 'k_plush_pile', 'k_books_floor', 'k_cushion_pink', 'k_plant_trio', 'k_fiddle'],
+    wallFill: ['k_heart_mirror', 'k_ribbon_deco', 'k_embroid_frame', 'k_rose_oval', 'k_rose_frame', 'k_doily'],
+  });
+  STYLES.pink.furn.push(f('k_heart_lamp', 2.55, -2.72), f('k_plush_pile', -0.1, 1.2), f('k_rose_table', -3.5, 1.9), f('k_heart_mirror', 0.2, -2.94), f('k_basket_pink', 2.4, 2.5));
+  Object.assign(STYLES.garage, {
+    mood: { main: 0.35, lamp: 0.8, hemi: [0x8aa0e8, 0x20202e, 0.26], amb: [0x6078c0, 0.08], dir: [0xa8c0ff, 0.12], bg: 0x10141f },
+    fill: ['k_tire_stack', 'k_ball_basket', 'k_cooler', 'k_kettlebell', 'k_box_stack', 'k_cushion_gray', 'k_skateboard', 'k_tire_stack', 'k_plant_trio'],
+    wallFill: ['k_neon_bolt', 'k_pennant', 'k_bike_poster', 'k_fish_wall', 'k_skate_rack'],
+  });
+  STYLES.garage.furn.push(f('k_ball_basket', 3.4, -0.9), f('k_cooler', -2.4, 2.4), f('k_tire_stack', -0.3, 2.35), f('k_neon_bolt', 0.6, -2.94), f('k_kettlebell', 1.2, 0.8));
+  Object.assign(STYLES.loft, {
+    mood: { main: 0.3, lamp: 0.85, hemi: [0xd8c0c0, 0x222228, 0.24], amb: [0xffb898, 0.07], dir: [0xff9a68, 0.36], bg: 0x141418 },
+    fill: ['k_arc_lamp', 'k_vinyl_crate', 'k_magazines', 'k_fiddle', 'k_cushion_gray', 'k_concrete_box', 'k_books_floor', 'k_plant_trio', 'k_crumpled'],
+    wallFill: ['k_band_poster', 'k_neon_tube', 'k_bridge_frame', 'k_speed_sign', 'k_station_clock'],
+  });
+  STYLES.loft.furn.push(f('k_arc_lamp', -0.6, -2.35), f('k_vinyl_crate', 2.35, -1.2), f('k_fiddle', -3.4, -1.3), f('k_band_poster', -3.94, 1.0, 90), f('k_cushion_gray', 0.2, 1.7));
+
   // 성격 조합 → 스타일 점수 (L1 가중치 가장 큼)
   function styleScore(keys, id) {
     const a = STYLES[id].aff; let s = 0;
@@ -545,11 +618,41 @@
     const Z = z < -1.5 ? -hz + (z + 3) : z > 1.5 ? hz - (3 - z) : z * hz / 3;
     return [+X.toFixed(2), +Z.toFixed(2)];
   }
-  function styleRoom(styleId, w = 8, d = 6) {
+  // 가구 바닥 사각형 (회전 반영)
+  const rectOf = (Fd, x, z, r) => { const q = Math.abs(Math.round(r / 90)) % 2 === 1; const fw = (q ? Fd.d : Fd.w) / 2, fd = (q ? Fd.w : Fd.d) / 2; return [x - fw, z - fd, x + fw, z + fd]; };
+  const hit = (a, b, m = 0.12) => a[0] < b[2] + m && a[2] > b[0] - m && a[1] < b[3] + m && a[3] > b[1] - m;
+  function styleRoom(styleId, w = 8, d = 6, door) {
     const S = STYLES[styleId]; if (!S) return null;
     const furn = S.furn.filter(x => F[x.type]).map(x => { const [X, Z] = place(x.x, x.z, w, d, F[x.type]); return { type: x.type, x: X, z: Z, rot: x.rot || 0, mat: null, color: null }; });
-    return { roomStyle: styleId, wallStyle: 'st_' + S.wall, wallStyleL: S.wallL ? 'st_' + S.wallL : null, wallStyleR: S.wallR ? 'st_' + S.wallR : null, floor: S.floor, floorColor: S.floorColor, furn };
+    // 빈 곳 채우기: 방이 클수록 더 많이 (벽을 따라 먼저, 그다음 빈 바닥)
+    const hx = w / 2, hz = d / 2, dr = door || { x: 3.2 * hx / 4, z: -hz + 0.4 };
+    const doorR = [dr.x - 1.0, dr.z - 1.2, dr.x + 1.0, dr.z + 1.2];
+    const floorR = furn.filter(o => !F[o.type].wall && !F[o.type].flat && !F[o.type].ceiling).map(o => rectOf(F[o.type], o.x, o.z, o.rot));
+    const wallR = furn.filter(o => F[o.type].wall).map(o => ({ side: Math.abs(o.z + hz) < 0.2 ? 'b' : o.x < 0 ? 'l' : 'r', a: Math.abs(o.z + hz) < 0.2 ? o.x : o.z, hw: F[o.type].w / 2 }));
+    let seed = (w * 131 + d * 17 + styleId.length * 7) | 0; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const nFloor = Math.round(3 + (w * d - 48) / 7), nWall = Math.round(2 + (w * d - 48) / 12);
+    let fi = 0;
+    for (let tries = 0, placed = 0; tries < 400 && placed < nFloor; tries++) {
+      const type = S.fill[fi % S.fill.length], Fd = F[type]; if (!Fd) { fi++; continue; }
+      // 벽 가까이 (70%) 또는 빈 바닥
+      let x, z, r = 0;
+      if (rnd() < 0.7) { const side = Math.floor(rnd() * 4); const m = Math.max(Fd.w, Fd.d) / 2 + 0.08; if (side === 0) { x = -hx + m + rnd() * (w - 2 * m); z = -hz + m; } else if (side === 1) { x = -hx + m; z = -hz + m + rnd() * (d - 2 * m); } else if (side === 2) { x = hx - m; z = -hz + m + rnd() * (d - 2 * m); } else { x = -hx + m + rnd() * (w - 2 * m); z = hz - m; } }
+      else { x = (rnd() - 0.5) * (w - 1.6); z = (rnd() - 0.5) * (d - 1.6); r = Math.round((rnd() - 0.5) * 40); }
+      const R = rectOf(Fd, x, z, r);
+      if (R[0] < -hx || R[2] > hx || R[1] < -hz || R[3] > hz || hit(R, doorR, 0) || floorR.some(o => hit(R, o))) continue;
+      floorR.push(R); furn.push({ type, x: +x.toFixed(2), z: +z.toFixed(2), rot: r, mat: null, color: null }); placed++; fi++;
+    }
+    let wi = 0;
+    for (let tries = 0, placed = 0; tries < 200 && placed < nWall; tries++) {
+      const type = S.wallFill[wi % S.wallFill.length], Fd = F[type]; if (!Fd) { wi++; continue; }
+      const side = ['b', 'l', 'r'][Math.floor(rnd() * 3)], len = side === 'b' ? w : d, a = (rnd() - 0.5) * (len - Fd.w - 0.6);
+      if (wallR.some(o => o.side === side && Math.abs(o.a - a) < o.hw + Fd.w / 2 + 0.15)) continue;
+      wallR.push({ side, a, hw: Fd.w / 2 });
+      const o = side === 'b' ? { x: a, z: -hz + 0.06, rot: 0 } : side === 'l' ? { x: -hx + 0.06, z: a, rot: 90 } : { x: hx - 0.06, z: a, rot: -90 };
+      furn.push({ type, x: +o.x.toFixed(2), z: +o.z.toFixed(2), rot: o.rot, mat: null, color: null }); placed++; wi++;
+    }
+    return { kitRev: REV, roomStyle: styleId, wallStyle: 'st_' + S.wall, wallStyleL: S.wallL ? 'st_' + S.wallL : null, wallStyleR: S.wallR ? 'st_' + S.wallR : null, floor: S.floor, floorColor: S.floorColor, furn };
   }
 
-  FM.RoomKit = { STYLES, styleRoom, pickStyle, styleFit, styleScore, wallTexture, WALLS };
+  FM.RoomKit = { REV, STYLES, styleRoom, pickStyle, styleFit, styleScore, wallTexture, WALLS };
 })();

@@ -26,9 +26,10 @@
     islandScene = new THREE.Scene();
     intScene = new THREE.Scene();
     intScene.background = new THREE.Color(0x3a2a34);
-    intScene.add(new THREE.HemisphereLight(0xffeedd, 0x6a5058, 0.42));
-    intScene.add(new THREE.AmbientLight(0xffe4cc, 0.1));
+    const ih = new THREE.HemisphereLight(0xffeedd, 0x6a5058, 0.42); intScene.add(ih);
+    const ia = new THREE.AmbientLight(0xffe4cc, 0.1); intScene.add(ia);
     const dl = new THREE.DirectionalLight(0xffe2c0, 0.3); dl.position.set(3, 8, 6); intScene.add(dl);
+    G.intLights = { hemi: ih, amb: ia, dir: dl };
     G.intScene = intScene; G.islandScene = islandScene; G.camera = camera; G.renderer = renderer;
     resize();
     window.addEventListener('resize', resize);
@@ -91,6 +92,12 @@
     const room = Sim.get().rooms[iid];
     const I = FM.INTERIORS[iid];
     intScene.background = new THREE.Color(room && room.theme === 'space' ? 0x05081a : room && room.theme === 'aquarium' ? 0x0a3a5a : I.kind === 'venue' ? 0x2a2438 : 0x3a3048);
+    // 스타일 방 분위기 조명 (전체 톤) — 없으면 기본값
+    const md = G.interior.mood, L = G.intLights;
+    const hm = md ? md.hemi : [0xffeedd, 0x6a5058, 0.42], am = md ? md.amb : [0xffe4cc, 0.1], dm = md ? md.dir : [0xffe2c0, 0.3];
+    L.hemi.color.setHex(hm[0]); L.hemi.groundColor.setHex(hm[1]); L.hemi.intensity = hm[2];
+    L.amb.color.setHex(am[0]); L.amb.intensity = am[1]; L.dir.color.setHex(dm[0]); L.dir.intensity = dm[1];
+    if (md && md.bg) intScene.background = new THREE.Color(md.bg);
   }
   G.rebuildInterior = () => { if (G.interior) buildInterior(G.interior.iid); };
   function enterInterior(iid, silent) {

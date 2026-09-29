@@ -180,7 +180,7 @@
     // 주민 방: 성격 조합에 맞는 레퍼런스 스타일(코티지/아쿠아/핑크/개러지/로프트)로 통째 꾸밈
     const RK = FM.RoomKit;
     const styleId = opts.style || (RK && v.id !== 'P' && !opts.plain ? RK.pickStyle(keys, hashStr(v.id || v.name || '')) : null);
-    const sty = styleId ? RK.styleRoom(styleId, w, d) : null;
+    const sty = styleId ? RK.styleRoom(styleId, w, d, door) : null;
     return Object.assign({
       theme: null, wall, wallStyle: A.wallStyle, floor: A.floor, floorColor: mixColor(A.floorColor, 0xffffff, rnd() * 0.2), light: B.light || (A.light === 'warm' && C.light) || A.light, lightOn: true,
       bgm: C.bgm || 'none', furn, trash, clean: 100 - trash.length * 8, pattern: null, patternFace: null, set: null, style: [keys.L1, keys.L2, keys.L3, keys.L4].join('+'),

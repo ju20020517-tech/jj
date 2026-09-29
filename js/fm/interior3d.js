@@ -447,6 +447,7 @@
     }
     // 가구 (2~5 레이어)
     const furn = (st.rooms[iid] && st.rooms[iid].furn) || I.furn || [];
+    const lampList = []; res.lamps = [];
     const pats = room.patterns || {};
     furn.forEach((f, idx) => {
       const F = FM.FURN[f.type]; if (!F) return;
@@ -466,7 +467,7 @@
       o.traverse(m => { m.userData.furnIdx = idx; });
       group.add(o);
       res.furnObjs.push(o);
-      if (F.ceiling || F.layer === 'light') {
+      if ((F.ceiling || F.layer === 'light') && !F.lamp) {
         const lc = D.LIGHT_COLORS[room.light || 'warm'] || D.LIGHT_COLORS.warm;
         const base = f.type === 'ceiling_light' || f.type === 'chandelier' ? 0.5 : 0.22;
         const pl = new THREE.PointLight(lc.color, room.lightOn === false ? 0.04 : base, Math.max(w, d) * 1.3, 1.8);
@@ -475,11 +476,26 @@
         group.add(pl); res.lights.push(pl);
       }
       if (f.type === 'mirrorball') res.disco = o;
+      // 가구 자체 발광 (스탠드 · 무드등 · 네온 · 창빛)
+      if (F.lamp) for (const [lx, ly, lz, col, inten, dist] of F.lamp) {
+        const r = (f.rot || 0) * Math.PI / 180, wx = f.x + lx * Math.cos(r) + lz * Math.sin(r), wz = f.z - lx * Math.sin(r) + lz * Math.cos(r);
+        lampList.push({ x: wx, y: ly, z: wz, col, inten, dist });
+      }
     });
+    // 램프 빛은 밝은 순으로 최대 5개 (모바일 성능)
+    const lampK = room.roomStyle && FM.RoomKit && FM.RoomKit.STYLES[room.roomStyle] && FM.RoomKit.STYLES[room.roomStyle].mood ? FM.RoomKit.STYLES[room.roomStyle].mood.lamp || 1 : 1;
+    lampList.sort((a, b) => b.inten - a.inten).slice(0, 5).forEach(L => {
+      L.inten *= lampK;
+      const pl = new THREE.PointLight(L.col, L.inten, L.dist, 1.6); pl.position.set(L.x, L.y, L.z); pl.userData.base = L.inten; pl.userData.ph = L.x * 3 + L.z;
+      group.add(pl); res.lamps.push(pl);
+    });
+    if (room.roomStyle && !themeId && FM.RoomKit && FM.RoomKit.STYLES[room.roomStyle]) res.mood = FM.RoomKit.STYLES[room.roomStyle].mood || null;
     // 조명이 하나도 없으면 기본 조명
     if (!res.lights.length) { const pl = new THREE.PointLight((D.LIGHT_COLORS[room.light || 'warm'] || D.LIGHT_COLORS.warm).color, room.lightOn === false ? 0.04 : 0.5, Math.max(w, d) * 1.5, 1.8); pl.userData.base = 0.5; pl.position.set(0, 2.6, 0); group.add(pl); res.lights.push(pl); }
     // 조명이 여러 개면 합이 너무 밝아지지 않게 나눔
     res.lightScale = 1 / Math.max(1, Math.sqrt(res.lights.length));
+    // 스타일 방은 천장 주조명을 낮추고 무드등이 분위기를 만들게
+    if (res.mood && res.mood.main) res.lightScale = (res.lightScale || 1) * res.mood.main;
     // 특이 취향(Layer 4) 파티클 & 보조 조명
     if (room.particles && !themeId) makeParticles(room.particles, w, d, group, res);
     // 쓰레기 (과자 껍질, 먼지 뭉치, 널브러진 옷가지)
@@ -581,6 +597,8 @@
         l.intensity = room.lightOn === false ? 0.04 : (l.userData.base || 0.4) * (res.lightScale || 1) * k;
       }
     }
+    // 램프: 은은하게 숨쉬듯 (조명을 꺼도 무드등은 켜져 있어 더 아늑)
+    for (const l of res.lamps || []) l.intensity = l.userData.base * (1 + Math.sin(t * 1.3 + l.userData.ph) * 0.06) * (room && room.lightOn === false ? 1.15 : 1);
     updateParticles(res, dt, t);
     if (res.disco) res.disco.rotation.y += dt * 2;
   };
