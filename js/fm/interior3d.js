@@ -35,6 +35,7 @@
         case 'water': for (let i = 0; i < 30; i++) { g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 3; g.beginPath(); const y = Math.random() * h; g.moveTo(0, y); for (let x = 0; x <= w; x += 16) g.lineTo(x, y + Math.sin(x / 20) * 5); g.stroke(); } break;
         case 'mat': for (let y = 0; y < h; y += 128) for (let x = 0; x < w; x += 128) { g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 4; g.strokeRect(x, y, 128, 128); } break;
         case 'slate': for (let y = 0; y < h; y += 32) for (let x = 0; x < w; x += 32) { g.fillStyle = `rgba(${((x * 7 + y * 3) % 5) < 2 ? '255,255,255,0.05' : '0,0,0,0.08'})`; g.fillRect(x + 1, y + 1, 30, 30); g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(x, y, 32, 1.5); g.fillRect(x, y, 1.5, 32); } break;
+        case 'checker': for (let y = 0; y < h; y += 32) for (let x = 0; x < w; x += 32) { if ((x + y) / 32 % 2) { g.fillStyle = '#f4ecd0'; g.fillRect(x, y, 32, 32); } g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(x, y, 32, 1); g.fillRect(x, y, 1, 32); } break;
         case 'sand': for (let i = 0; i < 900; i++) { g.fillStyle = dark; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); } break;
       }
     }, [2, 2]);
@@ -421,7 +422,7 @@
     const stMat = (style, len) => {
       const W = FM.RoomKit && FM.RoomKit.wallTexture(style.slice(3)); if (!W) return null;
       const t = W.tex.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W.tileW ? Math.max(1, Math.round(len / W.tileW)) : 1, 1);
-      return H.soften(new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }), 0.1);
+      return H.soften(new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide, color: room.wallTint || 0xffffff }), 0.1);
     };
     const stOK = st => !themeId && !(room.patterns && room.patterns.wall) && st && st.startsWith('st_');
     const wallMat = (len, st) => { if (stOK(st)) { const m = stMat(st, len); if (m) return m; } if (!fineWall) return H.soften(new THREE.MeshLambertMaterial({ map: wallMap, side: THREE.DoubleSide }), 0.1); const t = wallMap.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(Math.max(1, Math.round(len / TILE)), WALL_H / TILE); return H.soften(new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }), 0.1); };
@@ -457,7 +458,7 @@
       if (pats.sofa && tags.includes('sofa')) pattern = patTex(pats.sofa);
       if (pats.frame && (tags.includes('frame') || f.type === 'poster')) pattern = patTex(pats.frame);
       if (f.img && F.photo) pattern = imgTex(f.img);
-      const opts = { mat: f.mat, color: f.color, pattern };
+      const opts = { mat: f.mat, color: f.color, pattern, hue: room.roomStyle && !themeId ? room.kitHue || 0 : 0 };
       if (f.type === 'photo_crush') { const owner = st.villagers.find(v => v.home === iid); const tgt = f.target || (owner && owner.crush && owner.crush.target); if (tgt) opts.faceTex = faceTex(tgt); }
       const o = PM.furniture(f.type, opts);
       if (pattern && !f.img && !F.parts.some(p => (p[8] || '').includes('pic'))) o.traverse(m => { if (m.isMesh && m.userData.main) { m.material = new THREE.MeshLambertMaterial({ map: pattern }); } });
@@ -483,13 +484,13 @@
       }
     });
     // 램프 빛은 밝은 순으로 최대 5개 (모바일 성능)
-    const lampK = room.roomStyle && FM.RoomKit && FM.RoomKit.STYLES[room.roomStyle] && FM.RoomKit.STYLES[room.roomStyle].mood ? FM.RoomKit.STYLES[room.roomStyle].mood.lamp || 1 : 1;
+    if (room.roomStyle && !themeId && FM.RoomKit && FM.RoomKit.STYLES[room.roomStyle]) res.mood = FM.RoomKit.moodFor(room.roomStyle, room.moodVar || 'base');
+    const lampK = res.mood ? res.mood.lamp || 1 : 1;
     lampList.sort((a, b) => b.inten - a.inten).slice(0, 5).forEach(L => {
       L.inten *= lampK;
-      const pl = new THREE.PointLight(L.col, L.inten, L.dist, 1.6); pl.position.set(L.x, L.y, L.z); pl.userData.base = L.inten; pl.userData.ph = L.x * 3 + L.z;
+      const pl = new THREE.PointLight(FM.RoomKit ? FM.RoomKit.hueShift(L.col, room.kitHue || 0) : L.col, L.inten, L.dist, 1.6); pl.position.set(L.x, L.y, L.z); pl.userData.base = L.inten; pl.userData.ph = L.x * 3 + L.z;
       group.add(pl); res.lamps.push(pl);
     });
-    if (room.roomStyle && !themeId && FM.RoomKit && FM.RoomKit.STYLES[room.roomStyle]) res.mood = FM.RoomKit.STYLES[room.roomStyle].mood || null;
     // 조명이 하나도 없으면 기본 조명
     if (!res.lights.length) { const pl = new THREE.PointLight((D.LIGHT_COLORS[room.light || 'warm'] || D.LIGHT_COLORS.warm).color, room.lightOn === false ? 0.04 : 0.5, Math.max(w, d) * 1.5, 1.8); pl.userData.base = 0.5; pl.position.set(0, 2.6, 0); group.add(pl); res.lights.push(pl); }
     // 조명이 여러 개면 합이 너무 밝아지지 않게 나눔

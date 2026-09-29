@@ -126,7 +126,11 @@
     const g = new THREE.Group();
     if (!F) { g.add(mesh(box(0.5, 0.5, 0.5), mat(0xff00ff), 0, 0.25, 0)); return g; }
     const built = F.parts.map(p => { const m = partMesh(p, opts); g.add(m); return m; });
-    if (F.build) { F.build(g, opts); bake(g); }
+    if (F.build) {
+      F.build(g, opts); bake(g);
+      // 방마다 다른 색 조합: 포인트 색만 색상환 회전
+      if (opts.hue && FM.RoomKit) g.traverse(o => { if (o.isMesh) o.material = FM.RoomKit.hueMat(o.material, opts.hue); });
+    }
     else furnDetail(F, g, built);
     g.userData.type = type;
     return g;

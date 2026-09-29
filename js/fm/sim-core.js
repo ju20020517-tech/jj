@@ -666,7 +666,8 @@
       const r = v.home && S.rooms[v.home];
       if (!r || (r.roomStyle !== undefined && (r.kitRev || 1) >= FM.RoomKit.REV) || r.theme || r.edited || r.atmoByPlayer || v.child) continue;
       const { w, d } = Sim.interiorSize(v.home);
-      Object.assign(r, FM.RoomKit.styleRoom(r.roomStyle || FM.RoomKit.pickStyle(v.keys || {}, 0), w, d, (FM.INTERIORS[v.home] || {}).door));
+      const seed = [...String(v.id)].reduce((a, ch) => a * 31 + ch.charCodeAt(0) | 0, 7);
+      Object.assign(r, FM.RoomKit.styleRoom(FM.RoomKit.pickStyle(v.keys || {}, seed), w, d, (FM.INTERIORS[v.home] || {}).door, seed, v.keys || {}));
     }
     ensurePlayerRoom();
     FM.Soc && FM.Soc.onLoad && FM.Soc.onLoad();

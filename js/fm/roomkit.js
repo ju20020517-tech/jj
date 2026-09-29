@@ -14,7 +14,7 @@
   const { mat, geo, sphere, box, cyl, capsule, mesh, soften } = H;
   const F = FM.FURN;
   const PI = Math.PI;
-  const REV = 2;   // 스타일 방 구성 버전 (올라가면 손대지 않은 방은 새 구성으로 갱신)
+  const REV = 3;   // 스타일 방 구성 버전 (올라가면 손대지 않은 방은 새 구성으로 갱신)
   const css = PM.css;
 
   // ---------------------------------------------------------
@@ -621,7 +621,7 @@
   // 가구 바닥 사각형 (회전 반영)
   const rectOf = (Fd, x, z, r) => { const q = Math.abs(Math.round(r / 90)) % 2 === 1; const fw = (q ? Fd.d : Fd.w) / 2, fd = (q ? Fd.w : Fd.d) / 2; return [x - fw, z - fd, x + fw, z + fd]; };
   const hit = (a, b, m = 0.12) => a[0] < b[2] + m && a[2] > b[0] - m && a[1] < b[3] + m && a[3] > b[1] - m;
-  function styleRoom(styleId, w = 8, d = 6, door) {
+  function styleRoom(styleId, w = 8, d = 6, door, seedIn = 0, keys = {}) {
     const S = STYLES[styleId]; if (!S) return null;
     const furn = S.furn.filter(x => F[x.type]).map(x => { const [X, Z] = place(x.x, x.z, w, d, F[x.type]); return { type: x.type, x: X, z: Z, rot: x.rot || 0, mat: null, color: null }; });
     // 빈 곳 채우기: 방이 클수록 더 많이 (벽을 따라 먼저, 그다음 빈 바닥)
@@ -651,8 +651,59 @@
       const o = side === 'b' ? { x: a, z: -hz + 0.06, rot: 0 } : side === 'l' ? { x: -hx + 0.06, z: a, rot: 90 } : { x: hx - 0.06, z: a, rot: -90 };
       furn.push({ type, x: +o.x.toFixed(2), z: +o.z.toFixed(2), rot: o.rot, mat: null, color: null }); placed++; wi++;
     }
-    return { kitRev: REV, roomStyle: styleId, wallStyle: 'st_' + S.wall, wallStyleL: S.wallL ? 'st_' + S.wallL : null, wallStyleR: S.wallR ? 'st_' + S.wallR : null, floor: S.floor, floorColor: S.floorColor, furn };
+    return Object.assign({ kitRev: REV, roomStyle: styleId, wallStyle: 'st_' + S.wall, wallStyleL: S.wallL ? 'st_' + S.wallL : null, wallStyleR: S.wallR ? 'st_' + S.wallR : null, floor: S.floor, floorColor: S.floorColor, furn }, variant(styleId, keys, seedIn));
   }
 
-  FM.RoomKit = { REV, STYLES, styleRoom, pickStyle, styleFit, styleScore, wallTexture, WALLS };
+  // ---------------------------------------------------------
+  // 같은 스타일이라도 주민마다 색 조합 · 조명 분위기가 달라짐
+  //  kitHue: 포인트 색 색상환 회전 / wallTint: 벽 색조 / floorColor / moodVar: 조명 분위기
+  // ---------------------------------------------------------
+  const MOOD_VARS = {
+    base: { name: '기본' }, sunset: { name: '노을빛' }, night: { name: '한밤 무드등' }, pastel: { name: '파스텔 몽환' }, cool: { name: '맑은 쿨톤' }, golden: { name: '골든 아워' },
+  };
+  function variant(styleId, keys = {}, seed = 0) {
+    const S = STYLES[styleId], V = S.vars || {};
+    let x = (seed | 0) ^ 0x9e3779b9; const rnd = () => { x = Math.imul(x ^ (x >>> 15), 0x2c1b3c6d); x ^= x + Math.imul(x ^ (x >>> 7), 0x297a2d39); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+    const pick = a => a[Math.floor(rnd() * a.length)];
+    // 성격이 조명 분위기에 영향
+    const w = { base: 3, sunset: 2, night: 2, pastel: 2, cool: 2, golden: 2 };
+    if (keys.L2 === 'NIGHT_OWL') w.night += 5; if (keys.L2 === 'EARLY_BIRD') { w.base += 3; w.golden += 3; } if (keys.L2 === 'SLOTH') w.sunset += 2;
+    if (keys.L3 === 'DREAMY') w.pastel += 5; if (keys.L3 === 'CUTE') w.pastel += 3; if (keys.L3 === 'PASSIONATE') w.sunset += 4; if (keys.L3 === 'CYNICAL' || keys.L3 === 'FORMAL') w.cool += 4; if (keys.L3 === 'WARM') w.golden += 4; if (keys.L3 === 'SHY') w.night += 2;
+    for (const k of Object.keys(w)) if (V.lights && !V.lights.includes(k)) w[k] = 0;
+    const tot = Object.values(w).reduce((a, b) => a + b, 0); let r = rnd() * tot, moodVar = 'base';
+    for (const [k, v] of Object.entries(w)) { if ((r -= v) < 0) { moodVar = k; break; } }
+    return {
+      kitHue: pick(V.hues || [0, 0, 0, 0.05, -0.05, 0.09, -0.09, 0.14, -0.14]),
+      wallTint: pick(V.walls || [0xffffff, 0xffffff, 0xfff0e4, 0xe8f0ff, 0xf0ffe8, 0xfff0f6, 0xf4ecff]),
+      floorColor: pick(V.floors || [S.floorColor]),
+      moodVar,
+    };
+  }
+  const mixC = (a, b, t) => { const c = (v, sh) => (v >> sh) & 255; return [16, 8, 0].reduce((o, sh) => o | (Math.round(c(a, sh) + (c(b, sh) - c(a, sh)) * t) << sh), 0); };
+  function moodFor(styleId, v = 'base') {
+    const b = STYLES[styleId] && STYLES[styleId].mood; if (!b) return null;
+    const m = { main: b.main || 1, lamp: b.lamp || 1, hemi: b.hemi.slice(), amb: b.amb.slice(), dir: b.dir.slice(), bg: b.bg };
+    const tint = (col, k) => { m.hemi[0] = mixC(m.hemi[0], col, k); m.amb[0] = mixC(m.amb[0], col, k); m.dir[0] = mixC(m.dir[0], col, k); m.bg = mixC(m.bg, col, k * 0.4); };
+    if (v === 'sunset') { tint(0xff9a60, 0.42); m.dir[2] *= 1.15; m.lamp *= 1.1; }
+    else if (v === 'night') { tint(0x3a50a0, 0.5); m.hemi[2] *= 0.55; m.amb[1] *= 0.6; m.dir[2] *= 0.25; m.main *= 0.45; m.lamp *= 1.35; m.bg = mixC(m.bg, 0x000000, 0.4); }
+    else if (v === 'pastel') { tint(0xe0c0ff, 0.38); m.lamp *= 1.1; }
+    else if (v === 'cool') { tint(0xc8e0ff, 0.35); m.dir[2] *= 1.1; }
+    else if (v === 'golden') { tint(0xffd070, 0.35); m.dir[2] *= 1.2; }
+    return m;
+  }
+  // 색상 회전 (나무·무채색은 그대로, 포인트 색만)
+  const hueCache = new Map();
+  function hueShift(hex, h) {
+    if (!h) return hex; const c = new THREE.Color(hex), o = {}; c.getHSL(o); const deg = o.h * 360;
+    if (o.s < 0.28 || (deg > 16 && deg < 48 && o.l < 0.78)) return hex;
+    c.setHSL((o.h + h + 1) % 1, o.s, o.l); return c.getHex();
+  }
+  function hueMat(m, h) {
+    if (!h || !m || !m.color) return m; const key = m.uuid + ':' + h; if (hueCache.has(key)) return hueCache.get(key);
+    const hex = m.color.getHex(), nh = hueShift(hex, h); let out = m;
+    if (nh !== hex) { out = m.clone(); out.color.setHex(nh); if (m.onBeforeCompile) { out.onBeforeCompile = m.onBeforeCompile; out.customProgramCacheKey = m.customProgramCacheKey; } }
+    hueCache.set(key, out); return out;
+  }
+  FM.RoomKit = { variant, moodFor, MOOD_VARS, hueShift, hueMat, _h: { K, T, P, def, tmat, ctex, M, glow, glass, lathe2, picMat, shade, mesh, box, sphere, cyl, geo, capsule, mat, f, rectOf },
+    REV, STYLES, styleRoom, pickStyle, styleFit, styleScore, wallTexture, WALLS };
 })();
