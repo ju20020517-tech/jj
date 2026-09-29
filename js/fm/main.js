@@ -18,7 +18,7 @@
   function initRenderer() {
     const canvas = $('#game');
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 1.35 : 1.75));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
@@ -618,9 +618,11 @@
     FM.Guide.clearWaypointIfNear();
   }
   function frame() {
-    const dt = Math.min(0.05, clock.getDelta());
+    // 느린 기기에서도 게임 시간은 제대로 흐르게: 시뮬레이션은 최대 0.25초, 카메라/애니메이션은 0.05초로 제한
+    const raw = clock.getDelta();
+    const dt = Math.min(0.05, raw);
     const st = Sim.get();
-    if (!FM.UI.paused()) Sim.tick(dt);
+    try { if (!FM.UI.paused()) Sim.tick(Math.min(0.25, raw)); } catch (e) { console.error('tick', e); }
     movePlayer(dt);
     followAll(dt);
     updateCamera(dt);

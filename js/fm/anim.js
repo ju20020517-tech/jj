@@ -19,7 +19,13 @@
     c.seated = true;
   };
   // 누울 때는 몸 가운데가 제자리에 오도록 (머리가 벽 너머로 넘어가지 않게)
-  const lieBase = (c) => { c.body.rotation.x = -PI / 2; c.body.position.y = 0.32; c.body.position.z = 0.46; legs(c, 0, 0); c.lying = true; };
+  // 눕기: 몸 한가운데(배꼽)가 제자리에 오도록, 누울 면 높이(lieOn.h)만큼 올림
+  const lieBase = (c) => {
+    c.body.rotation.x = -PI / 2; c.body.position.z = 0.62; legs(c, 0.06, -0.06); c.lying = true;
+    const L = c.lieOn, k = (c.rs || 1) * (c.hh || 1);
+    c.body.position.y = 0.3 + (L ? L.h / k : 0);
+    if (L && L.along === 'x' && c.shape) c.shape.rotation.y = PI / 2;
+  };
   A._sitBase = sitBase;
 
   A.stand = () => {};
@@ -68,7 +74,8 @@
   A.drink = (c, t) => { sitBase(c); arms(c, -0.4, 0, -2.1, -0.3); c.head.rotation.x = -0.25; };
   A.sit = (c, t) => { sitBase(c); arms(c, -0.6, -0.1, -0.6, 0.1); };
   A.sadSit = (c, t) => { sitBase(c); c.head.rotation.x = 0.5; arms(c, -1.3, 0.2, -1.3, -0.2); };
-  A.lie = (c, t) => { lieBase(c); arms(c, -3, 0, -3, 0); };
+  // 누워서 쉬기: 한 손은 배 위, 한 손은 머리 밑, 가끔 발 까딱
+  A.lie = (c, t) => { lieBase(c); arms(c, -0.5, 0.35, -2.7, -0.5); legs(c, 0.06 + Math.max(0, S(t * 1.3)) * 0.12, -0.06); c.head.rotation.y = S(t * 0.2) * 0.25; };
   // 침대: 머리는 베개 위, 몸은 매트리스 위, 이불을 어깨까지 덮고 새근새근
   A.sleep = (c, t) => {
     lieBase(c);
@@ -76,7 +83,7 @@
     if (bed) {
       c.body.position.z = bed.headZ / (rs * ww) + 0.93;
       c.body.position.y = ((bed.top + 0.22 * rs) / rs - SHAPE_Y) / (c.hh || 1);
-    } else c.body.position.y = 0.4;
+    } else c.body.position.y = 0.3;
     arms(c, 0, -0.08, 0, 0.08);
     // 베개에 고개를 살짝 숙여 기대고(귀가 벽으로 안 넘어가게), 가끔 고개를 돌려 뒤척임
     c.head.rotation.x = 0.5;
@@ -207,9 +214,8 @@
       const sh = c.seatH || 0;
       if (sh > 0) {
         if (c.lying) {
-          // 벤치 위 낮잠: 좌석 위에 눕고, 벤치 방향(옆으로 긴 쪽)으로 돌려 눕힘
-          c.body.position.y += sh / ((c.rs || 1) * (c.hh || 1));
-          if (c.shape) c.shape.rotation.y = PI / 2;
+          // 벤치 · 소파 위 낮잠: 좌석 높이에 맞춰, 좌석 긴 방향으로 눕힘
+          if (!c.lieOn) { c.body.position.y += sh / ((c.rs || 1) * (c.hh || 1)); if (c.shape) c.shape.rotation.y = PI / 2; }
         } else if (!c.seated && !NO_SEAT[p]) sitBase(c, t);
       }
     },

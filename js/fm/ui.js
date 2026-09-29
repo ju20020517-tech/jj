@@ -71,6 +71,7 @@
     $('#btnSound').onclick = () => { FM.Audio.enable(!FM.Audio.on); UI.paint(); };
     $('#btnObserve').onclick = () => { if (G().view === 'observe') G().endObserve(); else G().observe(); };
     $('#btnMap').onclick = () => UI.toggleMap();
+    if ($('#btnRel')) $('#btnRel').onclick = () => FM.Drama && FM.Drama.openMap();
     $('#btnPanel').onclick = () => $('#side').classList.toggle('open');
     document.querySelectorAll('#side .tab').forEach(t => t.onclick = () => UI.tab(t.dataset.tab));
     // 모바일 버튼
@@ -296,6 +297,7 @@
   }
   function closeModal() { $('#modal').hidden = true; modalStack = 0; if (UI.onModalClose) { const f = UI.onModalClose; UI.onModalClose = null; f(); } }
   UI.closeModal = closeModal;
+  UI.modal = modal;
   UI.modalOpen = () => !$('#modal').hidden || !$('#dialog').hidden || !!dreamGame;
   UI.paused = () => !!dreamGame;
   UI.escape = () => { if (!$('#map').hidden) $('#map').hidden = true; else if (!$('#dialog').hidden) closeDialog(); else if (!$('#modal').hidden) closeModal(); else if (G().view === 'observe') G().endObserve(); else if (UI.editing) UI.closeEditor(); };

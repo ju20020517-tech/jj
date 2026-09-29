@@ -50,7 +50,7 @@
       }
     }
     const cm = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xaeb8c8, fog: false });
-    const ci = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 12), cm, puffs.length);
+    const ci = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 7), cm, puffs.length);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s3 = new THREE.Vector3(), p3 = new THREE.Vector3();
     puffs.forEach(([x, y, z, r], i) => { p3.set(x, y, z); s3.set(r, r * 0.72, r * 0.9); m4.compose(p3, q, s3); ci.setMatrixAt(i, m4); });
     cg.add(ci); scene.add(cg);
@@ -313,7 +313,7 @@
   }
   const M4 = (x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(sx, sy, sz));
   // 울퉁불퉁 구 (나뭇잎 덩어리)
-  function lumpy(seed, amp = 0.12, ws = 20, hs = 14) {
+  function lumpy(seed, amp = 0.12, ws = 12, hs = 9) {
     const g = new THREE.SphereGeometry(1, ws, hs); const p = g.attributes.position;
     for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const k = 1 + amp * (Math.sin(x * 5.1 + seed) * Math.cos(y * 4.3 + seed * 2) + Math.sin(z * 4.7 - seed) * 0.6); p.setXYZ(i, x * k, y * k, z * k); }
     g.computeVertexNormals();
@@ -356,12 +356,12 @@
     }
     const leafM = c => sway(AC.tm('leaf', 0xffffff).clone(), 0.035, 'leafsway');
     // 잎: 둥근 나무 = 몽글몽글 구름, 삼나무 = 가장자리가 물결치는 층층 원뿔
-    const cedarG = (() => { const g = new THREE.ConeGeometry(1.5, 1.7, 16, 3); const p2 = g.attributes.position; for (let i = 0; i < p2.count; i++) { const x = p2.getX(i), y = p2.getY(i), z = p2.getZ(i); if (y < -0.5) { const a = Math.atan2(z, x); const k = 1 + Math.sin(a * 8) * 0.08; p2.setXYZ(i, x * k, y - Math.abs(Math.sin(a * 8)) * 0.12, z * k); } } g.computeVertexNormals(); return AC.scaleUV(g, 4, 1.5); })();
+    const cedarG = (() => { const g = new THREE.ConeGeometry(1.5, 1.7, 12, 2); const p2 = g.attributes.position; for (let i = 0; i < p2.count; i++) { const x = p2.getX(i), y = p2.getY(i), z = p2.getZ(i); if (y < -0.5) { const a = Math.atan2(z, x); const k = 1 + Math.sin(a * 8) * 0.08; p2.setXYZ(i, x * k, y - Math.abs(Math.sin(a * 8)) * 0.12, z * k); } } g.computeVertexNormals(); return AC.scaleUV(g, 4, 1.5); })();
     const leafDefs = {
       round: { geo: lumpy(1.3, 0.1), col: 0x6cc85a, parts: [[0, 3.3, 0, 1.55], [-0.95, 2.8, 0.35, 1.1], [0.95, 2.9, -0.25, 1.15], [0.2, 2.7, 0.95, 1.0], [0.1, 4.2, 0.1, 1.0]] },
       pine: { geo: cedarG, col: 0x3f9a62, parts: [[0, 2.5, 0, 1.15], [0, 3.6, 0, 0.9], [0, 4.6, 0, 0.66], [0, 5.4, 0, 0.42]] },
       willow: { geo: lumpy(2.1, 0.14), col: 0xa6d86a, parts: [[0, 3.3, 0, 1.8], [-1.2, 2.5, 0, 1.2], [1.2, 2.5, 0, 1.2], [0, 2.4, 1.1, 1.1], [0, 2.6, -1.1, 1.0]] },
-      palm: { geo: (() => { const g = new THREE.SphereGeometry(1, 12, 6); g.scale(1.9, 0.18, 0.55); g.translate(1.2, 0, 0); return AC.scaleUV(g, 3, 1); })(), col: 0x56b44a, parts: [0, 1, 2, 3, 4, 5].map(i => [0, 4.75, 0, 1, i * Math.PI / 3]) },
+      palm: { geo: (() => { const g = new THREE.SphereGeometry(1, 8, 4); g.scale(1.9, 0.18, 0.55); g.translate(1.2, 0, 0); return AC.scaleUV(g, 3, 1); })(), col: 0x56b44a, parts: [0, 1, 2, 3, 4, 5].map(i => [0, 4.75, 0, 1, i * Math.PI / 3]) },
     };
     const fruits = [];
     for (const [k, list] of Object.entries(kinds)) {
@@ -391,18 +391,18 @@
       scene.add(inst);
     }
     if (fruits.length) {
-      const fi = new THREE.InstancedMesh(new THREE.SphereGeometry(0.2, 12, 10), H.mat(0xffffff), fruits.length);
+      const fi = new THREE.InstancedMesh(new THREE.SphereGeometry(0.2, 7, 5), H.mat(0xffffff), fruits.length);
       fruits.forEach(([x, y, z, c], i) => { m4.makeTranslation(x, y, z); fi.setMatrixAt(i, m4); fi.setColorAt(i, col.set(c)); });
-      fi.castShadow = true; scene.add(fi);
+      fi.castShadow = false; scene.add(fi);
     }
   }
 
   // 3D 꽃: 튤립 · 코스모스 · 팬지 · 국화 (꽃잎은 인스턴스 색, 줄기는 공통)
   function flowerGeos() {
-    const petal = new THREE.SphereGeometry(1, 10, 6);
+    const petal = new THREE.SphereGeometry(1, 6, 4);
     const ring = (n, r, sx, sz, tilt) => mergeGeos(Array.from({ length: n }, (_, i) => { const a = i / n * Math.PI * 2; return { g: petal, m4: M4(Math.cos(a) * r, 0, Math.sin(a) * r, 0, -a, tilt, sx, 0.022, sz) }; }));
     const tulip = mergeGeos([0, 1, 2].map(i => ({ g: petal, m4: M4(Math.cos(i * 2.1) * 0.035, 0.09, Math.sin(i * 2.1) * 0.035, 0, -i * 2.1, 0.12, 0.075, 0.13, 0.06) })).concat([0, 1, 2].map(i => ({ g: petal, m4: M4(Math.cos(i * 2.1 + 1) * 0.04, 0.08, Math.sin(i * 2.1 + 1) * 0.04, 0, -i * 2.1 - 1, 0.12, 0.07, 0.12, 0.055) }))));
-    const mum = (() => { const g = new THREE.IcosahedronGeometry(0.13, 2); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const k = 1 + 0.12 * Math.sin(x * 60) * Math.sin(y * 60) * Math.sin(z * 60); p.setXYZ(i, x * k, y * k * 0.85, z * k); } g.computeVertexNormals(); return g; })();
+    const mum = (() => { const g = new THREE.IcosahedronGeometry(0.13, 1); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const k = 1 + 0.12 * Math.sin(x * 60) * Math.sin(y * 60) * Math.sin(z * 60); p.setXYZ(i, x * k, y * k * 0.85, z * k); } g.computeVertexNormals(); return g; })();
     const stem = mergeGeos([
       { g: new THREE.CylinderGeometry(0.012, 0.016, 0.34, 5), m4: M4(0, 0.17, 0), color: 0x4f9e3e },
       { g: petal, m4: M4(0.06, 0.08, 0, 0, 0, 0.5, 0.09, 0.012, 0.035), color: 0x5fb04a },
@@ -443,9 +443,9 @@
         p3.set(x, y, z); q.setFromEuler(new THREE.Euler(ty === 'tulip' ? 0 : -0.25, x * 7, 0)); s3.setScalar(k * (ty === 'mum' ? 1 : 1.25)); m4.compose(p3, q, s3); inst.setMatrixAt(i, m4); inst.setColorAt(i, c.set(col));
         if (ty === 'cosmos' || ty === 'pansy') centers.push([x, y + 0.02, z, ty === 'pansy' ? 0x5a2a6a : 0xffd23a]);
       });
-      inst.castShadow = true; scene.add(inst);
+      inst.castShadow = false; scene.add(inst);
     }
-    if (centers.length) { const ci = new THREE.InstancedMesh(new THREE.SphereGeometry(0.035, 8, 6), sway(H.mat(0xffffff).clone(), 0.1, 'fhead'), centers.length); centers.forEach(([x, y, z, col], i) => { m4.makeTranslation(x, y, z); ci.setMatrixAt(i, m4); ci.setColorAt(i, c.set(col)); }); scene.add(ci); }
+    if (centers.length) { const ci = new THREE.InstancedMesh(new THREE.SphereGeometry(0.035, 5, 3), sway(H.mat(0xffffff).clone(), 0.1, 'fhead'), centers.length); centers.forEach(([x, y, z, col], i) => { m4.makeTranslation(x, y, z); ci.setMatrixAt(i, m4); ci.setColorAt(i, c.set(col)); }); scene.add(ci); }
   }
 
   // 3D 풀 (바람에 살랑살랑)
@@ -509,7 +509,7 @@
       if (!pl.bld || pl.bld.h > 20) continue;
       for (const [sx, sz] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) { const x = pl.x + sx * (pl.bld.w / 2 + 0.9), z = pl.z + sz * (pl.bld.d / 2 + 0.9); if (!nearRoad(segs, x, z) && !T.blockedByBuilding(x, z, 0.2) && !T.inWater(x, z)) spots.push([x, z, 0.8 + Math.abs(Math.sin(x)) * 0.4]); }
     }
-    const g = lumpy(3.3, 0.14, 16, 12);
+    const g = lumpy(3.3, 0.14, 10, 7);
     const bm = sway(AC.tm('leaf', 0xffffff).clone(), 0.03, 'bush');
     const inst = new THREE.InstancedMesh(g, bm, spots.length);
     const dots = [];
@@ -521,7 +521,7 @@
       for (let j = 0; j < 7; j++) { const a = j * 0.9 + x, e = 0.3 + (j % 3) * 0.25; dots.push([x + Math.cos(a) * Math.cos(e) * 0.9 * k, y + 0.55 * k + Math.sin(e) * 0.7 * k, z + Math.sin(a) * Math.cos(e) * 0.9 * k, fc]); }
     });
     inst.castShadow = true; inst.receiveShadow = true; scene.add(inst);
-    const di = new THREE.InstancedMesh(new THREE.SphereGeometry(0.08, 8, 6), H.mat(0xffffff), dots.length);
+    const di = new THREE.InstancedMesh(new THREE.SphereGeometry(0.08, 5, 4), H.mat(0xffffff), dots.length);
     dots.forEach(([x, y, z, col], i) => { m4.makeTranslation(x, y, z); di.setMatrixAt(i, m4); di.setColorAt(i, c.set(col)); });
     scene.add(di);
   }
@@ -644,7 +644,7 @@
     amb = new THREE.AmbientLight(0xffe8d0, 0.2); scene.add(amb);
     sun = new THREE.DirectionalLight(0xffe6c4, 0.95);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(1536, 1536);
     const sc2 = sun.shadow.camera; sc2.left = -48; sc2.right = 48; sc2.top = 48; sc2.bottom = -48; sc2.near = 1; sc2.far = 300;
     sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03;
     scene.add(sun); scene.add(sun.target);

@@ -992,6 +992,8 @@
 
   function startAct(v, id, extra = {}) {
     const A = D.ACTIONS[id] || {};
+    // 눕는 포즈인데 침대 정보가 없으면, 지금 쓰는 가구에서 찾아줌 (머리가 베개 위로)
+    if ((extra.pose || A.pose) === 'sleep' && !extra.bed && v.useTarget && v.useTarget.F && v.useTarget.F.bed) extra = Object.assign({}, extra, { bed: v.useTarget.F.bed });
     v.act = Object.assign({ id, t: (extra.dur || A.dur || 4) * rnd(0.8, 1.3), name: A.name || extra.name || id }, extra);
     v.state = extra.state || A.state || 'INTERACT_OBJ';
     v.pose = extra.pose || A.pose || null;
@@ -1000,6 +1002,12 @@
     if (v.spot && v.spot.face !== undefined) v.ry = v.spot.face;
     // 섬의 벤치/카페 의자에 앉으면 좌석 높이에 맞춰 앉음
     if (v.loc === 'island' && v.spot && v.spot.seat && !v.spot.lie && v.spot.tags.includes('bench') && v.act.seatH === undefined && Math.hypot(v.x - v.spot.x, v.z - v.spot.z) < 0.8) v.act.seatH = v.spot.tags.includes('cafe') ? 0.48 : 0.49;
+    // 선베드 · 해먹: 그 위에 제대로 눕기 (높이 + 긴 방향)
+    if (v.loc === 'island' && v.spot && v.spot.lie && Math.hypot(v.x - v.spot.x, v.z - v.spot.z) < 1) {
+      v.act.lie = v.spot.tags.includes('hammock') ? { h: 0.72, along: 'x' } : { h: 0.4, along: 'z' };
+      if (!['lie', 'sleep'].includes(v.pose)) v.pose = v.act.pose = 'lie';
+      v.x = v.spot.x; v.z = v.spot.z;
+    }
     if (v.useTarget && v.useTarget.ry !== undefined) v.ry = v.useTarget.ry;
     FM.bus.emit('act', { v, id });
     if (FM.Ev && FM.Ev.onAct) FM.Ev.onAct(v, id);
@@ -1146,7 +1154,7 @@
     const beds = furnUses(home, u => u.u.act === 'sleep');
     let u = beds.find(b => useOcc[b.key] === v.id) || beds.find(b => !useOcc[b.key]) || beds[0];
     if (u && v.useKey === u.key && Math.hypot(v.x - u.x, v.z - u.z) < 0.4) {
-      startAct(v, 'sleep', { state: 'HOME_LIFE', pose: 'sleep', dur: 30, name: '침대 수면', prop: null });
+      startAct(v, 'sleep', { state: 'HOME_LIFE', pose: 'sleep', dur: 30, name: '침대 수면', prop: null, bed: u.F.bed || null, y: u.u.y || 0 });
       if (room) room.lightOn = false;
       return;
     }
@@ -1158,7 +1166,7 @@
     const room = S.rooms[v.home];
     if (room && !room.lightOn && !asleep(v, hour())) room.lightOn = true;
     if (acts && acts.includes('work_home') && chance(0.6)) {
-      const desk = furnUses(v.home, u => u.F.tags && u.F.tags.includes('desk'))[0];
+      const desk = furnUses(v.home, u => u.F.tags && u.F.tags.includes('desk') && u.u.pose !== 'sleep')[0];
       if (desk) { goUse(v, desk, 'work_home'); return; }
     }
     homeAction(v, acts);
@@ -1305,7 +1313,7 @@
       const u = v.useTarget;
       v.x = u.x; v.z = u.z; v.ry = u.ry;
       const a = pa || u.u.act;
-      const extra = { state: v.loc === v.home ? 'HOME_LIFE' : (u.u.pose === 'sit' || u.u.pose === 'eat' || u.u.pose === 'drink' ? 'SIT_REST' : 'INTERACT_OBJ'), pose: u.u.pose, dur: rnd(6, 14), name: (D.ACTIONS[a] || {}).name || u.F.name, prop: u.u.prop || null, y: u.u.y || 0, seatH: u.u.seatH || 0, bed: u.F.bed && u.u.pose === 'sleep' ? u.F.bed : null };
+      const extra = { state: v.loc === v.home ? 'HOME_LIFE' : (u.u.pose === 'sit' || u.u.pose === 'eat' || u.u.pose === 'drink' ? 'SIT_REST' : 'INTERACT_OBJ'), pose: u.u.pose, dur: rnd(6, 14), name: (D.ACTIONS[a] || {}).name || u.F.name, prop: u.u.prop || null, y: u.u.y || 0, seatH: u.u.seatH || 0, lie: u.u.lie || null, bed: u.F.bed && u.u.pose === 'sleep' ? u.F.bed : null };
       if (a === 'sleep') { extra.dur = 30; extra.state = 'HOME_LIFE'; }
       startAct(v, a, extra);
       FM.Ev && FM.Ev.onFurn && FM.Ev.onFurn(v, u, a);

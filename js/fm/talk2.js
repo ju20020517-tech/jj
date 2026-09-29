@@ -504,6 +504,7 @@
   }
   const tail = v => [{ id: 'wMore', label: '💬 다른 얘기 하자' }, { id: 'menu', label: '📋 다른 행동 하기…' }, { id: 'bye', label: '👋 잘 가' }];
   W.chooseIntent = chooseIntent;
+  W.I = I; W.T = T; W.sty = sty; W.remember = remember; W.others = others; W.alive = alive;
   W.runIntent = runIntent;
 
   // ---------------------------------------------------------
@@ -626,9 +627,11 @@
     ['reconcile', '🕊️ 화해 주선하기'], ['bestie', '👯 절친 맺어주기'], ['rival', '🔥 선의의 라이벌 만들기'], ['mentor', '🎓 스승·제자 맺어주기'], ['sibling', '👫 의남매 맺어주기'],
     ['breakup', '💔 "그 사람이랑은 헤어지는 게 좋겠어"'], ['marry', '💍 "이제 결혼해!" 부추기기'],
   ];
+  W.IND = IND; W.indExtra = {};
   function indMenu(v) { return { text: sty(v, '응? 누구 얘기?'), options: IND.map(([k, l]) => ({ id: 'indPick', label: l, arg: k })).concat([{ id: 'menu', label: '↩️ 돌아가기' }]) }; }
   function indDo(v, mode, oid) {
     const o = byId(oid); if (!o) return { text: '...' };
+    if (W.indExtra[mode]) return W.indExtra[mode](v, o);
     const r = rel(v.id, o.id), f = r.friendship_point;
     const trust = rel(v.id, P).trust_level;
     const believe = chance(0.35 + trust / 150);
@@ -915,10 +918,10 @@
   // ---------------------------------------------------------
   let evT = 0;
   const EVENTS = [
-    { id: 'help', w: () => 3, run: (a, b) => { Soc.addFriend(a.id, b.id, 6, 5); return `🤲 ${a.name}이(가) ${b.name}의 짐을 들어줬어요`; } },
+    { id: 'help', w: () => 1.2, run: (a, b) => { Soc.addFriend(a.id, b.id, 6, 5); return `🤲 ${a.name}이(가) ${b.name}의 짐을 들어줬어요`; } },
     { id: 'hobby', w: (a, b) => sameHobby(a, b) ? 5 : 0, run: (a, b) => { Soc.addFriend(a.id, b.id, 9, 4); if (fp(a.id, b.id) > 50) setBond(a.id, b.id, 'HOBBY', true); return `🎣 ${a.name}와(과) ${b.name}이(가) 같은 취미로 신나게 떠들었어요`; } },
     { id: 'argue', w: (a, b) => (has(a, 'CRANKY') || has(b, 'CRANKY') || has(a, 'CYNICAL') ? 2.5 : 0.8), run: (a, b) => { Soc.addFriend(a.id, b.id, -8, -5); const r = rel(a.id, b.id); if (r.friendship_point < 15) setBond(a.id, b.id, 'NEMESIS'); Sim.emote(a, '💢'); Sim.emote(b, '😤'); return `💢 ${a.name}와(과) ${b.name}이(가) 사소한 일로 말다툼했어요`; } },
-    { id: 'compliment', w: () => 2.5, run: (a, b) => { Soc.addFriend(a.id, b.id, 5, 2); if (Soc.canRomance(b.id, a.id)) Soc.addRomance(b.id, a.id, rnd(2, 6)); Sim.emote(b, '😊'); return `💐 ${a.name}이(가) ${b.name}의 옷차림을 칭찬했어요`; } },
+    { id: 'compliment', w: () => 1.4, run: (a, b) => { Soc.addFriend(a.id, b.id, 5, 2); if (Soc.canRomance(b.id, a.id)) Soc.addRomance(b.id, a.id, rnd(2, 6)); Sim.emote(b, '😊'); return `💐 ${a.name}이(가) ${b.name}의 옷차림을 칭찬했어요`; } },
     { id: 'prank', w: a => has(a, 'PRANKSTER') ? 4 : 0, run: (a, b) => { const ok = has(b, 'PRANKSTER') || has(b, 'EXTROVERT') || chance(0.5); Soc.addFriend(a.id, b.id, ok ? 5 : -6, ok ? 2 : -4); Sim.emote(b, ok ? '😂' : '💢'); return ok ? `🤪 ${a.name}의 장난에 ${b.name}이(가) 배꼽 잡고 웃었어요` : `😠 ${a.name}의 장난에 ${b.name}이(가) 화났어요`; } },
     { id: 'race', w: (a, b) => (has(a, 'ATHLETIC') || has(a, 'PASSIONATE')) && (has(b, 'ATHLETIC') || has(b, 'PASSIONATE')) ? 4 : 0, run: (a, b) => { Soc.addFriend(a.id, b.id, 4, 2); setBond(a.id, b.id, 'RIVAL', true); return `🏃 ${a.name}와(과) ${b.name}이(가) 즉석 달리기 시합을 했어요 (라이벌!)`; } },
     { id: 'teach', w: (a, b) => (has(a, 'SCHOLARLY') && (has(b, 'CURIOUS') || has(b, 'ANXIOUS'))) ? 4 : 0, run: (a, b) => { Soc.addFriend(a.id, b.id, 7, 7); setBond(a.id, b.id, 'MENTOR', true); return `🎓 ${a.name}이(가) ${b.name}에게 이것저것 가르쳐 줬어요`; } },
