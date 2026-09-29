@@ -486,8 +486,10 @@
     });
     // 램프 빛은 밝은 순으로 최대 5개 (모바일 성능)
     if (room.roomStyle && !themeId && FM.RoomKit && FM.RoomKit.STYLES[room.roomStyle]) res.mood = FM.RoomKit.moodFor(room.roomStyle, room.moodVar || 'base');
+    // 공용 장소 전용 무드 (레퍼런스 인테리어) — { main, lamp, hemi, amb, dir, bg, shadow }
+    if (!res.mood && !themeId && room.venueMood) { const b = room.venueMood; res.mood = { main: b.main || 1, lamp: b.lamp || 1, hemi: b.hemi.slice(), amb: b.amb.slice(), dir: b.dir.slice(), bg: b.bg, shadow: b.shadow || null, rim: b.rim }; }
     const lampK = res.mood ? res.mood.lamp || 1 : 1;
-    lampList.sort((a, b) => b.inten - a.inten).slice(0, 5).forEach(L => {
+    lampList.sort((a, b) => b.inten - a.inten).slice(0, I.kind === 'venue' ? 8 : 5).forEach(L => {
       L.inten *= lampK;
       const pl = new THREE.PointLight(FM.RoomKit ? FM.RoomKit.hueShift(L.col, room.kitHue || 0) : L.col, L.inten, L.dist, 1.6); pl.position.set(L.x, L.y, L.z); pl.userData.base = L.inten; pl.userData.ph = L.x * 3 + L.z;
       group.add(pl); res.lamps.push(pl);
