@@ -351,7 +351,7 @@
   const NAMES = ['모카', '보리', '덕배', '콩이', '몽실', '두부', '호두', '밤이', '쿠키', '라떼', '치즈', '망고', '자두', '구름', '솜이', '까미', '초코', '레오', '미미', '봉구',
     '탱자', '도토리', '감자', '찹쌀', '하루', '누리', '별이', '달이', '뭉치', '방울', '딸기', '호떡', '만두', '루루', '제리', '피치', '토리', '단비', '나비', '코코', '율무', '보라', '유자', '팥떡'];
   const QUIRKS = ['음치', '덜렁이', '손재주꽝', '허세', '겁쟁이', '장난기'];
-  const DISLIKE = { ROMANTIC: ['sport'], ATHLETIC: ['book'], SCHOLARLY: ['party'], LAZY: ['sport'], EXTROVERT: ['book'], INTROVERT: ['party'], SNOB: ['weird'], CRANKY: ['romance', 'plush'], ARTISTIC: ['luxury'], ANXIOUS: ['weird', 'occult'] };
+  const DISLIKE = Sim.DISLIKE_T = { ROMANTIC: ['sport'], ATHLETIC: ['book'], SCHOLARLY: ['party'], LAZY: ['sport'], EXTROVERT: ['book'], INTROVERT: ['party'], SNOB: ['weird'], CRANKY: ['romance', 'plush'], ARTISTIC: ['luxury'], ANXIOUS: ['weird', 'occult'] };
 
   function allKeys(v) {
     const k = [v.keys.L1, v.keys.L2, v.keys.L3, v.keys.L4, ...(v.extraMain || [])];
@@ -524,6 +524,7 @@
       FISHING: { hat: ['bucket', 'straw'], top: ['vest', 'aloha'], acc: ['backpack'] },
     },
   };
+  Sim.OUTFIT_STYLE = STYLE;
   // 색을 살짝 흔들어 같은 성격끼리도 옷 색이 겹치지 않게
   const jitterC = c => { const r = ((c >> 16) & 255), g = ((c >> 8) & 255), b = c & 255, j = () => ((Math.random() - 0.5) * 36) | 0, k = x => Math.min(255, Math.max(0, x + j())); return (k(r) << 16) | (k(g) << 8) | k(b); };
   function styleByPersonality(l, keys) {
@@ -1235,6 +1236,7 @@
 
   // 자유 시간 — 스마트 오브젝트 반응 우선순위
   function freeThink(v, blk = {}) {
+    if (Sim.outingHook) { try { if (Sim.outingHook(v, blk)) return; } catch (e) { console.error('outing', e); } }
     // HOME 범위: 집/마당
     if (v.stats.range === 'HOME' && !blk.world && !blk.district) {
       // [사교파]+[집돌이]: 다른 주민이 마당 근처로 오면 반갑게 뛰어나가 대화

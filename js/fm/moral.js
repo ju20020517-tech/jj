@@ -83,6 +83,28 @@
   M.con = v => (!v || v.id === P ? 60 : MO(v).con);
   M.temptMul = v => clamp((100 - M.con(v)) / 45, 0.05, 2.2);
   M.fightMul = (a, b) => ((a && a.id !== P ? TE(a).fight : 1) + (b && b.id !== P ? TE(b).fight : 1)) / 2;
+  // 싸움 기록 — 하루 2번까지, 싸운 기록과 앙금(grudge)은 해결될 때까지 남음
+  const fightDay = () => { const st = S(); if (!st.fightDay || st.fightDay.day !== day()) st.fightDay = { day: day(), n: {} }; return st.fightDay; };
+  M.fightOK = (a, b) => { const f = fightDay(); return (f.n[a.id] || 0) < 2 && (f.n[b.id] || 0) < 2 ? 1 : 0; };
+  M.fightsToday = v => fightDay().n[v.id] || 0;
+  M.recordFight = function (a, b, why) {
+    if (!a || !b || a.id === P || b.id === P) return;
+    const f = fightDay(); f.n[a.id] = (f.n[a.id] || 0) + 1; f.n[b.id] = (f.n[b.id] || 0) + 1;
+    const r = Soc.rel(a.id, b.id);
+    r.fights = r.fights || []; r.fights.push({ day: day(), hm: Sim.time.hm(), why }); if (r.fights.length > 12) r.fights.shift();
+    r.grudge = clamp((r.grudge || 0) + 25 * ((TE(a).neg + TE(b).neg) / 2) + (ensure(a).temper === 'GRUDGE' || ensure(b).temper === 'GRUDGE' ? 15 : 0), 0, 100);
+    r.resolved = null;
+    if (W) { W.remember(a, 'fight', `${b.name}와(과) ${why}했어`, { about: b.id }); W.remember(b, 'fight', `${a.name}와(과) ${why}했어`, { about: a.id }); }
+  };
+  // 해결 (사과 · 중재 · 화해 드라마 · 플레이어 화해 주선)
+  M.resolve = function (a, b, how) {
+    const r = Soc.rel(a.id, b.id);
+    const had = (r.grudge || 0) > 0 || r.bond === 'NEMESIS' || r.bond === 'ENEMY';
+    r.grudge = 0; r.argues = 0; r.misunderstanding = null; r.resolved = { day: day(), how };
+    if (r.bond === 'NEMESIS' || r.bond === 'ENEMY') r.bond = r.friendship_point >= 40 ? 'OLD_FRIEND' : null;
+    if (had && W) { W.remember(a, 'reconcile', `${b.name}와(과) 화해했어 (${how})`, { about: b.id }); W.remember(b, 'reconcile', `${a.name}와(과) 화해했어 (${how})`, { about: a.id }); }
+    return had;
+  };
   M.chips = v => { if (!v || v.id === P || v.child) return ''; const m = MO(v), t = TE(v); return `<span class="k l5" title="${m.desc}">⚖️ ${m.icon} ${m.name}</span><span class="k l6" title="${t.desc}">🌡️ ${t.icon} ${t.name}</span>`; };
 
   // 새 주민 · 불러온 주민 모두 성향 부여
@@ -107,6 +129,7 @@
         return origAdd(a, b, f, dtr < 0 ? dtr * k : dtr, why);
       }
     }
+    if (dfp > 0 && a !== P && b !== P) { const r = Soc.rel(a, b); if ((r.grudge || 0) > 0) dfp *= 0.5; }
     return origAdd(a, b, dfp, dtr, why);
   };
 
@@ -139,9 +162,9 @@
     const [x, y] = pick(pairs); const [a, b] = chance(0.5) ? [x, y] : [y, x];
     const r = Soc.rel(a.id, b.id);
     const kind = ensure(a).temper === 'PEACEFUL' || a.temper === 'FORGIVING' || M.con(a) >= 70;
-    if ((r.bond === 'NEMESIS' || r.misunderstanding || (r.argues || 0) > 0 || (r.lastConflict || 0) >= day() - 2) && kind && chance(0.7)) {
+    if ((r.grudge || 0) > 0 && kind && ensure(a).temper !== 'GRUDGE' && chance(0.35 * (FM.Values ? FM.Values.apologyMul(a) : 1))) {
       origAdd(a.id, b.id, 9, 6, '사과'); origAdd(b.id, a.id, 6, 4, '사과');
-      r.misunderstanding = null; r.argues = 0; if (r.bond === 'NEMESIS') r.bond = null;
+      M.resolve(a, b, `${a.name}이(가) 먼저 사과함`);
       Sim.emote(a, '🙏'); Sim.emote(b, '😊');
       if (W) { W.remember(a, 'reconcile', `${b.name}에게 먼저 사과했어`, { about: b.id }); W.remember(b, 'reconcile', `${a.name}이(가) 먼저 사과해 줬어`, { about: a.id }); }
       return Sim.log('rel', `🙏 ${a.name}이(가) ${b.name}에게 먼저 사과했어요. 둘은 다시 웃으며 얘기해요`, [a.id, b.id], 1);
@@ -215,6 +238,49 @@
       if (e.type === 'rel' && /몸싸움/.test(e.text)) for (const id of e.who || []) M.bumpGuilt(byId(id), 20);
     } catch (er) { /* 무시 */ }
   });
+  // 화해 · 싸움 기록을 로그에서 연결 (어디서 일어났든)
+  FM.bus.on('log', e => {
+    try {
+      if (!e || !e.who || e.who.length < 2) return;
+      const [a, b] = e.who.slice(0, 2).map(byId);
+      if (!a || !b || a.id === P || b.id === P) return;
+      if (/화해했어요|다시 친구가 됐어요|싸움을 말려|사과했어요/.test(e.text)) M.resolve(a, b, e.text.replace(/^\S+\s/, '').slice(0, 30));
+      else if (/원수가 됐어요|몸싸움/.test(e.text)) M.recordFight(a, b, /몸싸움/.test(e.text) ? '몸싸움' : '크게 다툼');
+    } catch (er) { /* 무시 */ }
+  });
+  // 앙금이 남은 사이는 서로 피하거나 신경전 (해결 전까지 계속)
+  M.grudgeMoment = function () {
+    const st = S();
+    for (const r of Object.values(st.rel || {})) {
+      if (!r || !(r.grudge > 0) || r.subject_id === P || r.target_id === P) continue;
+      const A = byId(r.subject_id), B = byId(r.target_id); if (!A || !B || A.loc !== B.loc || A.sceneId || B.sceneId) continue;
+      if (A.loc === 'island' && Math.hypot(A.x - B.x, A.z - B.z) > 8) continue;
+      // 마음 넓은 쪽이 먼저 사과를 시도 (싸운 지 반나절은 지나야) — 뒤끝형은 거절하기도
+      const kindOf = x => ['PEACEFUL', 'FORGIVING'].includes(ensure(x).temper) || ['HARMONY', 'FRIENDSHIP'].includes(x.value) || M.con(x) >= 70;
+      const lastF = (r.fights || []).slice(-1)[0];
+      const cool = !lastF || lastF.day < day() || S().time % 1440 > 720;
+      const apol = kindOf(A) ? A : kindOf(B) ? B : null;
+      if (apol && cool && chance(0.3)) {
+        const other = apol === A ? B : A;
+        const refuse = ensure(other).temper === 'GRUDGE' && chance(0.5);
+        Sim.scene({ title: '사과', actors: { A: apol, B: other }, steps: [
+          { go: 'A', to: { actor: 'B', near: 1.2 }, max: 40 }, { face: 'A', at: 'B' }, { face: 'B', at: 'A' },
+          { say: 'A', text: sty(apol, lastF ? `${other.name}... 그때 ${lastF.why}한 거, 내가 미안했어.` : `${other.name}, 우리 이제 그만 풀자. 미안해.`), t: 3.5 },
+          refuse ? { say: 'B', text: sty(other, '...아직은 용서 못 해.'), t: 3 } : { say: 'B', text: sty(other, '...나도 미안. 사실 신경 쓰였어.'), t: 3 },
+          { emote: 'B', e: refuse ? '😤' : '😊', t: 2 },
+        ], onEnd: () => {
+          if (refuse) { r.grudge = Math.max(10, r.grudge - 15); Sim.log('rel', `🙏 ${apol.name}이(가) ${other.name}에게 사과했지만... 아직 받아 주지 않았어요`, [apol.id, other.id], 1); }
+          else { origAdd(apol.id, other.id, 8, 6, '사과'); origAdd(other.id, apol.id, 6, 5, '사과'); M.resolve(apol, other, `${apol.name}이(가) 먼저 사과함`); Sim.log('rel', `🙏 ${apol.name}이(가) ${other.name}에게 먼저 사과했어요. 둘은 드디어 화해했어요`, [apol.id, other.id], 1); }
+        } });
+        return;
+      }
+      if (!chance(0.25)) continue;
+      Sim.emote(A, '😒', 2.5); Sim.emote(B, '😤', 2.5);
+      const last = (r.fights || []).slice(-1)[0];
+      Sim.say(A, sty(A, last ? pick([`...${B.name}. 그때 ${last.why} 일, 난 아직 안 잊었어.`, `흥. (고개를 휙 돌린다)`, `${B.name}(이)랑은 말 안 해.`]) : '흥.'), 3);
+      return Sim.log('rel', `😒 ${A.name}와(과) ${B.name}은(는) 아직 앙금이 남아 서로 못 본 척했어요`, [A.id, B.id], 0);
+    }
+  };
   // 속마음
   const origThought = Sim.thought;
   Sim.thought = function (v) {
@@ -259,14 +325,13 @@
   const origTick = Soc.tick;
   Soc.tick = function (dtR, dMin) {
     origTick(dtR, dMin);
-    try { accK += dMin; if (accK >= 50) { accK = 0; kindness(); } } catch (e) { console.error('moral', e); }
+    try { accK += dMin; if (accK >= 50) { accK = 0; kindness(); if (chance(0.5)) M.grudgeMoment(); } } catch (e) { console.error('moral', e); }
   };
   FM.bus.on('hour', h => {
     try {
       const st = S(); if (!st) return;
       for (const v of st.villagers) ensure(v);
       guiltTick();
-      if (h === 5) heal();
     } catch (e) { console.error('moral hour', e); }
   });
   M.heal = heal; M.kindness = kindness; M.guiltTick = guiltTick;

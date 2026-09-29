@@ -21,6 +21,7 @@
     ARTISTIC: { wave: 'triangle', speed: 0.95, vol: 1.0, mul: 1.05, vib: 0.035, range: 2.4, bright: 4 },
     ANXIOUS: { wave: 'sine', speed: 1.2, vol: 0.85, mul: 1.12, vib: 0.02, range: 1.5, bright: 4 },
   };
+  V.PERS = PERS;
   const FEM_HAT = { bow: 1, flower: 1, headband: 0.6, halo: 0.4 }, MASC_ACC = { bowtie: 0.8, tie: 1 };
   // 외모에서 읽는 성별 이미지: + 높고 부드럽게, - 낮고 굵게
   function genderImage(l) {

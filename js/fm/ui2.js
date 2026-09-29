@@ -208,6 +208,12 @@
     others.sort((a, b) => pri(b) - pri(a));
     return others.slice(0, limit || 40);
   }
+  const fightTxt = r => {
+    const f = r.fights || [];
+    if (r.grudge > 0) return `<div class="rr-grudge">⚔️ 싸운 기록 ${f.length}회 · 🧊 앙금 ${Math.round(r.grudge)} <small>(최근 ${f.length ? `${f[f.length - 1].day}일차 ${esc(f[f.length - 1].why)}` : ''}) — 화해 전까지 남아요</small></div>`;
+    if (f.length && r.resolved) return `<div class="rr-hist">🕊️ ${f.length}번 싸웠지만 화해함 (${r.resolved.day}일차)</div>`;
+    return '';
+  };
   function pfRel(v) {
     const rows = relRows(v);
     const drama = FM.Drama && FM.Drama.dramaLines ? FM.Drama.dramaLines(v.id) : [];
@@ -217,7 +223,7 @@
         <div class="rr-main"><div><b>${esc(o.name)}</b> <span class="rbadge ${L.k ? 'k' : ''}">${esc(L.text)}</span>${r.misunderstanding && r.misunderstanding.until > Sim.time.day() ? ' <span class="rbadge bad">😤 오해</span>' : ''}</div>
           <div class="stat mini"><span>친밀</span>${bar(r.friendship_point, '#7fcf9a')}</div>
           ${f > 10 || g > 10 ? `<div class="rr-love">💗 ${esc(v.name)}→ ${pct(f)} · ←${esc(o.name)} ${pct(g)}</div>` : ''}
-          ${FM.Drama.histOf(v.id, o.id) ? `<div class="rr-hist">📜 ${esc(FM.Drama.histOf(v.id, o.id))}</div>` : ''}</div></div>`).join('') : '<p class="muted center">아직 친해진 주민이 없어요</p>'}</div>`;
+          ${FM.Drama.histOf(v.id, o.id) ? `<div class="rr-hist">📜 ${esc(FM.Drama.histOf(v.id, o.id))}</div>` : ''}${fightTxt(r)}</div></div>`).join('') : '<p class="muted center">아직 친해진 주민이 없어요</p>'}</div>`;
   }
 
   function pfLove(v) {
