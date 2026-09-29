@@ -53,6 +53,9 @@
     cult: { bg: '', floor: 0, light: [0xffa040, 0.5], hemi: [0x6040a0, 0x100818, 0.35], props: 'spot', fx: 'stars', titles: ['괴기 신흥 교단', '플라스틱 오리님을 모셔라', '자정의 수상한 모임'] },
     fashion: { bg: '', floor: 0, light: [0xffffff, 0.9], hemi: [0xffffff, 0xd0a0c0, 0.6], props: 'spot', fx: 'sparkle', titles: ['패션 테러 공개 시달회', '런웨이의 반란', '시대를 앞서간 옷'] },
     runaway: { bg: '', floor: 0, light: [0xa0b0d0, 0.5], hemi: [0x8090b0, 0x202838, 0.5], props: 'lamp', fx: 'rain', titles: ['비 내리는 정거장', '떠나지 마', '야반도주'] },
+    friend: { bg: '', floor: 0, light: [0xfff0d0, 0.8], hemi: [0xfff6e0, 0x80a0c0, 0.6], props: 'tree', fx: 'sparkle', titles: ['우리 우정 영원히', '너라서 다행이야', '둘도 없는 친구', '우정의 맹세'] },
+    party: { bg: '', floor: 0, light: [0xffe0b0, 0.9], hemi: [0xfff0e0, 0xa08060, 0.65], props: 'spot', fx: 'sparkle', titles: ['깜짝 생일 파티', '서프라이즈!', '너의 날'] },
+    umbrella: { bg: '', floor: 0, light: [0xc0d0f0, 0.6], hemi: [0xb0c0e0, 0x303848, 0.55], props: 'lamp', fx: 'rain', titles: ['우산 하나', '비 오는 날의 친구', '같이 쓰자'] },
     crushEnd: { bg: 'linear-gradient(180deg,#d0a070 0%,#e8c8a0 50%,#f4e0c8 100%)', floor: 0xc8a070, light: [0xffd8a8, 0.7], hemi: [0xffe0c0, 0x604020, 0.55], props: 'tree', fx: 'leaves',
       titles: ['전하지 못한 마음', '낙엽처럼', '짝사랑 안녕'] },
   };
@@ -166,6 +169,7 @@
     recent.set(c.key + c.theme, now);
     const mine = Object.values(c.cast).some(v => v.id === P);
     c.mine = mine;
+    c.t = now; c.day = Sim.time.day();
     queue.push(c); if (queue.length > 8) queue.shift();
     badge();
     const s = st();
@@ -174,8 +178,13 @@
     else if (!playing) teaser(c);
   }
   Cut.enqueue = enqueue;
-  Cut.queueLength = () => queue.length;
-  Cut.playNext = function () { const c = queue.shift(); badge(); if (c) play(c); };
+  Cut.queueLength = () => { pruneQueue(); return queue.length; };
+  // 2일이 지난 드라마는 저절로 사라짐
+  const EXPIRE = 1440 * 2;
+  Cut.EXPIRE_DAYS = 2;
+  const pruneQueue = () => { const now = st() ? st().time : 0; for (let i = queue.length - 1; i >= 0; i--) if (now - (queue[i].t || now) >= EXPIRE) queue.splice(i, 1); };
+  Cut.pruneQueue = pruneQueue;
+  Cut.playNext = function () { pruneQueue(); const c = queue.shift(); badge(); if (c) play(c); };
   function badge() {
     const b = $('#btnCut'); if (!b) return;
     b.dataset.badge = queue.length ? String(queue.length) : '';
@@ -254,6 +263,9 @@
     else if (kind === 'bench') { add(new THREE.BoxGeometry(1.4, 0.08, 0.42), 0xc08a5a, 0, 0.42, 0); add(new THREE.BoxGeometry(1.4, 0.35, 0.06), 0xb07a4a, 0, 0.62, -0.2); for (const x of [-0.6, 0.6]) add(new THREE.BoxGeometry(0.06, 0.42, 0.4), 0x5a4a3a, x, 0.21, 0); }
     else if (kind === 'runway') { add(new THREE.BoxGeometry(1.2, 0.08, 4), 0xff6fa0, 0, 0.04, 0); for (let i = 0; i < 6; i++) add(new THREE.SphereGeometry(0.06, 6, 6), 0xffffff, (i % 2 ? 0.62 : -0.62), 0.12, -1.8 + Math.floor(i / 2) * 1.8, true); }
     else if (kind === 'podium') { add(new THREE.BoxGeometry(1.6, 0.9, 0.6), 0x5a3a22, 0, 0.45, 0); add(new THREE.BoxGeometry(1.7, 0.06, 0.66), 0x7a5a3a, 0, 0.92, 0); }
+    else if (kind === 'cake') { add(new THREE.CylinderGeometry(0.34, 0.36, 0.22, 20), 0xfff0f4, 0, 0.72, 0); add(new THREE.CylinderGeometry(0.25, 0.27, 0.18, 20), 0xffb8d0, 0, 0.92, 0); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; add(new THREE.CylinderGeometry(0.015, 0.015, 0.12, 6), 0x8fd3ff, Math.cos(a) * 0.15, 1.07, Math.sin(a) * 0.15); add(new THREE.SphereGeometry(0.025, 6, 6), 0xffb040, Math.cos(a) * 0.15, 1.15, Math.sin(a) * 0.15, true); } add(new THREE.CylinderGeometry(0.4, 0.4, 0.6, 12), 0xc08a5a, 0, 0.3, 0); const cl = new THREE.PointLight(0xffc070, 1.1, 3.5); cl.position.y = 1.3; g.add(cl); }
+    else if (kind === 'umbrella') { const can = add(new THREE.SphereGeometry(0.85, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0xff8fb1, 0, 1.75, 0); can.scale.y = 0.45; add(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 6), 0x6a4a3a, 0, 1.25, 0); }
+    else if (kind === 'letter') { add(new THREE.BoxGeometry(0.3, 0.02, 0.2), 0xfff4e0, 0, 0.05, 0); add(new THREE.SphereGeometry(0.04, 6, 6), 0xff5d8a, 0, 0.07, 0); }
     g.userData.cine = true;
     return g;
   }
@@ -494,7 +506,8 @@
   // ---------------------------------------------------------
   // 재생
   // ---------------------------------------------------------
-  const BGM_OF = { confess: 'romance', reunion: 'romance', fate: 'night', propose: 'romance', wedding: 'wedding', breakup: 'piano', divorce: 'piano', runaway: 'piano', crushEnd: 'piano', affair: 'night', triangle: 'night', fight: 'club', brawl: 'club', jealous: 'shy', makeup: 'healing', baby: 'opera', scam: 'night', cult: 'deepsea', fashion: 'club' };
+  const WARM_TH = { friend: 1, party: 1, umbrella: 1, makeup: 1, baby: 1, wedding: 1, propose: 1, reunion: 1 };
+  const BGM_OF = { friend: 'healing', party: 'chip', umbrella: 'piano', confess: 'romance', reunion: 'romance', fate: 'night', propose: 'romance', wedding: 'wedding', breakup: 'piano', divorce: 'piano', runaway: 'piano', crushEnd: 'piano', affair: 'night', triangle: 'night', fight: 'club', brawl: 'club', jealous: 'shy', makeup: 'healing', baby: 'opera', scam: 'night', cult: 'deepsea', fashion: 'club' };
   Cut.BGM_OF = BGM_OF;
   function play(c) {
     const s = st();
@@ -556,7 +569,7 @@
       else if (c.outcome === 'sad') sfx('piano');
       adv = setTimeout(finish, 3200);
     };
-    const talkBox = (name, faceHtml, text, hot, pitch) => {
+    const talkBox = (name, faceHtml, text, hot, pitch, speaker) => {
       full = J(text);
       box.hidden = false; box.classList.remove('in'); void box.offsetWidth; box.classList.add('in');
       box.classList.toggle('hot', !!hot);
@@ -566,7 +579,7 @@
       let k = 0;
       typing = setInterval(() => {
         k += 1; tx.textContent = full.slice(0, k);
-        if (k % 3 === 0) { if (FM.Audio.blip) FM.Audio.blip(pitch || 1); else sfx('blip'); }
+        if (k % 2 === 0 && full[k - 1] !== ' ') { if (speaker && FM.Voice) FM.Voice.blip(speaker, full[k - 1], pitch || 1); else if (FM.Audio.blip) FM.Audio.blip(pitch || 1); else sfx('blip'); }
         if (k >= full.length) { clearInterval(typing); typing = null; el.querySelector('.cs-next').classList.add('on'); if (stage) stage.talk(null, false); adv = setTimeout(next, 1300 + full.length * 35); }
       }, 42);
     };
@@ -609,11 +622,11 @@
       el.querySelector('.cs-next').classList.remove('on');
       if (b.say && c.cast[b.say]) {
         const v = c.cast[b.say];
-        const text = J(b.text); const hot = b.hot !== undefined ? b.hot : HOT.test(text);
+        const text = J(b.text); const hot = b.hot !== undefined ? b.hot : (WARM_TH[c.theme] ? false : HOT.test(text));
         if (stage) { stage.shot(b.shot || (hot ? pick(['zoom', 'close', 'low']) : pick(['close', 'close', 'two', 'low'])), b.say); stage.talk(b.say, true); }
         el.classList.toggle('lines', hot);
         if (hot) { stage && stage.shake(0.6); sfx('thud'); }
-        talkBox(v.id === P ? v.name + ' (나)' : v.name, FM.Face.img(v, 64), text, hot, c.pitch && c.pitch[b.say]);
+        talkBox(v.id === P ? v.name + ' (나)' : v.name, FM.Face.img(v, 64), text, hot, c.pitch && c.pitch[b.say], v);
         return;
       }
       if (b.narr) { if (stage && b.shot) stage.shot(b.shot[0], b.shot[1]); talkBox(b.who || '내레이션', `<span class="cs-narr">${esc(b.icon || '🎙️')}</span>`, b.narr, b.hot); return; }

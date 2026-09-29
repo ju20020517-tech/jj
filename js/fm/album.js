@@ -22,6 +22,10 @@
   // ---------------------------------------------------------
   const clean = o => JSON.parse(JSON.stringify(o, (k, v) => (typeof v === 'function' ? undefined : v)));
   const snap = v => ({ id: v.id, name: v.name, look: v.id === P ? v.look : (FM.Chars && FM.Chars.outfitLook ? FM.Chars.outfitLook(v) : v.look), keys: v.keys || {}, child: v.child ? { stage: v.child.stage } : null });
+  // 2일이 지난 드라마는 저절로 사라짐 (📌 보관한 것 · 직접 편집한 것은 남음)
+  const prune = () => { const st = S(); if (!st || !st.dramaAlbum) return; const today = Sim.time.day(); st.dramaAlbum = st.dramaAlbum.filter(e => e.pinned || e.edited || e.shared || today - (e.day || today) < (Cut.EXPIRE_DAYS || 2)); };
+  Cut.pruneAlbum = prune;
+  FM.bus.on('hour', () => { try { prune(); Cut.pruneQueue && Cut.pruneQueue(); } catch (e) { /* 무시 */ } });
   Cut.saveAlbum = function (c) {
     const st = S(); if (!st) return;
     st.dramaAlbum = st.dramaAlbum || [];
@@ -77,6 +81,7 @@
   // ---------------------------------------------------------
   const faces = e => Object.values(e.cast).slice(0, 4).map(s0 => { const v = s0.id === P ? S().player : Sim.byId(s0.id) || { id: 'g', name: s0.name, look: s0.look, keys: s0.keys, status: {} }; return FM.Face.img(v, 30); }).join('');
   UI.dramaAlbum = function (tab) {
+    prune();
     const st = S(); const list = st.dramaAlbum || [];
     const q = Cut.queueLength ? Cut.queueLength() : 0;
     const K = FM.Vig ? FM.Vig.KINDS : {};
@@ -93,16 +98,17 @@
           body.querySelectorAll('[data-k]').forEach(x => x.onclick = () => { UI.closeModal(); FM.Vig.run(x.dataset.k); });
           return;
         }
-        body.innerHTML = `<div class="da-tools"><button class="btn small ghost" id="daImport">📥 공유 코드로 불러오기</button></div>
+        body.innerHTML = `<div class="da-tools"><small class="muted">⏳ 드라마는 2일이 지나면 저절로 사라져요 (📌 보관하면 남아요)</small><button class="btn small ghost" id="daImport">📥 공유 코드로 불러오기</button></div>
           ${list.length ? `<div class="da-list">${list.map((e, i) => `<div class="da-card">
             <div class="da-ic">${ICON[e.theme] || '🎬'}</div>
             <div class="da-main"><b>제 ${e.ep || '?'}화 「${esc(e.sub || '')}」</b>${e.edited ? '<span class="tag pink">✏️ 편집본</span>' : ''}${e.shared ? '<span class="tag">📥 공유받음</span>' : ''}
-              <small>${e.day}일차 ${esc(e.hm || '')}${e.venueName ? ` · 📍 ${esc(e.venueName)}` : ''}</small><div class="da-faces">${faces(e)}</div></div>
-            <div class="da-btns"><button data-a="play" data-i="${i}">▶</button><button data-a="edit" data-i="${i}" title="더빙 · 편집">✏️</button><button data-a="share" data-i="${i}" title="공유">🔗</button><button data-a="del" data-i="${i}" title="삭제">🗑</button></div></div>`).join('')}</div>` : '<p class="muted center">아직 저장된 드라마가 없어요. 고백 · 싸움 · 결혼 같은 사건이 벌어지면 자동으로 쌓여요!</p>'}`;
+              <small>${e.day}일차 ${esc(e.hm || '')}${e.venueName ? ` · 📍 ${esc(e.venueName)}` : ''}${e.pinned || e.edited || e.shared ? ' · 📌 보관됨' : ` · ⏳ ${Math.max(0, (Cut.EXPIRE_DAYS || 2) - (Sim.time.day() - e.day))}일 뒤 사라짐`}</small><div class="da-faces">${faces(e)}</div></div>
+            <div class="da-btns"><button data-a="play" data-i="${i}">▶</button><button data-a="pin" data-i="${i}" title="${e.pinned ? '보관 해제' : '📌 보관 (자동 삭제 안 됨)'}" class="${e.pinned ? 'on' : ''}">📌</button><button data-a="edit" data-i="${i}" title="더빙 · 편집">✏️</button><button data-a="share" data-i="${i}" title="공유">🔗</button><button data-a="del" data-i="${i}" title="삭제">🗑</button></div></div>`).join('')}</div>` : '<p class="muted center">아직 저장된 드라마가 없어요. 고백 · 우정 · 결혼 같은 사건이 벌어지면 자동으로 쌓여요!</p>'}`;
         body.querySelector('#daImport').onclick = () => importDialog();
         body.querySelectorAll('[data-a]').forEach(x => x.onclick = () => {
           const e = list[+x.dataset.i]; if (!e) return;
           if (x.dataset.a === 'play') Cut.replay(e);
+          if (x.dataset.a === 'pin') { e.pinned = !e.pinned; UI.toast(e.pinned ? '📌 보관했어요 — 2일이 지나도 사라지지 않아요' : '보관을 해제했어요'); paint('list'); }
           if (x.dataset.a === 'edit') editor(e);
           if (x.dataset.a === 'share') shareDialog(e);
           if (x.dataset.a === 'del') { if (confirm('이 드라마를 앨범에서 지울까요?')) { list.splice(+x.dataset.i, 1); paint('list'); } }

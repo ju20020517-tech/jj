@@ -253,7 +253,7 @@
     typeTimer = setInterval(() => {
       const n = Math.min(vnFull.length, Math.floor((performance.now() - t0) / 1000 * 34) + 1);   // 초당 34자
       if (n === vnShown) return;
-      if (Math.floor(n / 3) !== Math.floor(vnShown / 3) && vnFull[n - 1] !== ' ') FM.Audio.sfx('blip');
+      if (Math.floor(n / 2) !== Math.floor(vnShown / 2) && vnFull[n - 1] !== ' ') { if (FM.Voice && talkV) FM.Voice.blip(talkV, vnFull[n - 1]); else FM.Audio.sfx('blip'); }
       vnShown = n; el.textContent = vnFull.slice(0, vnShown);
       if (vnShown >= vnFull.length) finishType();
     }, 30);
@@ -1377,11 +1377,13 @@
     const iid = g.view === 'observe' ? g.obs : p.loc !== 'island' ? p.loc : null;
     if (iid) {
       const room = s.rooms[iid];
-      const venue = { club_in: 'club', tea_in: 'tea', sky_in: 'piano', arcade_in: 'chip', cathedral_in: 'wedding', library_in: 'healing', obs_in: 'night', mall_in: 'lofi', cafe_in: 'lofi', pub_in: 'lofi', sushi_in: 'lofi' }[iid];
+      const venue = (FM.Audio.INTERIOR_BGM || {})[iid];
       if (venue) key = venue;
       else if (room) key = room.set === 'aquarium' || room.theme === 'aquarium' ? 'deepsea' : room.bgm && room.bgm !== 'none' ? room.bgm : 'lofi';
+    } else if (FM.Audio.placeBgm) {
+      const fx = g.view === 'observe' && !g.obs ? 0 : p.x, fz = g.view === 'observe' && !g.obs ? -10 : p.z;
+      key = FM.Audio.placeBgm(fx, fz, h, s.weather.type);
     } else if (h >= 20 || h < 5) key = 'night';
-    else if (p.loc === 'island' && MAP.P.cliff && Math.hypot(p.x - MAP.P.cliff.x, p.z - MAP.P.cliff.z) < 30 && h >= 17) key = 'romance';
     FM.Audio.play(key);
   };
 })();

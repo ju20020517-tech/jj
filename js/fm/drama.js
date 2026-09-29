@@ -61,7 +61,7 @@
   // ---------------------------------------------------------
   // 드라마 감지 (삼각 · 사각 · 바람)
   // ---------------------------------------------------------
-  const TEMPT = v => 0.15 + (has(v, 'ROMANTIC') ? 0.15 : 0) + (has(v, 'PASSIONATE') ? 0.12 : 0) + (has(v, 'PRANKSTER') ? 0.1 : 0) + (has(v, 'EXTROVERT') ? 0.08 : 0) - (has(v, 'FORMAL') ? 0.12 : 0) - (has(v, 'DILIGENT') ? 0.1 : 0) - (has(v, 'SHY') ? 0.08 : 0);
+  const TEMPT = v => Math.max(0, (FM.Moral ? FM.Moral.temptMul(v) : 1) * (0.15 + (has(v, 'ROMANTIC') ? 0.15 : 0) + (has(v, 'PASSIONATE') ? 0.12 : 0) + (has(v, 'PRANKSTER') ? 0.1 : 0) + (has(v, 'EXTROVERT') ? 0.08 : 0) - (has(v, 'FORMAL') ? 0.12 : 0) - (has(v, 'DILIGENT') ? 0.1 : 0) - (has(v, 'SHY') ? 0.08 : 0)));
   const affairOf = id => st().affairs.find(a => !a.over && (a.a === id || a.b === id));
   DR.affairOf = affairOf;
   function startAffair(x, z, why) {
@@ -129,7 +129,7 @@
   // ---------------------------------------------------------
   function expose(af, by) {
     if (af.exposed || af.over) return;
-    af.exposed = true; af.known = true;
+    af.exposed = true; af.known = true; af.exposedDay = day();
     const x = byId(af.a), z = byId(af.b), pt = af.partner === P ? null : byId(af.partner);
     const r = rel(af.a, af.partner);
     Sim.log('affair', `💥 바람 들통! ${nm(af.a)}이(가) ${nm(af.partner)} 몰래 ${nm(af.b)}을(를) 만나 온 사실이 ${by ? nm(by) + '에 의해 ' : ''}드러났어요!`, [af.a, af.b, af.partner], 3, { newsKind: 'breakup' });
@@ -197,12 +197,13 @@
       },
     },
     enemy: {
-      w: (v, near) => { const o = near.find(x => ['ENEMY', 'NEMESIS'].includes(rel(v.id, x.id).bond)); return o ? [3, o] : null; },
+      w: (v, near) => { const o = near.find(x => ['ENEMY', 'NEMESIS'].includes(rel(v.id, x.id).bond)); const r0 = o && rel(v.id, o.id); if (!o || (r0.lastGrowl || 0) >= day()) return null; return [0.7 * (FM.Moral ? FM.Moral.fightMul(v, o) : 1), o]; },
       run: (v, o) => {
         if (has(v, 'INTROVERT') || has(v, 'SHY') || has(v, 'ANXIOUS')) { Sim.scene({ title: '원수 피하기', actors: { A: v }, steps: [{ face: 'A', at: o.id }, { emote: 'A', e: '😰' }, { go: 'A', to: { actor: o.id, near: 16 }, run: true, max: 30 }] }); return `😰 ${v.name}이(가) ${o.name}을(를) 보자마자 황급히 자리를 피했어요`; }
         const r = rel(v.id, o.id);
         Sim.scene({ title: '원수와 마주침', actors: { A: v, B: o }, steps: [{ go: 'A', to: { actor: 'B', near: 1.4 }, max: 40 }, { face: 'A', at: 'B' }, { face: 'B', at: 'A' }, { say: 'A', text: say(v, r.history ? `${o.name}... 그 일 아직 안 잊었어` : `또 너냐, ${o.name}`), t: 2.6 }, { say: 'B', text: sty(o, '나도 너 보기 싫거든?'), t: 2.2 }, { par: [{ emote: 'A', e: '💢' }, { emote: 'B', e: '💢' }] }, { par: [{ pose: 'A', p: 'stomp', t: 1.6 }, { pose: 'B', p: 'stomp', t: 1.6 }] }],
-          onEnd: () => { Soc.addFriend(v.id, o.id, -3, -2); v.stress = clamp((v.stress || 0) + 8, 0, 100); } });
+          onEnd: () => { Soc.addFriend(v.id, o.id, -1, -1); v.stress = clamp((v.stress || 0) + 4, 0, 100); } });
+        r.lastGrowl = day();
         return `☠️ 원수 ${v.name}와(과) ${o.name}이(가) 마주쳐서 으르렁댔어요`;
       },
     },
@@ -500,12 +501,15 @@
     return k && EDGE[k] ? k : null;
   };
   DR.rom = rom;
+  // 진행 중인 드라마 목록은 2일이 지나면 저절로 사라짐
+  const freshD = x => day() - (x.day || x.since || 0) < 2;
+  DR.freshD = freshD;
   DR.dramaLines = function (id) {
     const d = st(), out = [];
     const has = (...ids) => !id || ids.includes(id);
-    for (const t of Object.values(d.tri)) if (has(t.a, t.b, t.t)) out.push(t.kind === 'couple' ? `🔺 ${nm(t.a)} → ${nm(t.t)} ♥ ${nm(t.b)} (연인 있는 사람을 짝사랑)` : `🔺 ${nm(t.a)} ⚔️ ${nm(t.b)} — 둘 다 ${nm(t.t)}을(를) 좋아함`);
-    for (const q of Object.values(d.sq)) if (has(...q.ids)) out.push(q.kind === 'swap' ? `🔷 ${nm(q.ids[0])}·${nm(q.ids[1])} 커플 ↔ ${nm(q.ids[2])}·${nm(q.ids[3])} 커플 엇갈린 마음` : `🔷 ${q.ids.map(nm).join(' → ')} 짝사랑 사슬`);
-    for (const af of d.affairs) if ((af.known || af.exposed || (af.witness || []).length) && has(af.a, af.b, af.partner)) out.push(`${af.exposed ? '💥' : '🔥'} ${nm(af.a)} ⇄ ${nm(af.b)} (연인 ${nm(af.partner)} 몰래) ${af.exposed ? '— 들통남' : af.over ? '— 정리함' : ''}`);
+    for (const t of Object.values(d.tri)) if (freshD(t) && has(t.a, t.b, t.t)) out.push(t.kind === 'couple' ? `🔺 ${nm(t.a)} → ${nm(t.t)} ♥ ${nm(t.b)} (연인 있는 사람을 짝사랑)` : `🔺 ${nm(t.a)} ⚔️ ${nm(t.b)} — 둘 다 ${nm(t.t)}을(를) 좋아함`);
+    for (const q of Object.values(d.sq)) if (freshD(q) && has(...q.ids)) out.push(q.kind === 'swap' ? `🔷 ${nm(q.ids[0])}·${nm(q.ids[1])} 커플 ↔ ${nm(q.ids[2])}·${nm(q.ids[3])} 커플 엇갈린 마음` : `🔷 ${q.ids.map(nm).join(' → ')} 짝사랑 사슬`);
+    for (const af of d.affairs) if ((af.known || af.exposed || (af.witness || []).length) && freshD({ day: af.exposedDay || af.since }) && has(af.a, af.b, af.partner)) out.push(`${af.exposed ? '💥' : '🔥'} ${nm(af.a)} ⇄ ${nm(af.b)} (연인 ${nm(af.partner)} 몰래) ${af.exposed ? '— 들통남' : af.over ? '— 정리함' : ''}`);
     return out;
   };
   DR.histOf = function (a, b) { const k = Soc.hasRel(a, b) ? rel(a, b) : null; return k && k.history ? k.history : ''; };
@@ -530,9 +534,9 @@
     const legend = Object.entries({ DATING: '💕 연인', MARRIED: '💍 부부', EX: '💔 옛 연인', ENEMY: '☠️ 원수', RIVAL: '🏆 라이벌', RIVAL_LOVE: '⚔️ 연적', BESTIE: '👯 절친', OLD_FRIEND: '📼 옛친구', SIBLING: '👫 의남매', MENTOR: '🎓 스승·제자', AFFAIR: '🔥 비밀 연애(알려진 것)' }).map(([k, l]) => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 8px 2px 0;font-size:12px"><i style="display:inline-block;width:22px;height:0;border-top:${EDGE[k][1]}px ${EDGE[k][2] ? 'dashed' : 'solid'} ${EDGE[k][0]}"></i>${l}</span>`).join('') + '<span style="font-size:12px;color:#ff6f9f">⇢ 짝사랑(설렘 45↑)</span>';
     const d = st();
     const dramas = [];
-    for (const t of Object.values(d.tri)) dramas.push(t.kind === 'couple' ? `🔺 ${nm(t.a)} → ${nm(t.t)} ♥ ${nm(t.b)} (연인 있는 사람을 짝사랑)` : `🔺 ${nm(t.a)} ⚔️ ${nm(t.b)} — 둘 다 ${nm(t.t)}을(를) 좋아함`);
-    for (const q of Object.values(d.sq)) dramas.push(q.kind === 'swap' ? `🔷 ${nm(q.ids[0])}·${nm(q.ids[1])} 커플 ↔ ${nm(q.ids[2])}·${nm(q.ids[3])} 커플 엇갈린 마음` : `🔷 ${q.ids.map(nm).join(' → ')} 짝사랑 사슬`);
-    for (const af of d.affairs) if (af.known || af.exposed || (af.witness || []).length) dramas.push(`${af.exposed ? '💥' : '🔥'} ${nm(af.a)} ⇄ ${nm(af.b)} (연인 ${nm(af.partner)} 몰래) ${af.exposed ? '— 들통남' : af.over ? '— 정리함' : ''}`);
+    for (const t of Object.values(d.tri).filter(freshD)) dramas.push(t.kind === 'couple' ? `🔺 ${nm(t.a)} → ${nm(t.t)} ♥ ${nm(t.b)} (연인 있는 사람을 짝사랑)` : `🔺 ${nm(t.a)} ⚔️ ${nm(t.b)} — 둘 다 ${nm(t.t)}을(를) 좋아함`);
+    for (const q of Object.values(d.sq).filter(freshD)) dramas.push(q.kind === 'swap' ? `🔷 ${nm(q.ids[0])}·${nm(q.ids[1])} 커플 ↔ ${nm(q.ids[2])}·${nm(q.ids[3])} 커플 엇갈린 마음` : `🔷 ${q.ids.map(nm).join(' → ')} 짝사랑 사슬`);
+    for (const af of d.affairs) if ((af.known || af.exposed || (af.witness || []).length) && freshD({ day: af.exposedDay || af.since })) dramas.push(`${af.exposed ? '💥' : '🔥'} ${nm(af.a)} ⇄ ${nm(af.b)} (연인 ${nm(af.partner)} 몰래) ${af.exposed ? '— 들통남' : af.over ? '— 정리함' : ''}`);
     const hist = []; for (const k of Object.keys(S().rel)) { const r = S().rel[k]; if (r.history && r.bond) hist.push(`${W.BONDS[r.bond] || r.bond} ${nm(r.subject_id)} · ${nm(r.target_id)} — ${r.history}`); }
     FM.UI.modal('🕸️ 섬 관계도', `${svg}<div style="margin:6px 0 10px">${legend}</div>
       <h4>🎭 진행 중인 드라마</h4>${dramas.length ? dramas.map(x => `<div class="muted" style="margin:3px 0">${x}</div>`).join('') : '<p class="muted">아직 조용해요... (주민들이 돌아다니다 보면 생겨요)</p>'}

@@ -121,11 +121,11 @@
           <div class="pf-face">${face(v, 104)}</div>
           <div class="pf-id">
             <div class="pf-title">${esc(v.title)}${v.child ? ` · 👶 ${growth(v)}` : ''}</div>
-            <div class="pf-kw">${ks.map((k, i) => `<span class="k l${i + 1}" title="${esc(D.kw(k).desc || '')}">${D.kw(k).icon || ''} ${D.kw(k).name}</span>`).join('')}${(v.extraMain || []).map(k => `<span class="k l1">${D.kw(k).icon} ${D.kw(k).name}</span>`).join('')}</div>
+            <div class="pf-kw">${ks.map((k, i) => `<span class="k l${i + 1}" title="${esc(D.kw(k).desc || '')}">${D.kw(k).icon || ''} ${D.kw(k).name}</span>`).join('')}${(v.extraMain || []).map(k => `<span class="k l1">${D.kw(k).icon} ${D.kw(k).name}</span>`).join('')}${FM.Moral ? FM.Moral.chips(v) : ''}</div>
             <div class="pf-thought">💭 ${esc(Sim.thought(v))}</div>
           </div>
         </div>
-        <div class="pf-acts"><button data-a="talk">💬 말 걸기</button><button data-a="go">📍 찾아가기</button><button data-a="map">🕸️ 관계도</button><button data-a="room">🔭 방 보기</button></div>
+        <div class="pf-acts"><button data-a="talk">💬 말 걸기</button><button data-a="go">📍 찾아가기</button><button data-a="map">🕸️ 관계도</button><button data-a="room">🔭 방 보기</button><button data-a="voice">🔊 목소리</button></div>
         <div class="pf-tabs">${Object.entries(tabs).map(([k, l]) => `<button data-t="${k}" class="${pfTab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div class="pf-body"></div>
       </div>`, b => {
@@ -140,6 +140,7 @@
       b.querySelector('[data-a=talk]').onclick = () => { UI.closeModal(); UI.goTo(v); setTimeout(() => UI.talk(v), 500); };
       b.querySelector('[data-a=go]').onclick = () => { UI.closeModal(); UI.goTo(v); };
       b.querySelector('[data-a=map]').onclick = () => FM.Drama.openMap(v.id);
+      b.querySelector('[data-a=voice]').onclick = () => { if (!FM.Audio.on) FM.Audio.enable(true); const t = Sim.thought(v); v.bubble = { text: t, until: Sim.get().realT + 3 }; if (FM.Voice) FM.Audio.speak(FM.Voice.of(v), t); };
       b.querySelector('[data-a=room]').onclick = () => { UI.closeModal(); if (v.home.startsWith('apt')) G().observe(v.home); else G().observeInterior(v.home); };
       paint();
     }, true);
@@ -194,7 +195,7 @@
     const line = N.compose(v, top[0]);
     const memRow = (arr, label) => arr.length ? `<div class="mem-tier"><b>${label}</b>${arr.slice(-3).reverse().map(e => `<span>${esc(N.agoTxt(e.t))} · ${esc(e.text)}</span>`).join('')}</div>` : '';
     return `<section class="pf-card wide mind"><h5>🧠 자율 의지 엔진</h5>
-      <div class="needs">${Object.entries(N.NEEDS).map(([k, d]) => `<div class="stat"><span>${d.icon} ${d.name}</span>${bar(n[k], n[k] >= 80 ? '#ff5d6d' : d.color)}</div>`).join('')}</div>
+      <div class="needs">${Object.entries(N.NEEDS).map(([k, d]) => `<div class="stat"><span>${d.icon} ${d.name}</span>${bar(n[k], n[k] >= 80 ? '#ff5d6d' : d.color)}</div>`).join('')}${v.guilt > 1 ? `<div class="stat"><span>😔 죄책감</span>${bar(v.guilt, '#6a5a8a')}</div>` : ''}</div>
       <div class="synth"><small>지금 가장 큰 욕구: <b>${N.NEEDS[top[0]].icon} ${N.NEEDS[top[0]].name} ${Math.round(top[1])}</b>${top[1] >= 80 ? ' — 곧 먼저 말을 걸어올 거예요!' : ''}</small>
         <div class="syn-row"><em>도입</em>${esc(line.Intro)}</div>${line.Memory_Ref ? `<div class="syn-row"><em>기억</em>${esc(line.Memory_Ref)}</div>` : ''}<div class="syn-row"><em>의도</em>${esc(line.Intent)}</div><div class="syn-row"><em>떡밥</em>${esc(line.Hook)}</div></div>
       ${memRow(m.short, '⏱️ 단기 기억 (48시간)')}${memRow(m.mid, '📅 중기 기억 (30일)')}${memRow(m.long, '💎 장기 기억 (영구)')}
@@ -406,7 +407,7 @@
     </div>`;
     document.body.appendChild(el);
     FM.Audio && FM.Audio.sfx && FM.Audio.sfx('chime');
-    showState = { el, cards, i: -1, timer: null, talkT: null };
+    showState = { el, cards, i: -1, timer: null, talkT: null, anchorV: anchor || null };
     el.onclick = e => { if (e.target === el) closeNews(); };
     el.querySelector('.ns-x').onclick = closeNews;
     el.querySelectorAll('[data-n]').forEach(b => b.onclick = () => showCard(showState.i + +b.dataset.n));
@@ -434,6 +435,7 @@
     const af = S2.el.querySelector('.ns-aface');
     S2.talkT = setInterval(() => {
       k += 2; head.textContent = text.slice(0, k);
+      if (S2.anchorV && FM.Voice && text[k - 1] && text[k - 1] !== ' ') FM.Voice.blip(S2.anchorV, text[k - 1]);
       if (af) af.classList.toggle('talk', (k / 2) % 2 === 1);
       if (k >= text.length) { clearInterval(S2.talkT); if (af) af.classList.remove('talk'); S2.timer = setTimeout(() => showCard(S2.i + 1), 3800); }
     }, 45);

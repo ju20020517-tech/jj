@@ -321,7 +321,7 @@
     try {
       if (e && !e.secret && e.type === 'rel' && /말다툼|원수가 됐어요/.test(e.text)) {
         const [a, b] = (e.who || []).map(byId);
-        if (a && b && a.id !== P && b.id !== P && free(a) && free(b) && Soc.rel(a.id, b.id).friendship_point < 30 && chance(/원수/.test(e.text) ? 0.7 : 0.25)) return Object.assign(brawl(a, b), { fromLog: true });
+        if (a && b && a.id !== P && b.id !== P && free(a) && free(b) && Soc.rel(a.id, b.id).friendship_point < 30 && chance((/원수/.test(e.text) ? 0.35 : 0.1) * (FM.Moral ? FM.Moral.fightMul(a, b) : 1))) return Object.assign(brawl(a, b), { fromLog: true });
       }
       if (e && e.type === 'baby' && /태어났어요/.test(e.text)) {
         const ids = e.who || []; const baby = byId(ids[2]); const ps = ids.slice(0, 2).map(byId).filter(Boolean);
@@ -349,7 +349,7 @@
     }
     // 4. 사기 (밤 22시)
     if (h === 22 && chance(0.12) && cool('scam', 30)) {
-      const A = vs.find(v => ['SNOB', 'ARTISTIC', 'EXTROVERT', 'CRANKY'].includes(v.keys.L1)); const B = vs.find(v => v !== A && ['ANXIOUS', 'ROMANTIC', 'LAZY'].includes(v.keys.L1) && (v.coins || 0) > 400);
+      const A = vs.find(v => (FM.Moral ? FM.Moral.con(v) <= 40 : ['SNOB', 'ARTISTIC', 'EXTROVERT', 'CRANKY'].includes(v.keys.L1))); const B = vs.find(v => v !== A && ['ANXIOUS', 'ROMANTIC', 'LAZY'].includes(v.keys.L1) && (v.coins || 0) > 400);
       if (A && B) return Cut.enqueue(Object.assign(scam(A, B), { venue: { loc: 'island', x: 69, z: 44, place: 'alley' } }), true);
     }
     // 5. 교단 (자정 무렵)

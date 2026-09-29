@@ -63,8 +63,41 @@
     healing: { name: '힐링', bpm: 64, chords: [[65, 69, 72, 76], [60, 64, 67, 72], [62, 65, 69, 74], [60, 64, 67, 71]], mel: 'sparse', inst: 'sine', pad: true },
     deepsea: { name: '심해 음향', bpm: 50, chords: [[45, 52, 57], [43, 50, 55]], mel: 'bubble', inst: 'sine', pad: true, quiet: true },
     tea:     { name: 'LP 음반', bpm: 70, chords: [[57, 60, 64, 67], [62, 65, 69, 72], [55, 59, 62, 65], [60, 64, 67, 71]], mel: 'piano', inst: 'triangle', crackle: true },
+    // ---- 장소별 새 BGM ----
+    town:     { name: '광장의 왈츠', bpm: 112, chords: [[60, 64, 67], [65, 69, 72], [67, 71, 74], [60, 64, 67]], mel: 'waltz', inst: 'triangle', bass: true },
+    tropical: { name: '에메랄드 해변', bpm: 116, chords: [[65, 69, 72], [60, 64, 67], [62, 65, 69], [60, 64, 67]], mel: 'island', inst: 'sine', drums: 'soft', bass: true },
+    folk:     { name: '숲속 기타', bpm: 96, chords: [[67, 71, 74], [64, 67, 71], [60, 64, 67], [62, 66, 69]], mel: 'folk', inst: 'triangle', pad: true },
+    bossa:    { name: '카페 보사노바', bpm: 90, chords: [[62, 65, 69, 72], [67, 71, 74, 77], [60, 64, 67, 71], [57, 61, 64, 67]], mel: 'bossa', inst: 'triangle', drums: 'soft', bass: true },
+    citypop:  { name: '네온 시티팝', bpm: 110, chords: [[65, 69, 72, 76], [64, 67, 71, 74], [62, 65, 69, 72], [67, 71, 74, 77]], mel: 'citypop', inst: 'square', drums: true, bass: true },
+    organ:    { name: '대성당 오르간', bpm: 58, chords: [[48, 55, 60, 64], [53, 57, 60, 65], [55, 59, 62, 67], [48, 55, 60, 64]], mel: 'organ', inst: 'sawtooth', pad: true },
+    space:    { name: '별빛 천문대', bpm: 54, chords: [[57, 64, 69], [53, 60, 65], [55, 62, 67], [52, 59, 64]], mel: 'twinkle', inst: 'sine', pad: true, quiet: true },
+    zen:      { name: '폭포의 명상', bpm: 56, chords: [[62, 69, 74], [60, 67, 72]], mel: 'penta', inst: 'sine', pad: true, quiet: true },
+    shanty:   { name: '항구의 뱃노래', bpm: 100, chords: [[57, 60, 64], [55, 59, 62], [53, 57, 60], [52, 56, 59]], mel: 'shanty', inst: 'triangle', bass: true },
+    kids:     { name: '신나는 쉬는 시간', bpm: 126, chords: [[60, 64, 67], [65, 69, 72], [67, 71, 74], [60, 64, 67]], mel: 'bounce', inst: 'square', drums: 'chip', bass: true },
+    work:     { name: '오피스 타이핑', bpm: 94, chords: [[60, 64, 67, 71], [57, 60, 64, 67], [62, 65, 69, 72], [55, 59, 62, 65]], mel: 'piano', inst: 'triangle', drums: 'soft', bass: true },
+    calm:     { name: '고요한 병동', bpm: 62, chords: [[64, 67, 71], [60, 64, 67], [62, 65, 69], [59, 62, 67]], mel: 'piano', inst: 'sine', quiet: true, pad: true },
+    morning:  { name: '상쾌한 아침', bpm: 108, chords: [[60, 64, 67], [67, 71, 74], [65, 69, 72], [67, 71, 74]], mel: 'arp', inst: 'sine', pad: true },
+    rain:     { name: '빗소리 피아노', bpm: 64, chords: [[57, 60, 64], [53, 57, 60], [55, 59, 62], [57, 60, 64]], mel: 'piano', inst: 'triangle', quiet: true, rain: true },
+    market:   { name: '야시장 골목', bpm: 104, chords: [[62, 65, 69], [60, 64, 67], [57, 60, 64], [60, 64, 67]], mel: 'penta', inst: 'triangle', drums: 'soft', bass: true },
+    subway:   { name: '지하철 환승', bpm: 118, chords: [[57, 60, 64], [53, 57, 60], [55, 59, 62], [57, 60, 64]], mel: 'club', inst: 'sawtooth', drums: 'soft', quiet: true },
   };
   Au.TRACKS = TRACKS;
+  // 장소 · 시간 · 날씨에 맞는 BGM 고르기
+  const PLACE_BGM = { plaza: 'town', apt_yard: 'town', apartment: 'town', cafe: 'bossa', metro: 'subway', studio: 'citypop', stairs: 'field', bridge: 'field', cliff: 'romance', cliff_lawn: 'romance', cathedral: 'organ', observatory: 'space', waterfall: 'zen', home_p: 'folk', park: 'folk', playground: 'kids', school: 'kids', library: 'healing', workshop: 'folk', teahouse: 'tea', skylounge: 'bossa', mall: 'citypop', arcade: 'chip', sushi: 'market', pub: 'market', club: 'club', conv: 'citypop', alley: 'market', office: 'work', cityhall: 'work', medical: 'calm', beach: 'tropical', ferry: 'shanty' };
+  const DISTRICT_BGM = { CORE: 'town', NORTH: 'field', WEST: 'folk', EAST: 'citypop', SOUTH: 'tropical' };
+  const NIGHT_KEEP = { club: 1, chip: 1, space: 1, market: 1, organ: 1, subway: 1 };
+  Au.INTERIOR_BGM = { cafe_in: 'bossa', studio_in: 'citypop', cathedral_in: 'organ', obs_in: 'space', school_in: 'kids', library_in: 'healing', workshop_in: 'folk', tea_in: 'tea', sky_in: 'bossa', mall_in: 'citypop', arcade_in: 'chip', sushi_in: 'market', pub_in: 'market', club_in: 'club', conv_in: 'citypop', office_in: 'work', hall_in: 'work', med_in: 'calm' };
+  Au.placeBgm = function (x, z, h, weather) {
+    const MAP = FM.MAP; let best = null, bd = 1e9;
+    for (const P0 of Object.values(MAP.P)) { const d = Math.hypot(P0.x - x, P0.z - z); const r = P0.r || (P0.bld ? 16 : 12); if (d < r + 4 && d < bd) { bd = d; best = P0; } }
+    let key = best && PLACE_BGM[best.id] ? PLACE_BGM[best.id] : DISTRICT_BGM[FM.T.district(x, z)] || 'field';
+    if (best && best.id === 'cliff' && h < 16) key = 'zen';
+    const night = h >= 21 || h < 5;
+    if (/rain|storm/.test(weather || '') && !NIGHT_KEEP[key]) return 'rain';
+    if (night && !NIGHT_KEEP[key]) return best && best.id === 'beach' ? 'night' : 'night';
+    if (h >= 5 && h < 9 && (key === 'town' || key === 'folk' || key === 'field')) return 'morning';
+    return key;
+  };
 
   let timer = null, nextT = 0, step = 0;
   Au.play = function (key) {
@@ -97,6 +130,16 @@
         case 'piano': if (s % 2 === 0) tone(N(ch[(s / 2) % ch.length] + 12), nextT, beat * 3, 'triangle', v * 0.55, bgmGain, 0.005, 1.2); break;
         case 'club': tone(N(ch[s % ch.length] + 12), nextT, beat * 0.5, 'sawtooth', v * 0.25); break;
         case 'bubble': if (Math.random() < 0.3) tone(600 + Math.random() * 900, nextT, 0.08, 'sine', 0.05, bgmGain, 0.005, 0.05); break;
+        case 'waltz': { const m = step % 6; if (m === 0) tone(N(ch[0] - 12), nextT, beat * 1.8, 'triangle', v * 0.5); else if (m === 2 || m === 4) { tone(N(ch[1]), nextT, beat * 0.8, 'triangle', v * 0.3); tone(N(ch[2]), nextT, beat * 0.8, 'triangle', v * 0.3); } if (m === 0 || m === 3) tone(N(ch[(step / 3 | 0) % ch.length] + 12), nextT, beat * 1.5, tr.inst, v * 0.5); break; }
+        case 'island': { const pat = [1, 0, 1, 1, 0, 1, 0, 1]; if (pat[s]) { const pent = [0, 2, 4, 7, 9]; tone(N(ch[0] + 12 + pent[(step * 3 + s) % 5]), nextT, beat * 0.7, 'sine', v * 0.5, bgmGain, 0.002, 0.25); tone(N(ch[0] + 24 + pent[(step * 3 + s) % 5]), nextT, beat * 0.5, 'triangle', v * 0.15, bgmGain, 0.002, 0.2); } break; }
+        case 'folk': { const pat = [0, 2, 1, 2, 0, 2, 1, 2]; tone(N(ch[pat[s] % ch.length] + (s === 0 ? -12 : 0)), nextT, beat * 1.4, 'triangle', v * 0.45, bgmGain, 0.003, 0.5); if (s === 5 && Math.random() < 0.6) tone(N(ch[2] + 12), nextT, beat * 2, 'sine', v * 0.35, bgmGain, 0.02, 0.6); break; }
+        case 'bossa': { const hit = [1, 0, 0, 1, 0, 0, 1, 0]; if (hit[s]) for (const n of ch) tone(N(n), nextT, beat * 0.8, 'triangle', v * 0.18, bgmGain, 0.005, 0.2); if (s === 2 || s === 6) tone(N(ch[(step / 2 | 0) % ch.length] + 12), nextT, beat * 1.5, 'sine', v * 0.4, bgmGain, 0.02, 0.4); break; }
+        case 'citypop': { if (s % 2 === 1) tone(N(ch[0] - 12 + (s === 3 ? 12 : 0)), nextT, beat * 0.4, 'square', v * 0.2, bgmGain, 0.002, 0.08); if (s === 0 || s === 3 || s === 6) for (const n of ch) tone(N(n), nextT, beat * 0.6, 'triangle', v * 0.14, bgmGain, 0.005, 0.12); if (s === 4) tone(N(ch[3 % ch.length] + 12), nextT, beat * 2, 'sine', v * 0.45, bgmGain, 0.01, 0.4); break; }
+        case 'organ': if (s === 0) for (const n of ch) { tone(N(n), nextT, beat * 7.5, 'square', v * 0.07, bgmGain, 0.15, 0.6); tone(N(n + 12), nextT, beat * 7.5, 'sine', v * 0.12, bgmGain, 0.15, 0.6); } if (s === 4) tone(N(ch[(step / 8 | 0) % ch.length] + 12), nextT, beat * 4, 'triangle', v * 0.35, bgmGain, 0.1, 0.8); break;
+        case 'twinkle': if (Math.random() < 0.28) tone(N(ch[(Math.random() * ch.length) | 0] + 24), nextT, beat * 0.5, 'sine', v * 0.35, bgmGain, 0.002, 0.9); break;
+        case 'penta': { const pent = [0, 2, 4, 7, 9, 12]; if (s % 2 === 0 && Math.random() < 0.75) tone(N(ch[0] + 12 + pent[(Math.random() * pent.length) | 0]), nextT, beat * 1.2, tr.inst, v * 0.45, bgmGain, 0.003, 0.6); break; }
+        case 'shanty': { const m = step % 6; if (m === 0) tone(N(ch[0] - 12), nextT, beat * 2, 'triangle', v * 0.5); if (m === 3) tone(N(ch[0] - 5), nextT, beat * 2, 'triangle', v * 0.4); const mel = [2, 1, 0, 1, 2, 2]; tone(N(ch[mel[m]] + 12), nextT, beat * 0.9, 'triangle', v * 0.4, bgmGain, 0.01, 0.2); break; }
+        case 'bounce': { const pat = [0, 2, 1, 2, 0, 1, 2, 1]; tone(N(ch[pat[s]] + 12 + (s === 7 ? 12 : 0)), nextT, beat * 0.45, 'square', v * 0.3, bgmGain, 0.002, 0.08); break; }
       }
       if (tr.drums) {
         if (s % 4 === 0) { tone(tr.drums === 'chip' ? 110 : 60, nextT, 0.12, tr.drums === 'chip' ? 'square' : 'sine', tr.drums === 'soft' ? 0.18 : 0.35, bgmGain, 0.002, 0.1); }
@@ -104,6 +147,7 @@
         if (s % 8 === 4) noise(nextT, 0.15, tr.drums === 'soft' ? 0.06 : 0.14, 1800, 0.7, bgmGain);
       }
       if (tr.crackle && Math.random() < 0.4) noise(nextT, 0.02, 0.03, 3000, 2, bgmGain);
+      if (tr.rain) noise(nextT, beat, 0.025, 2500, 0.4, bgmGain, 'highpass');
       nextT += beat; step++;
     }
   }
@@ -111,6 +155,42 @@
   // ---------------------------------------------------------
   // 효과음
   // ---------------------------------------------------------
+  // ---------------------------------------------------------
+  // 주민 목소리 (동물의 숲 식 옹알이) — 목소리 프로필 { f: 기본 음높이(Hz), wave, speed, vol, vib, bright, glide, gruff }
+  // ---------------------------------------------------------
+  let voiceGain = null, voicesNow = 0;
+  function vg() { if (!voiceGain && ctx) { voiceGain = ctx.createGain(); voiceGain.gain.value = 1.35; voiceGain.connect(master); } return voiceGain; }
+  function syllable(pr, t, f, dur, vol) {
+    const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), g2 = ctx.createGain(), lp = ctx.createBiquadFilter();
+    o.type = pr.wave || 'triangle'; o2.type = 'sine';
+    o.frequency.setValueAtTime(f, t); o2.frequency.setValueAtTime(f * 2, t);
+    if (pr.glide) { o.frequency.linearRampToValueAtTime(f * (1 + pr.glide), t + dur); o2.frequency.linearRampToValueAtTime(f * 2 * (1 + pr.glide), t + dur); }
+    if (pr.vib) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 9; lg.gain.value = f * pr.vib; l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(t + dur + 0.05); }
+    lp.type = 'lowpass'; lp.frequency.value = f * (pr.bright || 4); lp.Q.value = 1.2;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.012); g.gain.setTargetAtTime(0, t + dur * 0.7, dur * 0.25);
+    g2.gain.setValueAtTime(0, t); g2.gain.linearRampToValueAtTime(vol * 0.3, t + 0.012); g2.gain.setTargetAtTime(0, t + dur * 0.6, dur * 0.2);
+    o.connect(lp); lp.connect(g); g.connect(vg()); o2.connect(g2); g2.connect(vg());
+    o.start(t); o2.start(t); o.stop(t + dur + 0.15); o2.stop(t + dur + 0.15);
+    if (pr.gruff) noise(t, dur * 0.8, vol * pr.gruff, f * 3, 2, vg());
+  }
+  const sylF = (pr, ch, i, n, q, ex) => { const c = ch ? ch.charCodeAt(0) : 0; const semi = ((c * 7 + i * 3) % 7 - 3) * (pr.range || 1.4); let f = pr.f * Math.pow(2, semi / 12); if (q && i >= n - 2) f *= 1.18 + (i === n - 1 ? 0.1 : 0); if (ex && i === 0) f *= 1.08; return f; };
+  // 한 글자 (대화창 타자 소리)
+  Au.voiceBlip = function (pr, ch) {
+    if (!ctx || !Au.on || !pr) return;
+    const t = ctx.currentTime;
+    syllable(pr, t, sylF(pr, ch, (Math.random() * 5) | 0, 5, false, false), 0.07 / (pr.speed || 1), 0.13 * (pr.vol || 1));
+  };
+  // 한 문장 옹알이 (말풍선)
+  Au.speak = function (pr, text) {
+    if (!ctx || !Au.on || !pr || voicesNow >= 2) return;
+    const chars = String(text).replace(/[^가-힣a-zA-Z0-9]/g, '').slice(0, 16);
+    if (!chars) return;
+    const q = /\?\s*$/.test(text), ex = /!/.test(text);
+    const step = 0.085 / (pr.speed || 1);
+    let t = ctx.currentTime + 0.02;
+    voicesNow++; setTimeout(() => { voicesNow = Math.max(0, voicesNow - 1); }, chars.length * step * 1000 + 200);
+    for (let i = 0; i < chars.length; i++) { syllable(pr, t, sylF(pr, chars[i], i, chars.length, q, ex), step * 0.85, 0.13 * (pr.vol || 1) * (ex ? 1.15 : 1)); t += step * (0.85 + Math.random() * 0.3); }
+  };
   // 대사 효과음 (음성 피치 조절 — 드라마 앨범 더빙용)
   Au.blip = function (pitch = 1) { if (!ctx || !Au.on) return; tone(N(74 + Math.floor(Math.random() * 6)) * pitch, ctx.currentTime, 0.035, 'triangle', 0.035, sfxGain); };
   Au.sfx = function (key) {

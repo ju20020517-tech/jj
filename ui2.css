@@ -441,3 +441,10 @@ body.cine-holy #cutscene .cs-tint { background: radial-gradient(circle at 50% 35
 .de-lines { display: flex; flex-direction: column; gap: 5px; max-height: 40vh; overflow: auto; }
 .de-line { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
 .de-line span { font-size: 13px; color: #8a6a50; text-align: right; }
+.pf-kw .k.l5 { background: #efe8ff; } .pf-kw .k.l6 { background: #ffeede; }
+.th-friend .cs-tint { background: radial-gradient(circle at 50% 40%, rgba(255, 240, 200, 0) 35%, rgba(255, 200, 140, .28) 100%); }
+.th-party .cs-tint { background: radial-gradient(circle at 50% 45%, rgba(255, 220, 150, .15) 20%, rgba(80, 40, 90, .35) 100%); }
+.th-umbrella .cs-tint { background: radial-gradient(circle at 50% 45%, rgba(200, 220, 255, .05) 30%, rgba(40, 60, 100, .35) 100%); }
+.da-tools { align-items: center; gap: 8px; justify-content: space-between !important; }
+.da-btns { grid-template-columns: 1fr 1fr 1fr !important; }
+.da-btns button.on { background: #ffd45c; }
