@@ -212,6 +212,18 @@ body[data-view="observe"] #side { display: none; }
 #editor label { display: block; margin: 5px 0; }
 .furn-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 4px; }
 .furn-list button { border: 2px solid var(--line); background: #fff; border-radius: 10px; padding: 4px; font-size: 12px; display: flex; flex-direction: column; }
+/* 가구 썸네일 목록 */
+.furn-list.thumbs { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+.furn-list.thumbs button { align-items: center; gap: 2px; padding: 4px 3px 5px; cursor: pointer; transition: transform .12s, border-color .12s, box-shadow .12s; }
+.furn-list.thumbs button:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: 0 4px 10px rgba(0,0,0,.12); }
+.furn-list.thumbs button[hidden], .furn-list[hidden], #editor h5[hidden] { display: none; }
+.furn-list.thumbs img { width: 76px; height: 76px; object-fit: contain; border-radius: 8px; background: radial-gradient(circle at 50% 60%, #fff 0%, #f6efe6 70%); }
+.furn-list.thumbs img:not(.ok) { background: linear-gradient(90deg, #f6efe6 25%, #fff 50%, #f6efe6 75%); background-size: 200% 100%; animation: ftShimmer 1.2s linear infinite; }
+.furn-list.thumbs img.none { animation: none; }
+.furn-list.thumbs span { font-size: 11px; line-height: 1.2; text-align: center; word-break: keep-all; max-height: 2.4em; overflow: hidden; }
+@keyframes ftShimmer { to { background-position: -200% 0; } }
+.fl-tools { display: flex; gap: 6px; margin: 6px 0; position: sticky; top: -10px; z-index: 2; background: #fff; padding: 4px 0; }
+.fl-tools input, .fl-tools select { flex: 1; min-width: 0; border: 2px solid var(--line); border-radius: 10px; padding: 5px 8px; font-size: 13px; background: #fff; }
 .chips button[data-mat] { border-left: 8px solid var(--c, #fff); }
 
 /* 지도 */

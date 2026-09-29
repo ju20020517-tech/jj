@@ -14,7 +14,7 @@
   const { mat, geo, sphere, box, cyl, capsule, mesh, soften } = H;
   const F = FM.FURN;
   const PI = Math.PI;
-  const REV = 4;   // 스타일 방 구성 버전 (올라가면 손대지 않은 방은 새 구성으로 갱신)
+  const REV = 5;   // 스타일 방 구성 버전 (올라가면 손대지 않은 방은 새 구성으로 갱신)
   const css = PM.css;
 
   // ---------------------------------------------------------

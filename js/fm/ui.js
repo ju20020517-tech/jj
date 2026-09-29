@@ -837,6 +837,7 @@
   // =========================================================
   UI.editing = false; UI.placing = null;
   let edIid = null, edSel = null;
+  const edList = { q: '', style: '', open: false };   // 가구 목록 검색어 · 스타일 필터 · 펼침 상태 (다시 그려도 유지)
   UI.openRoomEditor = function (iid) {
     if (iid === 'home_p_in') Sim.ensurePlayerRoom();
     const g = G();
@@ -945,7 +946,7 @@
     const F = f ? FM.FURN[f.type] : null;
     const isOwn = edIid === 'home_p_in';
     const cats = ['rest', 'work', 'smart', 'wall', 'light', 'misc'];
-    const floorKinds = ['wood', 'log', 'tile', 'marble', 'carpet', 'metal', 'candy', 'water', 'mat', 'sand'];
+    const floorKinds = ['wood', 'log', 'tile', 'marble', 'carpet', 'metal', 'candy', 'water', 'mat', 'sand', 'slate', 'checker', ...Object.keys(FM.FLOOR_DRAW || {})];
     e.innerHTML = `<div class="ed-head"><b>🛠️ 방 꾸미기 — ${esc(FM.INTERIORS[edIid].name)}</b><button id="edX">완료</button></div>
       <div class="ed-body">
         ${f ? `<div class="ed-sec sel"><b>선택: ${esc(F.name)}</b> <small>(${FM.FURN_LAYERS[F.layer]})</small>
@@ -960,8 +961,10 @@
           <label>바닥 색 <input type="color" id="edFloorC" value="${FM.PM.css(room.floorColor || 0xd9b88a)}"></label>
           <button id="edPattern">🎨 DIY 패브릭 & 도트 에디터</button></details>
         <div class="ed-sec"><b>🖼️ 내 이미지로 꾸미기</b><div class="chips photo-chips"><button data-photo="poster">포스터</button><button data-photo="poster_wide">가로 포스터</button><button data-photo="canvas_big">대형 캔버스</button><button data-photo="frame">액자</button><button data-photo="photo_stand">탁상 액자</button></div><small class="muted">파일을 고르면 벽에 바로 걸려요. 끌어서 위치를 옮길 수 있어요.</small></div>
-        <details><summary>2~6. 가구 추가 (무료)</summary>
-          ${cats.map(c => `<h5>${FM.FURN_LAYERS[c]}</h5><div class="furn-list">${Object.values(FM.FURN).filter(x => x.layer === c && x.price > 0).map(x => `<button data-add="${x.id}">${esc(x.name)}</button>`).join('')}</div>`).join('')}</details>
+        <details id="edAddBox" ${edList.open ? 'open' : ''}><summary>2~6. 가구 추가 (무료) — 🖼️ 그림 보고 고르기</summary>
+          <div class="fl-tools"><input id="edFQ" type="search" placeholder="🔍 가구 이름 검색" value="${esc(edList.q)}">${FM.RoomKit ? `<select id="edFS"><option value="">🏠 모든 스타일</option>${Object.entries(FM.RoomKit.STYLES).map(([k, x]) => `<option value="${k}" ${edList.style === k ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}</div>
+          ${cats.map(c => `<h5 data-cat="${c}">${FM.FURN_LAYERS[c]}</h5><div class="furn-list thumbs" data-cat="${c}">${Object.values(FM.FURN).filter(x => x.layer === c && x.price > 0).map(x => `<button data-add="${x.id}" data-name="${esc(x.name)}" title="${esc(x.name)}"><img data-ft="${x.id}" alt=""><span>${esc(x.name)}</span></button>`).join('')}</div>`).join('')}
+          <p class="muted fl-empty" hidden>찾는 가구가 없어요</p></details>
         <details><summary>🎫 테마 & 공유</summary>
           <div class="furn-list">${Object.entries(D.THEMES).map(([k, t]) => `<button data-theme="${k}">${esc(t.name)}<small>${esc(t.cat)}</small></button>`).join('')}</div>
           <p class="muted">🎨 방 꾸미기는 모두 무료예요. 테마 버튼을 누르면 바로 적용돼요.</p>
@@ -1004,6 +1007,24 @@
     $('#edFloor').onchange = ev => { room.floor = ev.target.value; rebuild(); };
     $('#edFloorC').oninput = ev => { room.floorColor = parseInt(ev.target.value.slice(1), 16); rebuild(); };
     $('#edPattern').onclick = () => UI.patternEditor(edIid);
+    // 가구 목록: 썸네일 · 검색 · 스타일 필터
+    const addBox = $('#edAddBox');
+    if (addBox) {
+      const styleSet = () => { const S2 = edList.style && FM.RoomKit && FM.RoomKit.STYLES[edList.style]; return S2 ? new Set([...S2.furn.map(o => o.type), ...(S2.fill || []), ...(S2.wallFill || [])]) : null; };
+      const applyFilter = () => {
+        const q = edList.q.trim().toLowerCase(), set = styleSet(); let any = false;
+        addBox.querySelectorAll('.furn-list').forEach(list => {
+          let n = 0; list.querySelectorAll('[data-add]').forEach(b => { const ok = (!q || b.dataset.name.toLowerCase().includes(q) || b.dataset.add.includes(q)) && (!set || set.has(b.dataset.add)); b.hidden = !ok; if (ok) n++; });
+          list.hidden = !n; const h = addBox.querySelector(`h5[data-cat="${list.dataset.cat}"]`); if (h) h.hidden = !n; if (n) any = true;
+        });
+        addBox.querySelector('.fl-empty').hidden = any;
+        if (FM.FurnThumb) FM.FurnThumb.fill(addBox);
+      };
+      addBox.addEventListener('toggle', () => { edList.open = addBox.open; if (addBox.open && FM.FurnThumb) FM.FurnThumb.fill(addBox); });
+      $('#edFQ').oninput = ev => { edList.q = ev.target.value; applyFilter(); };
+      if ($('#edFS')) $('#edFS').onchange = ev => { edList.style = ev.target.value; applyFilter(); };
+      applyFilter();
+    }
     e.querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
       const F2 = FM.FURN[b.dataset.add];
       room.furn.push({ type: F2.id, x: 0, z: 0, rot: 0 });

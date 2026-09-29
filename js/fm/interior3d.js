@@ -37,6 +37,7 @@
         case 'slate': for (let y = 0; y < h; y += 32) for (let x = 0; x < w; x += 32) { g.fillStyle = `rgba(${((x * 7 + y * 3) % 5) < 2 ? '255,255,255,0.05' : '0,0,0,0.08'})`; g.fillRect(x + 1, y + 1, 30, 30); g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(x, y, 32, 1.5); g.fillRect(x, y, 1.5, 32); } break;
         case 'checker': for (let y = 0; y < h; y += 32) for (let x = 0; x < w; x += 32) { if ((x + y) / 32 % 2) { g.fillStyle = '#f4ecd0'; g.fillRect(x, y, 32, 32); } g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(x, y, 32, 1); g.fillRect(x, y, 1, 32); } break;
         case 'sand': for (let i = 0; i < 900; i++) { g.fillStyle = dark; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); } break;
+        default: if (FM.FLOOR_DRAW && FM.FLOOR_DRAW[kind]) FM.FLOOR_DRAW[kind](g, w, h, color);   // 확장 바닥재 (roomkit3 등)
       }
     }, [2, 2]);
   }
