@@ -199,12 +199,12 @@
         m.balKey = bk; m.bal.visible = !!b;
         if (b) { m.bal.material.map = balloonTex(b.kind, b.color, b.data && b.data.big); m.bal.material.needsUpdate = true; const s = b.data && b.data.big ? 1.4 : 0.9; m.bal.scale.set(s, s, 1); }
       }
-      if (b) m.bal.position.y = 1.9 + Math.sin(st.realT * 3) * 0.06;
+      if (b) m.bal.position.y = 2.05 + Math.sin(st.realT * 3) * 0.06;
       const em = e.emote && e.emote.until > st.realT ? e.emote.e : null;
       if (em !== m.emoKey) { m.emoKey = em; m.emo.visible = !!em; m.emoT = 0; if (em) { m.emo.material.map = emojiTex(em); m.emo.material.needsUpdate = true; } }
       // 이모티콘에 맞춘 감정 몸짓 (장면 포즈가 없을 때)
       if (em && !moving && !(e.pose && e.sceneId)) { m.emoT = (m.emoT || 0) + dt; FM.Anim.POSES._emoGesture(c, em, m.emoT); }
-      if (em) m.emo.position.y = 1.55 + Math.sin(st.realT * 5) * 0.05;
+      if (em) m.emo.position.y = 1.78 + Math.sin(st.realT * 5) * 0.05;
       r.visible = !(e.child && e.child.stage === 'BABY' && viewLoc === 'island');
     }
     // 보이지 않게 된 모델 정리

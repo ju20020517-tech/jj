@@ -229,12 +229,13 @@
       }
 
       // 볼터치
-      if (l.blush !== null && l.blush !== undefined) {
+      {   // 볼터치 (없던 주민도 은은하게)
+        const soft = l.blush === null || l.blush === undefined;
         for (const x of [w * 0.16, w * 0.84]) {
-          const grd = g.createRadialGradient(x, h * 0.66, 0, x, h * 0.66, 46);
-          const c = hex(l.blush);
-          grd.addColorStop(0, c + 'cc'); grd.addColorStop(0.6, c + '66'); grd.addColorStop(1, c + '00');
-          g.fillStyle = grd; ellipse(g, x, h * 0.66, 46, 32);
+          const grd = g.createRadialGradient(x, h * 0.66, 0, x, h * 0.66, 52);
+          const c = hex(soft ? 0xffa8b8 : l.blush);
+          grd.addColorStop(0, c + (soft ? '88' : 'dd')); grd.addColorStop(0.6, c + (soft ? '44' : '77')); grd.addColorStop(1, c + '00');
+          g.fillStyle = grd; ellipse(g, x, h * 0.66, 52, 36);
         }
       }
 
@@ -263,14 +264,14 @@
           g.fillStyle = grd; ellipse(g, x, ey, rx, ry);
           g.fillStyle = '#fff';
           if (withStar) star(g, x - rx * 0.3, ey - ry * 0.35, rx * 0.45);
-          else ellipse(g, x - rx * 0.35, ey - ry * 0.38, rx * 0.36, ry * 0.3);
-          circle(g, x + rx * 0.35, ey + ry * 0.4, rx * 0.16);
+          else { ellipse(g, x - rx * 0.3, ey - ry * 0.36, rx * 0.42, ry * 0.34); circle(g, x - rx * 0.05, ey - ry * 0.02, rx * 0.1); }
+          circle(g, x + rx * 0.36, ey + ry * 0.42, rx * 0.2);
         };
         ex.forEach((x, i) => {
           if (blink && l.eyes !== 'happy') { g.strokeStyle = '#2b201c'; g.lineWidth = 12; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 28, ey + 4); g.quadraticCurveTo(x, ey + 18, x + 28, ey + 4); g.stroke(); return; }
           switch (l.eyes) {
             case 'happy': arc(x); break;
-            case 'wink': if (i === 1) arc(x); else oval(x, 32, 41); break;
+            case 'wink': if (i === 1) arc(x); else oval(x, 36, 46); break;
             case 'sparkle':
               oval(x, 38, 46);
               g.strokeStyle = '#2b201c'; g.lineWidth = 6;
@@ -296,7 +297,7 @@
               break;
             }
             case 'star': oval(x, 34, 42, true); break;
-            default: oval(x, 32, 41);
+            default: oval(x, 36, 46);
           }
         });
       }
@@ -376,6 +377,7 @@
     // 체형 (키 · 통통함) — 주민마다 조금씩 다름
     const shapeG = new THREE.Group();
     shapeG.scale.set(l.width || 1, l.height || 1, l.width || 1);
+    shapeG.position.y = 0.07;   // 다리가 옷 아래로 보이도록 몸을 살짝 들어 올림
     shapeG.add(body);
     root.add(shapeG);
 
@@ -385,9 +387,9 @@
     const makeLeg = side => {
       const pivot = new THREE.Group();
       pivot.position.set(side * 0.1, 0.2, 0);
-      pivot.add(mesh(capsule(0.075, 0.06), mat(legColor), 0, -0.07, 0));
-      const foot = mesh(sphere(0.1), mat(footColor), 0, -0.15, 0.035);
-      foot.scale.set(1, 0.62, 1.3);
+      pivot.add(mesh(capsule(0.08, 0.14), mat(legColor), 0, -0.11, 0));
+      const foot = mesh(sphere(0.11), mat(footColor), 0, -0.235, 0.045);
+      foot.scale.set(1, 0.6, 1.35);
       pivot.add(foot);
       body.add(pivot);
       return pivot;
@@ -474,7 +476,8 @@
 
     // ----- 머리 -----
     const head = new THREE.Group();
-    head.position.y = 0.9;
+    head.position.y = 0.93;
+    head.scale.setScalar(1.12);   // 동물의 숲처럼 큰 머리
     body.add(head);
     const hs = sp.head || [1.1, 0.95, 1.02];
     const skull = mesh(sphere(HEAD_R, 36, 28), mat(skin));
@@ -964,19 +967,19 @@
     const sn = Math.sin(c.phase), cs = Math.cos(c.phase);
     const sw = sn * m;
     const bounce = Math.abs(sn) * m;
-    const legAmp = run ? 1.05 : 0.72, armAmp = run ? 1.25 : 0.8;
+    const legAmp = run ? 1.05 : 0.85, armAmp = run ? 1.25 : 0.95;
     c.legL.rotation.x = sw * legAmp;
     c.legR.rotation.x = -sw * legAmp;
     if (c.legL.userData.y0 === undefined) { c.legL.userData.y0 = c.legL.position.y; c.legR.userData.y0 = c.legR.position.y; }
-    c.legL.position.y = c.legL.userData.y0 + Math.max(0, -cs) * (run ? 0.07 : 0.045) * m;   // 앞으로 나가는 발을 살짝 들어 올림
-    c.legR.position.y = c.legR.userData.y0 + Math.max(0, cs) * (run ? 0.07 : 0.045) * m;
+    c.legL.position.y = c.legL.userData.y0 + Math.max(0, -cs) * (run ? 0.08 : 0.075) * m;   // 앞으로 나가는 발을 살짝 들어 올림
+    c.legR.position.y = c.legR.userData.y0 + Math.max(0, cs) * (run ? 0.08 : 0.075) * m;
     c.armL.rotation.x = -sw * armAmp;
     c.armR.rotation.x = sw * armAmp;
     const breath = Math.sin(c.idleT * 2.4) * 0.015 * (1 - m);
     const squash = (bounce - 0.5) * (run ? 0.1 : 0.08) * m;
-    c.body.position.y = bounce * (run ? 0.1 : 0.065);
+    c.body.position.y = bounce * (run ? 0.11 : 0.09);
     c.body.scale.set(1 - squash * 0.5 - breath * 0.5, 1 + squash + breath, 1 - squash * 0.5 - breath * 0.5);
-    c.body.rotation.z = sn * 0.045 * m;
+    c.body.rotation.z = sn * (run ? 0.05 : 0.1) * m;          // 뒤뚱뒤뚱 (좌우로 흔들며 걷기)
     c.body.rotation.x = (run ? 0.2 : 0.06) * m;                 // 앞으로 기울기
     c.body.rotation.y = sn * (run ? 0.12 : 0.08) * m;            // 골반 비틀기
 
