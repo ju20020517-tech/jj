@@ -529,14 +529,14 @@
     vacuum:      { name: '신(God)의 청소기', icon: '🌀', price: 0, tool: 'vacuum' },
     truth_tea:   { name: '진실만을 말하게 하는 홍차', icon: '🫖', price: 600, shop: 'cafe', special: 'truth' },
     wish_coin:   { name: '소원 동전', icon: '🪙', price: 100, shop: 'conv', special: 'wish' },
-    auto_ticket: { name: '주민 자율 인테리어 티켓', icon: '🎟️', price: 1200, shop: 'mall', special: 'autoInterior' },
+    auto_ticket: { name: '주민 자율 인테리어 티켓', icon: '🎟️', price: 0, shop: 'mall', special: 'autoInterior' },
     time_capsule:{ name: '타임캡슐', icon: '⏳', price: 0, quest: true },
     face_copy:   { name: '얼굴 복사 종이', icon: '📄', price: 0, tags: ['weird', 'art'] },
     dream_item:  { name: '꿈속 가품', icon: '🌈', price: 0, tags: ['weird'] },
   };
   // 테마별 인테리어 티켓 자동 생성
   for (const [id, t] of Object.entries(D.THEMES)) {
-    D.ITEMS['ticket_' + id] = { name: `인테리어 티켓: ${t.name}`, icon: '🎫', price: 900, shop: 'mall', special: 'ticket', theme: id };
+    D.ITEMS['ticket_' + id] = { name: `인테리어 티켓: ${t.name}`, icon: '🎫', price: 0, shop: 'mall', special: 'ticket', theme: id };
   }
   D.FLEA_ITEMS = [
     { name: '누군가 씹던 껌 세트', icon: '🫧', price: 5000 }, { name: '이상한 모양의 돌멩이', icon: '🪨', price: 1200 },

@@ -212,6 +212,7 @@
     const opts = r.options || [];
     box.innerHTML = opts.map((o, i) => `<button data-i="${i}" class="${o.id === 'bye' ? 'bye' : ''}" ${o.disabled ? 'disabled title="' + esc(o.hint || '') + '"' : ''} style="animation-delay:${i * 0.03}s">${esc(o.label)}${o.disabled && o.hint ? `<small>${esc(o.hint)}</small>` : ''}</button>`).join('');
     box.classList.toggle('many', opts.length > 7);
+    box.classList.toggle('many3', opts.length > 14);
     box.querySelectorAll('button').forEach(b => b.onclick = e => {
       e.stopPropagation();
       const o = r.options[+b.dataset.i];
@@ -953,20 +954,20 @@
           <label>바닥재 <select id="edFloor">${floorKinds.map(k => `<option ${room.floor === k ? 'selected' : ''} value="${k}">${k} (${D.FLOOR_SOUND[k] || ''})</option>`).join('')}</select></label>
           <label>바닥 색 <input type="color" id="edFloorC" value="${FM.PM.css(room.floorColor || 0xd9b88a)}"></label>
           <button id="edPattern">🎨 DIY 패브릭 & 도트 에디터</button></details>
-        <div class="ed-sec"><b>🖼️ 내 이미지로 꾸미기</b><div class="chips photo-chips"><button data-photo="poster">포스터 (300🪙)</button><button data-photo="poster_wide">가로 포스터 (450🪙)</button><button data-photo="canvas_big">대형 캔버스 (900🪙)</button><button data-photo="frame">액자 (400🪙)</button><button data-photo="photo_stand">탁상 액자 (250🪙)</button></div><small class="muted">파일을 고르면 벽에 바로 걸려요. 끌어서 위치를 옮길 수 있어요.</small></div>
-        <details><summary>2~6. 가구 추가 (${isOwn ? '구입' : '선물'})</summary>
-          ${cats.map(c => `<h5>${FM.FURN_LAYERS[c]}</h5><div class="furn-list">${Object.values(FM.FURN).filter(x => x.layer === c && x.price > 0).map(x => `<button data-add="${x.id}">${esc(x.name)}<small>${x.price}🪙</small></button>`).join('')}</div>`).join('')}</details>
+        <div class="ed-sec"><b>🖼️ 내 이미지로 꾸미기</b><div class="chips photo-chips"><button data-photo="poster">포스터</button><button data-photo="poster_wide">가로 포스터</button><button data-photo="canvas_big">대형 캔버스</button><button data-photo="frame">액자</button><button data-photo="photo_stand">탁상 액자</button></div><small class="muted">파일을 고르면 벽에 바로 걸려요. 끌어서 위치를 옮길 수 있어요.</small></div>
+        <details><summary>2~6. 가구 추가 (무료)</summary>
+          ${cats.map(c => `<h5>${FM.FURN_LAYERS[c]}</h5><div class="furn-list">${Object.values(FM.FURN).filter(x => x.layer === c && x.price > 0).map(x => `<button data-add="${x.id}">${esc(x.name)}</button>`).join('')}</div>`).join('')}</details>
         <details><summary>🎫 테마 & 공유</summary>
           <div class="furn-list">${Object.entries(D.THEMES).map(([k, t]) => `<button data-theme="${k}">${esc(t.name)}<small>${esc(t.cat)}</small></button>`).join('')}</div>
-          <p class="muted">테마 버튼은 인테리어 티켓(900🪙)을 사서 바로 적용해요.</p>
-          <button id="edAuto">🎟️ 주민 자율 인테리어 티켓 (1200🪙)</button> <button id="edCode">🔗 인테리어 코드 / 템플릿 마켓</button></details>
+          <p class="muted">🎨 방 꾸미기는 모두 무료예요. 테마 버튼을 누르면 바로 적용돼요.</p>
+          <button id="edAuto">🎟️ 주민 자율 인테리어 (무료)</button> <button id="edCode">🔗 인테리어 코드 / 템플릿 마켓</button></details>
       </div>`;
     $('#edX').onclick = () => UI.closeEditor();
     const rebuild = () => { room.edited = true; G().rebuildInterior(); };
     if (f) {
       $('#edMove').onclick = () => { UI.placing = edSel; paintEditor(); };
       $('#edRot').onclick = () => { f.rot = ((f.rot || 0) + 90) % 360; rebuild(); };
-      $('#edDel').onclick = () => { room.furn.splice(edSel, 1); if (isOwn) st().player.coins += Math.round((F.price || 0) * 0.5); edSel = null; rebuild(); paintEditor(); };
+      $('#edDel').onclick = () => { room.furn.splice(edSel, 1); edSel = null; rebuild(); paintEditor(); };
       e.querySelectorAll('[data-mat]').forEach(b => b.onclick = () => { f.mat = b.dataset.mat || undefined; rebuild(); paintEditor(); });
       $('#edCol').oninput = ev => { f.color = parseInt(ev.target.value.slice(1), 16); rebuild(); };
       $('#edColClear').onclick = () => { delete f.color; rebuild(); };
@@ -974,10 +975,8 @@
       if ($('#edImgX')) $('#edImgX').onclick = () => { delete f.img; rebuild(); paintEditor(); };
     }
     e.querySelectorAll('[data-photo]').forEach(b => b.onclick = () => {
-      const F2 = FM.FURN[b.dataset.photo], p = st().player;
-      if (p.coins < F2.price) return UI.toast('코인이 부족해요');
+      const F2 = FM.FURN[b.dataset.photo];
       UI.pickImage(F2.id, url => {
-        p.coins -= F2.price;
         const { w, d } = Sim.interiorSize(edIid);
         const used = room.furn.filter(q => FM.FURN[q.type] && FM.FURN[q.type].wall).map(q => q.x);
         const winX = -w / 4;   // 뒷벽 창문 피하기
@@ -992,20 +991,17 @@
     $('#edFloorC').oninput = ev => { room.floorColor = parseInt(ev.target.value.slice(1), 16); rebuild(); };
     $('#edPattern').onclick = () => UI.patternEditor(edIid);
     e.querySelectorAll('[data-add]').forEach(b => b.onclick = () => {
-      const F2 = FM.FURN[b.dataset.add]; const p = st().player;
-      if (p.coins < F2.price) return UI.toast('코인이 부족해요');
-      p.coins -= F2.price;
+      const F2 = FM.FURN[b.dataset.add];
       room.furn.push({ type: F2.id, x: 0, z: 0, rot: 0 });
       edSel = room.furn.length - 1; UI.placing = edSel;
       rebuild(); paintEditor(); UI.toast(`${F2.name} 추가! 바닥을 눌러 배치하세요`);
     });
     e.querySelectorAll('[data-theme]').forEach(b => b.onclick = () => {
-      const p = st().player; if (p.coins < 900) return UI.toast('코인이 부족해요'); p.coins -= 900;
       const owner = st().villagers.find(v => v.home === edIid && !v.child);
       if (owner) Ev.applyTheme(owner, b.dataset.theme); else { const s2 = Sim.interiorSize(edIid); st().rooms[edIid] = Object.assign(FM.themeRoom(b.dataset.theme, s2.w, s2.d), { lastDecor: Sim.time.day() }); FM.bus.emit('blackout', { iid: edIid }); }
       edSel = null; setTimeout(paintEditor, 400);
     });
-    $('#edAuto').onclick = () => { const owner = st().villagers.find(v => v.home === edIid && !v.child); if (!owner) return UI.toast('주민의 방에서만 쓸 수 있어요'); const p = st().player; if (p.coins < 1200) return UI.toast('코인이 부족해요'); p.coins -= 1200; Ev.autoInterior(owner); setTimeout(paintEditor, 400); };
+    $('#edAuto').onclick = () => { const owner = st().villagers.find(v => v.home === edIid && !v.child); if (!owner) return UI.toast('주민의 방에서만 쓸 수 있어요'); Ev.autoInterior(owner); setTimeout(paintEditor, 400); };
     $('#edCode').onclick = () => UI.codeModal(edIid);
   }
   // 인테리어 코드 / 스타일 템플릿 마켓
@@ -1078,12 +1074,12 @@
     const yardF = Object.values(FM.FURN).filter(f => f.layer === 'yard' || f.id === 'fence');
     const slots = [-4.5, -1.5, 1.5, 4.5];
     modal(`🏡 ${esc(MAP.P[plotId].name)} — 건축 및 외관 커스텀`, `<h4>외관 테마 (8종)</h4><div class="grid-btn">${Object.entries(FM.PM.VILLA_THEMES).map(([k, t]) => `<button data-ext="${k}" class="${cur === k ? 'on' : ''}">${esc(t.name)}</button>`).join('')}</div>
-      <h4>마당 그리드 (4칸)</h4><div class="grid-btn">${slots.map((x, i) => { const y = yard.find(q => q.slot === i); return `<div class="slot"><b>${i + 1}번 칸</b><select data-slot="${i}"><option value="">비어 있음</option>${yardF.map(f => `<option value="${f.id}" ${y && y.type === f.id ? 'selected' : ''}>${esc(f.name)} (${f.price}🪙)</option>`).join('')}</select></div>`; }).join('')}</div>`, b => {
+      <h4>마당 그리드 (4칸)</h4><div class="grid-btn">${slots.map((x, i) => { const y = yard.find(q => q.slot === i); return `<div class="slot"><b>${i + 1}번 칸</b><select data-slot="${i}"><option value="">비어 있음</option>${yardF.map(f => `<option value="${f.id}" ${y && y.type === f.id ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></div>`; }).join('')}</div>`, b => {
       b.querySelectorAll('[data-ext]').forEach(x => x.onclick = () => { s.plots.ext[plotId] = x.dataset.ext; FM.W.rebuildBuilding(plotId); UI.toast('🏡 외관을 바꿨어요'); UI.yardEditor(plotId); });
       b.querySelectorAll('[data-slot]').forEach(sel => sel.onchange = () => {
         const i = +sel.dataset.slot; const t = sel.value;
         const arr = s.plots.yard[plotId] = (s.plots.yard[plotId] || []).filter(q => q.slot !== i);
-        if (t) { const F = FM.FURN[t]; if (s.player.coins < F.price) { UI.toast('코인이 부족해요'); sel.value = ''; return; } s.player.coins -= F.price; arr.push({ slot: i, type: t }); }
+        if (t) arr.push({ slot: i, type: t });
         UI.renderYards();
       });
     }, true);
