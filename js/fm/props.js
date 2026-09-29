@@ -238,6 +238,11 @@
   // 정적 묶음 병합 (bake)
   // ---------------------------------------------------------
   function bake(group) {
+    // userData.keep 인 자식(움직이는 묶음 · 파티클)은 합치지 않고 그대로 둠
+    const kept = group.children.filter(o => o.userData && o.userData.keep); kept.forEach(o => group.remove(o));
+    bakeInner(group); kept.forEach(o => group.add(o)); return group;
+  }
+  function bakeInner(group) {
     group.updateMatrixWorld(true);
     const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
     const buckets = new Map();
