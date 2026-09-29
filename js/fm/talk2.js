@@ -620,7 +620,7 @@
   function bondOf(v, kind) { const o = others(v).find(o => rel(v.id, o.id).bond === kind); return o ? o.id : null; }
   const sameHobby = (a, b) => a.keys.L4 === b.keys.L4;
   function introChoices(v, mode) {
-    return others(v).sort((a, b) => fp(v.id, a.id) - fp(v.id, b.id)).slice(0, 10).map(o => ({ id: 'indDo', label: `${o.name} (${Soc.stageName(rel(v.id, o.id).friendship_stage)}${rel(v.id, o.id).bond ? ' · ' + BONDS[rel(v.id, o.id).bond] : ''})`, arg: mode + '|' + o.id }));
+    return others(v).sort((a, b) => fp(v.id, b.id) - fp(v.id, a.id)).slice(0, 16).map(o => ({ id: 'indDo', label: `${o.name} (${Soc.stageName(rel(v.id, o.id).friendship_stage)}${rel(v.id, o.id).bond ? ' · ' + BONDS[rel(v.id, o.id).bond] : ''}${W.indRate ? W.indRate(v, o, mode) : ''})`, arg: mode + '|' + o.id }));
   }
   const IND = [
     ['introduce', '🤝 친해지게 소개하기'], ['matchmake', '💞 소개팅 주선 (데이트 약속 잡기)'], ['praise', '💬 "○○가 너 칭찬하더라" 전하기'], ['badmouth', '😈 "○○가 네 험담하더라" 이간질'],

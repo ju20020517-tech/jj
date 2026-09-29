@@ -179,6 +179,7 @@
           <div class="kv"><span>자주 하는 일</span><b>${esc(topActs.join(', ') || '-')}</b></div>
         </section>
       </div>
+      ${FM.Needs ? pfMind(v) : ''}
       <section class="pf-card wide"><h5>🎁 취향</h5>
         <p>좋아하는 선물: <b>${esc(v.giftLikes.join(', '))}</b>${v.giftDislikes.length ? ` · 싫어하는 선물: ${esc(v.giftDislikes.join(', '))}` : ''}<br>
         관심사: ${v.likesKeys.map(kwName).join(', ')}${v.likesSpecies ? ` · 좋아하는 종: ${(ISLE.SPECIES[v.likesSpecies] || {}).name || ''}` : ''}${v.quirks.length ? `<br>숨은 특징: ${v.quirks.map(esc).join(', ')}` : ''}</p>
@@ -186,6 +187,19 @@
       </section>`;
   }
 
+  // 자율 의지 — 5대 욕구 · 3단 기억 · 지금 하고 싶은 말
+  function pfMind(v) {
+    const N = FM.Needs, n = N.of(v), m = N.mem(v);
+    const top = Object.entries(n).sort((a, b) => b[1] - a[1])[0];
+    const line = N.compose(v, top[0]);
+    const memRow = (arr, label) => arr.length ? `<div class="mem-tier"><b>${label}</b>${arr.slice(-3).reverse().map(e => `<span>${esc(N.agoTxt(e.t))} · ${esc(e.text)}</span>`).join('')}</div>` : '';
+    return `<section class="pf-card wide mind"><h5>🧠 자율 의지 엔진</h5>
+      <div class="needs">${Object.entries(N.NEEDS).map(([k, d]) => `<div class="stat"><span>${d.icon} ${d.name}</span>${bar(n[k], n[k] >= 80 ? '#ff5d6d' : d.color)}</div>`).join('')}</div>
+      <div class="synth"><small>지금 가장 큰 욕구: <b>${N.NEEDS[top[0]].icon} ${N.NEEDS[top[0]].name} ${Math.round(top[1])}</b>${top[1] >= 80 ? ' — 곧 먼저 말을 걸어올 거예요!' : ''}</small>
+        <div class="syn-row"><em>도입</em>${esc(line.Intro)}</div>${line.Memory_Ref ? `<div class="syn-row"><em>기억</em>${esc(line.Memory_Ref)}</div>` : ''}<div class="syn-row"><em>의도</em>${esc(line.Intent)}</div><div class="syn-row"><em>떡밥</em>${esc(line.Hook)}</div></div>
+      ${memRow(m.short, '⏱️ 단기 기억 (48시간)')}${memRow(m.mid, '📅 중기 기억 (30일)')}${memRow(m.long, '💎 장기 기억 (영구)')}
+    </section>`;
+  }
   function relRows(v, limit) {
     const s = st();
     const others = s.villagers.filter(o => o !== v && Soc.hasRel(v.id, o.id)).map(o => ({ o, r: Soc.rel(v.id, o.id), f: Soc.F(v.id, o.id).romance, g: Soc.F(o.id, v.id).romance, L: relLabel(v.id, o.id) }));
@@ -231,6 +245,9 @@
         <div class="kv"><span>신혼집</span><b>${esc(homeName(m.matrimonial_home_id))}</b></div></section>` : ''}
       <section class="pf-card"><h5>👨‍👩‍👧 가족</h5>
         ${v.child ? `<div class="kv"><span>부모</span><b>${v.child.parents.map(person).join(' ')}</b></div><div class="kv"><span>성장</span><b>${growth(v)} (${v.child.birthDay}일차 출생)</b></div>${v.child.third ? `<div class="kv"><span>후천 성격</span><b>${kwName(v.child.third)}</b></div>` : ''}` : ''}
+        ${v.child && v.child.edu ? `<div class="kv"><span>받은 교육</span><b>${Object.entries(v.child.edu).map(([k, n]) => `${D.L1[k].icon}${n}`).join(' ')}</b></div>` : ''}
+        ${v.child && FM.Life ? `<div class="kv"><span>독립까지</span><b>${Math.max(0, FM.Life.INDEP_DAY - (Sim.time.day() - v.child.birthDay))}일</b></div>` : ''}
+        ${v.grownUp ? `<div class="kv"><span>🏰 가문</span><b>${esc(v.grownUp.house)} ${v.grownUp.gen}세</b></div><div class="kv"><span>부모</span><b>${v.grownUp.parents.map(person).join(' ')}</b></div><div class="kv"><span>성격 유래</span><b>${esc(v.grownUp.why)}</b></div>` : ''}
         ${kids.length ? `<div class="kv"><span>자녀</span><b>${kids.map(k => person(k.id)).join(' ')}</b></div>` : v.child ? '' : '<p class="muted">아직 자녀가 없어요</p>'}
         <button class="btn small" id="pfFam">🌳 마을 가계도</button>
       </section>
@@ -247,7 +264,7 @@
     return `<section class="pf-card wide"><h5>🏠 지금 사는 집</h5>
         <div class="kv"><span>집</span><b>${esc(homeName(v.home))}</b></div>
         ${roommates.length ? `<div class="kv"><span>같이 사는 주민</span><b>${roommates.map(o => `<span class="pchip" data-open="${o.id}">${face(o, 24)} ${esc(o.name)}</span>`).join(' ')}</b></div>` : ''}
-        ${room && room.style ? `<div class="kv"><span>방 스타일</span><b>${esc((FM.RoomKit && FM.RoomKit.STYLES[room.style] || {}).name || room.style)}</b></div>` : ''}
+        ${room && room.roomStyle && FM.RoomKit && FM.RoomKit.STYLES[room.roomStyle] ? `<div class="kv"><span>방 스타일</span><b>${esc(FM.RoomKit.STYLES[room.roomStyle].name)}</b></div>` : ''}
         <div class="md-actions"><button class="btn small" id="hmEdit">🎨 방 꾸며주기</button><button class="btn small ghost" id="hmObs">🔭 방 관찰</button></div>
       </section>
       ${v.child ? '<p class="muted">아이는 부모님과 함께 살아요.</p>' : `<section class="pf-card wide"><h5>🚚 이사 보내기</h5>

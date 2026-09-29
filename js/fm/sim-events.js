@@ -123,8 +123,8 @@
     const st = S();
     const since = st.lastNewsT || 0;
     const src = st.log.filter(e => e.t > since && e.imp >= 2 && !e.secret).slice(-6);
-    const items = src.map(e => e.text.replace(/^[^\s]+\s/, ''));
-    const cards = src.map((e, i) => ({ text: items[i], who: (e.who || []).slice(0, 3), type: e.type, icon: (e.text.match(/^(\S+)\s/) || [])[1] || '📰' }));
+    const items = src.map(e => (e.newsKind === 'drama' && !/속보/.test(e.text) ? '속보! ' : '') + e.text.replace(/^[^\s]+\s/, ''));
+    const cards = src.map((e, i) => ({ text: items[i], who: (e.who || []).slice(0, 3), type: e.type, icon: e.newsKind === 'drama' ? '🚨' : (e.text.match(/^(\S+)\s/) || [])[1] || '📰', breaking: e.newsKind === 'drama' }));
     if (st.flea && st.flea.sold && st.flea.sold.length) for (const s of st.flea.sold.splice(0)) items.push(`${s.who}님이 벼룩시장에서 '${s.item}'을(를) ${s.price.toLocaleString()}원에 판매했습니다`);
     computeRankings();
     const R = st.rankings;

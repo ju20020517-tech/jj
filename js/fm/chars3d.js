@@ -210,7 +210,7 @@
       // 이모티콘에 맞춘 감정 몸짓 (장면 포즈가 없을 때)
       if (em && !moving && !(e.pose && e.sceneId)) { m.emoT = (m.emoT || 0) + dt; FM.Anim.POSES._emoGesture(c, em, m.emoT); }
       if (em) m.emo.position.y = 1.78 + Math.sin(st.realT * 5) * 0.05;
-      r.visible = !(e.child && e.child.stage === 'BABY' && viewLoc === 'island');
+      r.visible = !(e.child && e.child.stage === 'BABY' && viewLoc === 'island') && !(Ch.hidden && Ch.hidden.has(e.id));
     }
     // 보이지 않게 된 모델 정리
     for (const [id, m] of models) {

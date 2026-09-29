@@ -40,9 +40,11 @@
 
   // 한국어 조사 자동 교정: "모카이(가)" → "모카가", "보리을(를)" → "보리를"
   const hasBatchim = ch => { const c = ch.charCodeAt(0); if (c < 0xac00 || c > 0xd7a3) return null; return (c - 0xac00) % 28; };
-  const JOSA = [['이(가)', '이', '가'], ['을(를)', '을', '를'], ['은(는)', '은', '는'], ['와(과)', '과', '와'], ['아(야)', '아', '야'], ['이(라)', '이라', '라']];
+  const JOSA = [['이(가)', '이', '가'], ['을(를)', '을', '를'], ['은(는)', '은', '는'], ['와(과)', '과', '와'], ['아(야)', '아', '야'], ['이(라)', '이라', '라'], ['(이)랑', '이랑', '랑'], ['(이)야', '이야', '야']];
   function josa(text) {
     if (!text || typeof text !== 'string') return text;
+    // 플레이어 이름이 '나'일 때: "나이(가)" → "내가"
+    if (text.includes('나이(가)')) text = text.replace(/(^|[\s'"(“‘·,])나이\(가\)/g, '$1내가');
     for (const [tag, withB, noB] of JOSA) {
       if (!text.includes(tag)) continue;
       text = text.split(tag).map((part, i, arr) => {

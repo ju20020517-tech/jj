@@ -328,3 +328,116 @@ button.chip.title:hover { transform: scale(1.04); }
 #cutTeaser .ct-tag { background: #ffd45c; color: #3d2c24; border-radius: 999px; padding: 4px 10px; font-size: 13px; }
 #cutTeaser .face { width: 30px; height: 30px; margin-left: -8px; } #cutTeaser .ct-tag + .face { margin-left: 0; }
 #cutTeaser .ct-t { font-size: 14px; white-space: nowrap; }
+/* 컷신 — 실제 게임 장소 위에 드라마 톤 입히기 */
+.cs-tint { position: absolute; inset: 0; pointer-events: none; }
+.th-confess .cs-tint { background: radial-gradient(circle at 50% 40%, rgba(255, 190, 150, .0) 30%, rgba(255, 140, 120, .28) 100%); }
+.th-reunion .cs-tint, .th-propose .cs-tint, .th-wedding .cs-tint { background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0) 35%, rgba(255, 180, 210, .3) 100%); }
+.th-breakup .cs-tint, .th-divorce .cs-tint, .th-crushEnd .cs-tint, .th-runaway .cs-tint { background: radial-gradient(circle at 50% 45%, rgba(40, 60, 100, .05) 30%, rgba(20, 30, 60, .45) 100%); }
+.th-affair .cs-tint, .th-triangle .cs-tint, .th-jealous .cs-tint, .th-fight .cs-tint, .th-brawl .cs-tint, .th-cult .cs-tint, .th-scam .cs-tint { background: radial-gradient(circle at 50% 45%, rgba(0, 0, 0, 0) 25%, rgba(30, 5, 40, .6) 100%); }
+.th-baby .cs-tint { background: radial-gradient(circle at 50% 40%, rgba(255, 230, 140, .25), rgba(255, 200, 80, .25) 100%); }
+body[data-cine] #bubbles, body[data-cine] #hud { visibility: hidden; }
+body[data-cine=breakup] #game, body[data-cine=runaway] #game, body[data-cine=crushEnd] #game { filter: saturate(.55) brightness(.92) hue-rotate(-8deg); }
+body[data-cine=affair] #game, body[data-cine=triangle] #game, body[data-cine=scam] #game, body[data-cine=cult] #game { filter: saturate(.9) brightness(.8) hue-rotate(-25deg) contrast(1.1); }
+body[data-cine=fight] #game, body[data-cine=brawl] #game { filter: saturate(1.2) contrast(1.1) sepia(.2); }
+body.cine-gray #game { filter: grayscale(1) contrast(1.1) !important; transition: filter .6s; }
+body.cine-thriller #game { filter: saturate(.6) brightness(.7) hue-rotate(170deg) contrast(1.2) !important; transition: filter .4s; }
+.pf-card.mind .needs { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); column-gap: 14px; }
+.pf-card.mind .stat { grid-template-columns: 120px 1fr; }
+.synth { background: #fff8ee; border-radius: 14px; padding: 8px 10px; margin: 8px 0; }
+.synth small { display: block; color: var(--muted); margin-bottom: 4px; }
+.syn-row { font-size: 13.5px; line-height: 1.5; margin: 2px 0; }
+.syn-row em { font-style: normal; display: inline-block; min-width: 34px; margin-right: 6px; font-size: 11px; background: #ffe2d4; color: #b0603a; border-radius: 999px; padding: 0 6px; text-align: center; }
+.mem-tier { margin-top: 6px; font-size: 12.5px; }
+.mem-tier b { display: block; font-weight: normal; color: #8a6a50; }
+.mem-tier span { display: block; color: #5a4a3a; padding-left: 8px; }
+
+/* ---------- B급 멜로드라마 연출 ---------- */
+.cs-over { position: absolute; inset: 0; z-index: 7; pointer-events: none; }
+.cs-over > * { pointer-events: auto; }
+.cs-where { margin-top: 8px; opacity: .85; letter-spacing: 1px !important; }
+.cs-narr { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: #3d2c24; font-size: 32px; }
+.cs-pop.txt { font-size: 40px; color: #fff; -webkit-text-stroke: 2px #ff6f9f; font-weight: bold; }
+body.cine-holy #game { filter: sepia(.35) saturate(1.4) brightness(1.12) !important; transition: filter .6s; }
+body.cine-sepia #game { filter: sepia(.8) contrast(.95) brightness(.95) !important; transition: filter .6s; }
+body.cine-holy #cutscene .cs-tint { background: radial-gradient(circle at 50% 35%, rgba(255, 240, 160, .45), rgba(255, 190, 60, .25) 70%) !important; }
+/* 분할 화면 */
+.cs-split { position: absolute; inset: 9vh 0; display: grid; gap: 6px; background: #0d0a12; padding: 6px; }
+.cs-split.n2 { grid-template-columns: 1fr 1fr; } .cs-split.n3 { grid-template-columns: 1fr 1fr 1fr; } .cs-split.n4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.cs-split .sp { position: relative; overflow: hidden; border-radius: 10px; display: grid; place-items: center; animation: spIn .35s var(--d) both cubic-bezier(.3, 1.5, .5, 1);
+  background: repeating-conic-gradient(from 0deg at 50% 50%, #fff4e6 0deg 6deg, #ffd9e6 6deg 12deg); }
+.cs-split .sp img { width: min(78%, 46vh); aspect-ratio: 1; border-radius: 50%; box-shadow: 0 0 0 6px #fff, 0 10px 30px rgba(0,0,0,.35); animation: spZoom 2.4s var(--d) ease-out both; }
+.cs-split .sp b { position: absolute; left: 10px; top: 8px; background: #fff; color: #3d2c24; border-radius: 999px; padding: 2px 12px; font-weight: normal; font-size: 16px; }
+.cs-split .sp em { position: absolute; right: 10px; bottom: 10px; font-style: normal; background: #ff4d6d; color: #fff; border-radius: 999px; padding: 3px 12px; font-size: 15px; }
+@keyframes spIn { from { transform: scale(.4) rotate(-6deg); opacity: 0; } }
+@keyframes spZoom { from { transform: scale(.8); } to { transform: scale(1.12); } }
+/* QTE · 투표 */
+.cs-qte, .cs-vote { position: absolute; left: 50%; bottom: calc(9vh + 20px); transform: translateX(-50%); width: min(560px, 92vw); background: rgba(255, 252, 246, .97); border: 4px solid #fff; border-radius: 26px; padding: 14px 16px; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.35); animation: boxIn .3s cubic-bezier(.3, 1.4, .5, 1); color: #3d2c24; }
+.q-title { font-size: 19px; margin-bottom: 10px; }
+.q-btn { border: 0; border-radius: 999px; padding: 16px 30px; font-size: 24px; color: #fff; background: linear-gradient(135deg, #ff6f61, #ff3d7f); box-shadow: 0 6px 0 #c02a55; font-family: inherit; animation: qPulse .6s infinite; }
+.q-btn.hit { animation: qHit .15s; }
+@keyframes qPulse { 50% { transform: scale(1.06); } }
+@keyframes qHit { 50% { transform: scale(.9) translateY(4px); box-shadow: 0 2px 0 #c02a55; } }
+.q-bar { height: 10px; background: #f0e2d4; border-radius: 999px; overflow: hidden; margin: 12px 0 6px; }
+.q-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff4d6d, #ffd45c); transition: width .05s linear; }
+.q-cnt { font-size: 22px; color: #ff4d6d; }
+.cs-qte small, .cs-vote small { color: var(--muted); }
+.v-opts { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.v-opts button { border: 3px solid #f0dcc8; background: #fff; border-radius: 20px; padding: 8px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: inherit; font-size: 15px; transition: transform .12s; min-width: 92px; }
+.v-opts button:hover { transform: translateY(-3px) scale(1.04); border-color: #ff8f6a; }
+.cs-vote.plain .v-opts { flex-direction: column; } .cs-vote.plain .v-opts button { font-size: 17px; padding: 12px; }
+.v-opts .nob { font-size: 44px; line-height: 64px; }
+.cs-replay { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); background: rgba(0,0,0,.6); color: #fff; border-radius: 999px; padding: 10px 22px; font-size: 18px; }
+/* 먼지 구름 육탄전 */
+.cs-dust { position: absolute; width: 0; height: 0; }
+.cs-dust i { position: absolute; width: 150px; height: 150px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fffaf0, #e8dcc8 60%, #c8b8a0); box-shadow: inset -10px -12px 0 rgba(0,0,0,.08); animation: dustB .35s infinite alternate; }
+.cs-dust i:nth-child(1) { left: -150px; top: -110px; } .cs-dust i:nth-child(2) { left: -40px; top: -150px; width: 170px; height: 170px; animation-delay: .1s; }
+.cs-dust i:nth-child(3) { left: 30px; top: -100px; animation-delay: .2s; } .cs-dust i:nth-child(4) { left: -110px; top: -40px; width: 130px; height: 130px; animation-delay: .15s; } .cs-dust i:nth-child(5) { left: 0; top: -30px; width: 140px; height: 140px; animation-delay: .05s; }
+@keyframes dustB { from { transform: translate(-6px, 4px) scale(.95); } to { transform: translate(6px, -4px) scale(1.07); } }
+.cs-dust .pow { position: absolute; left: -120px; top: -170px; font-size: 38px; color: #ff3d3d; -webkit-text-stroke: 2px #fff; transform: rotate(-12deg); animation: blink .4s infinite; }
+.cs-dust .pow.p2 { left: 70px; top: -150px; transform: rotate(10deg); animation-delay: .2s; } .cs-dust .pow.p3 { left: -40px; top: 60px; font-size: 32px; animation-delay: .1s; }
+.cs-dust.gone { animation: fadeOut .5s forwards; }
+@keyframes fadeOut { to { opacity: 0; transform: scale(1.3); } }
+.cs-throw { position: absolute; font-size: 38px; animation: throwIt 1.2s cubic-bezier(.3, .6, .5, 1) forwards; }
+@keyframes throwIt { to { transform: translate(var(--tx), var(--ty)) rotate(720deg); opacity: .2; } }
+.cs-stork { position: absolute; top: 14vh; left: -120px; font-size: 64px; animation: storkFly 3s linear forwards; }
+.cs-stork .pkg { display: block; font-size: 40px; margin: -14px 0 0 20px; animation: bob .5s infinite; }
+@keyframes storkFly { to { left: calc(100vw + 120px); } }
+.cs-film { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); display: flex; gap: 14px; padding: 16px 30px; background: #1a1410; overflow: hidden;
+  background-image: linear-gradient(90deg, transparent 0 6px, #fff 6px 16px, transparent 16px 26px); background-size: 26px 12px; background-repeat: repeat-x; background-position: 0 4px, 0 calc(100% - 4px); }
+.cs-film .fr { flex: 1; background: #f4e8d0; filter: sepia(.6); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; color: #3d2c24; font-size: 14px; text-align: center; opacity: 0; animation: frIn .6s var(--d) forwards; }
+.cs-film .fr img { width: 76px; height: 76px; border-radius: 50%; }
+@keyframes frIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; } }
+.cs-search { position: absolute; inset: 0; background: radial-gradient(circle 160px at var(--x, 50%) 45%, rgba(255, 255, 220, 0) 0, rgba(255, 255, 220, .15) 60%, rgba(0, 0, 0, .75) 100%); animation: search 1.6s ease-in-out 2 alternate; }
+@keyframes search { from { --x: 20%; background-position: -300px 0; } to { background-position: 300px 0; } }
+.cs-soul { position: absolute; font-size: 60px; transform: translate(-50%, 0); animation: soulUp 2.5s ease-out forwards; }
+@keyframes soulUp { 0% { opacity: 0; transform: translate(-50%, 0) scale(.3); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-30%, -260px) scale(1.4) rotate(-15deg); } }
+.cs-spark { position: absolute; font-size: 90px; transform: translate(-50%, -50%); animation: popE 1.4s cubic-bezier(.3, 1.6, .5, 1) forwards; filter: drop-shadow(0 0 12px #ffe45c); }
+.cs-beam { position: absolute; height: 7px; transform-origin: 0 50%; background: linear-gradient(90deg, #fff, #ff2d2d 20%, rgba(255, 45, 45, .3)); box-shadow: 0 0 14px #ff2d2d, 0 0 30px #ff2d2d; border-radius: 999px; animation: beam 1.8s ease-out forwards; }
+@keyframes beam { 0% { clip-path: inset(0 100% 0 0); } 30% { clip-path: inset(0 0 0 0); } 85% { opacity: 1; } 100% { opacity: 0; } }
+/* ---------- 드라마 앨범 ---------- */
+.da-tabs { display: flex; gap: 4px; background: #f6ebdc; border-radius: 999px; padding: 4px; margin: 8px 0 10px; }
+.da-tabs button { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 8px; font-family: inherit; font-size: 14px; color: #7a5a44; }
+.da-tabs button.on { background: #fff; color: var(--accent); box-shadow: 0 2px 6px rgba(200, 120, 70, .2); }
+.da-tools { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.da-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }
+.da-card { display: flex; gap: 10px; align-items: center; background: #fff; border-radius: 18px; padding: 10px; box-shadow: 0 2px 0 var(--line); }
+.da-ic { font-size: 30px; width: 46px; height: 46px; display: grid; place-items: center; background: #fff1e4; border-radius: 14px; flex: none; }
+.da-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.da-main b { font-weight: normal; font-size: 15px; }
+.da-main small { color: var(--muted); }
+.da-faces { display: flex; } .da-faces .face + .face { margin-left: -8px; }
+.da-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.da-btns button { border: 0; background: #fff4ea; border-radius: 10px; width: 34px; height: 30px; font-size: 14px; }
+.da-btns button[data-a=play] { background: #ff8f6a; color: #fff; }
+.da-cat { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.da-cat button { border: 0; background: linear-gradient(135deg, #fff4ea, #ffeef5); border-radius: 16px; padding: 14px; font-family: inherit; font-size: 15px; text-align: left; box-shadow: 0 2px 0 var(--line); }
+.da-cat button:hover { transform: translateY(-2px); }
+.da-code { width: 100%; height: 120px; border: 2px solid var(--line); border-radius: 12px; padding: 8px; font-family: monospace; font-size: 11px; word-break: break-all; }
+.de-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.de-cast { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
+.de-actor { background: #fff; border-radius: 14px; padding: 8px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 2px 0 var(--line); }
+.de-actor b { font-weight: normal; }
+.de-actor select, .de-line input { border: 2px solid var(--line); border-radius: 10px; padding: 5px 8px; font-family: inherit; font-size: 14px; background: #fff; }
+.de-lines { display: flex; flex-direction: column; gap: 5px; max-height: 40vh; overflow: auto; }
+.de-line { display: grid; grid-template-columns: 90px 1fr; gap: 8px; align-items: center; }
+.de-line span { font-size: 13px; color: #8a6a50; text-align: right; }

@@ -111,6 +111,8 @@
   // ---------------------------------------------------------
   // 효과음
   // ---------------------------------------------------------
+  // 대사 효과음 (음성 피치 조절 — 드라마 앨범 더빙용)
+  Au.blip = function (pitch = 1) { if (!ctx || !Au.on) return; tone(N(74 + Math.floor(Math.random() * 6)) * pitch, ctx.currentTime, 0.035, 'triangle', 0.035, sfxGain); };
   Au.sfx = function (key) {
     if (!ctx || !Au.on) return;
     const t = ctx.currentTime;

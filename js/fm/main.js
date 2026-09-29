@@ -494,6 +494,7 @@
   function playerAction(kind) {
     const st = Sim.get(), p = st.player;
     if (G.view === 'observe' || p.busy) return;
+    if (kind === 'fish' || kind === 'bug') p.lastTool = { k: kind === 'fish' ? '낚싯대' : '잠자리채', t: st.time };
     if (kind === 'sit') {
       p.sitting = !p.sitting; p.pose = p.sitting ? 'sit' : null;
       // 근처에 빈 벤치가 있으면 벤치에 제대로 앉기
@@ -630,6 +631,8 @@
     const h = Sim.time.hour();
     // 렌더 대상
     const ents = st.villagers.concat(Ev.staff, st.visitors, [Object.assign(p, { id: 'P', outfit: p.outfit || null, state: p.moving ? 'WALK' : 'IDLE' })]);
+    // 드라마 컷신: 실제 장소를 시네마 카메라로
+    if (G.cine) { try { cineFrame(dt, st, ents, h); } catch (e) { console.error('cine', e); } FM.UI.frame(dt, G.cine ? G.cine.cam : camera); return; }
     if (G.view === 'island' || (G.view === 'observe' && !G.obs) || G.zoomAnim) {
       FM.W.applyTime(h, st.weather.type, camTarget);
       FM.W.update(dt, st, camTarget, camera.position);
@@ -647,6 +650,36 @@
     // BGM
     if ((bgmT -= dt) < 0) { bgmT = 1; FM.UI.pickBgm(); }
     FM.UI.frame(dt, camera);
+  }
+
+  // ---------------------------------------------------------
+  // 컷신 촬영 (cutscene.js 가 무대·카메라를 넘겨줌)
+  // ---------------------------------------------------------
+  G.startCine = function (c) { G.cine = c; };
+  G.endCine = function () {
+    const c = G.cine; G.cine = null; if (!c) return;
+    if (c.int) { intScene.remove(c.int.group); G.interior = null; }
+    FM.Chars.hidden = null;
+  };
+  function cineFrame(dt, st, ents, h) {
+    const C = G.cine;
+    if (C.loc === 'island') {
+      FM.W.applyTime(h, st.weather.type, C.center);
+      FM.W.update(dt, st, C.center, C.cam.position);
+      FM.Chars.sync(ents, 'island', islandScene, dt, { cullFrom: C.center, cullR: 70 });
+      if (C.tick) C.tick(dt);
+      renderer.render(islandScene, C.cam);
+    } else {
+      if (!C.int) {
+        if (G.interior) { intScene.remove(G.interior.group); G.interior = null; }
+        buildInterior(C.loc); C.int = G.interior; G.interior = null;
+        if (C.onBuilt) C.onBuilt(C.int);
+      }
+      FM.Int3D.update(C.int, dt, performance.now() / 1000);
+      FM.Chars.sync(ents, C.loc, C.int.group, dt, { spaceFloat: C.int.set === 'space' });
+      if (C.tick) C.tick(dt);
+      renderer.render(intScene, C.cam);
+    }
   }
 
   // 부트
