@@ -463,7 +463,27 @@
     const used = new Set(S.villagers.map(v => v.home));
     return FM.APT_ROOMS.find(r => !used.has(r)) || null;
   }
+  // 빈 집: 아파트 → 빌라 독채 → 대형 빌라(룸메이트 2명까지). prefer: 'villa' 면 빌라 먼저
+  function freeHome(prefer) {
+    const cnt = {}; for (const v of S.villagers) if (v.home) cnt[v.home] = (cnt[v.home] || 0) + 1;
+    const granted = (S.plots && S.plots.granted) || {};
+    const villas = MAP.PLOTS.map(p => ({ id: p.id + '_in', cap: p.size === 'large' ? 2 : 1, plot: p.id })).filter(x => !granted[x.plot] || (cnt[x.id] || 0) > 0);
+    const apt = freeAptRoom();
+    const villa = (villas.find(x => x.cap === 1 && !cnt[x.id]) || villas.find(x => x.cap === 2 && !cnt[x.id]) || villas.find(x => (cnt[x.id] || 0) < x.cap) || {}).id || null;
+    return prefer === 'villa' ? villa || apt : apt || villa;
+  }
+  // 이사 갈 수 있는 빈 집 목록 (프로필 → 이사)
+  Sim.homeOptions = function () {
+    const cnt = {}; for (const v of S.villagers) if (v.home) cnt[v.home] = (cnt[v.home] || 0) + 1;
+    const granted = (S.plots && S.plots.granted) || {};
+    const out = [];
+    const apt = freeAptRoom(); if (apt) out.push({ id: apt, kind: 'apt', cap: 1, used: 0 });
+    for (const p of MAP.PLOTS) { const id = p.id + '_in', cap = p.size === 'large' ? 2 : 1; if (granted[p.id] && !cnt[id]) continue; if ((cnt[id] || 0) < cap) out.push({ id, kind: p.size === 'large' ? 'villaL' : 'villa', cap, used: cnt[id] || 0 }); }
+    return out.filter(o => FM.INTERIORS[o.id]);
+  };
   Sim.freeAptRoom = freeAptRoom;
+  Sim.freeHome = freeHome;
+  Sim.MAX_VILLAGERS = 30;
 
   // 성격 조합이 옷차림과 표정에 묻어남
   const STYLE = {
@@ -565,7 +585,7 @@
       phrase: o.phrase || '', quirks: [...new Set(qs)].slice(0, 2),
       likesKeys: o.likesKeys || [pick(Object.keys(D.L1)), pick(Object.keys(D.L3))],
       likesSpecies: o.likesSpecies || (chance(0.4) ? pick(window.ISLE && ISLE.SPECIES ? Object.keys(ISLE.SPECIES) : ['cat', 'dog', 'bear']) : null),
-      home: o.home || freeAptRoom(), job: 'office', coins: rint(300, 1500), debt: 0,
+      home: o.home || null, job: 'office', coins: rint(300, 1500), debt: 0,
       hunger: rint(10, 40), energy: 100, stress: rint(0, 25), depression: 0, mood: 70, reputation: 50, popularity: 0,
       loc: 'island', x: 0, z: 0, ry: 0, route: null, state: 'WALK', act: null, idleT: rnd(0, 3), prop: null, pose: null,
       bubble: null, emote: null, balloon: null, crush: null, jealousy: null, status: {}, outfit: null, sceneId: null, thought: null,
@@ -597,8 +617,8 @@
 
   // 입주 (집 배정 + 방 기본 가구)
   function moveIn(v, silent) {
-    if (!v.home) v.home = freeAptRoom();
-    if (!v.home) return false;
+    if (!v.home) v.home = freeHome(v.preferHome);
+    if (!v.home || S.villagers.filter(o => !o.child).length >= Sim.MAX_VILLAGERS && !v.child) return false;
     S.villagers.push(v);
     if (!S.rooms[v.home]) S.rooms[v.home] = FM.defaultRoom(v);
     const ap = doorOut('apartment');

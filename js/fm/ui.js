@@ -21,7 +21,7 @@
   // 시작 화면
   // =========================================================
   function readCreator() { try { const d = JSON.parse(localStorage.getItem(ISLE.CREATOR_KEY) || 'null'); return d && Array.isArray(d.characters) ? d : null; } catch (e) { return null; } }
-  UI.startScreen = function () {
+  UI.startScreenOld = function () {
     const cr = readCreator();
     const el = $('#start');
     const chars = cr ? cr.characters : [];
@@ -37,7 +37,7 @@
             <select id="stLook"><option value="rand">🎲 무작위 사람</option>${chars.map(c => `<option value="${c.id}" ${me && me.id === c.id ? 'selected' : ''}>${icon(c)} ${esc(c.name || '이름 없음')}</option>`).join('')}</select></label>
           <label class="field">나의 메인 성격 (자녀 유전에 사용)
             <select id="stKey">${Object.entries(D.L1).map(([k, v]) => `<option value="${k}">${v.icon} ${v.name}</option>`).join('')}</select></label>
-          <label class="field">처음 입주할 주민 수 <input id="stCount" type="number" min="4" max="20" value="10"></label>
+          <label class="field">처음 입주할 주민 수 <input id="stCount" type="number" min="4" max="30" value="12"></label>
           ${chars.length ? `<div class="field">🎨 캐릭터 만들기에서 만든 주민 데려오기<div class="chk-list">${chars.filter(c => !me || c.id !== me.id).map(c => `<label><input type="checkbox" class="stImp" value="${c.id}" ${cr.invited.includes(c.id) ? 'checked' : ''}> ${icon(c)} ${esc(c.name || '이름 없음')}</label>`).join('')}</div></div>` : '<p class="note">💡 <a href="creator.html">캐릭터 만들기</a>에서 만든 주민을 섬으로 데려올 수 있어요.</p>'}
           <button class="btn big" id="stNew">🏝️ 섬으로 출발!</button>
         </details>
@@ -53,7 +53,7 @@
         const imported = [...document.querySelectorAll('.stImp:checked')].map(x => chars.find(c => c.id === x.value)).filter(Boolean).map(c => ({ look: ISLE.normalizeLook(c.look), name: c.name || undefined, phrase: c.phrase }));
         const key = $('#stKey').value;
         FM.G.start({ fresh: true, playerName: $('#stName').value.trim() || '나', playerLook: pc ? ISLE.normalizeLook(pc.look) : ISLE.normalizeLook(Object.assign(ISLE.randomLook(), { species: 'human' })),
-          count: Math.max(4, Math.min(20, +$('#stCount').value || 10)), imported, playerKeys: { L1: key, L2: Sim.u.pick(Object.keys(D.L2)), L3: Sim.u.pick(Object.keys(D.L3)), L4: Sim.u.pick(Object.keys(D.L4)) } });
+          count: Math.max(4, Math.min(30, +$('#stCount').value || 12)), imported, playerKeys: { L1: key, L2: Sim.u.pick(Object.keys(D.L2)), L3: Sim.u.pick(Object.keys(D.L3)), L4: Sim.u.pick(Object.keys(D.L4)) } });
       }, 50);
     };
     if ($('#stContinue')) $('#stContinue').onclick = () => go(false);
@@ -117,7 +117,7 @@
     $('#hudMail').textContent = unread ? `📮 ${unread}` : '';
     // 고민 풍선 알림
     const need = s.villagers.filter(v => v.balloon);
-    $('#notif').innerHTML = need.slice(0, 5).map(v => `<button class="nt" data-id="${v.id}"><span class="bal ${v.balloon.color}">${v.balloon.kind === 'marry' ? '💍' : '!'}</span>${icon(v)} ${esc(v.name)} <small>${balloonLabel(v.balloon)}</small></button>`).join('') + (need.length > 5 ? `<div class="nt more">+${need.length - 5}명 더</div>` : '');
+    $('#notif').innerHTML = need.slice(0, 5).map(v => `<button class="nt" data-id="${v.id}"><span class="bal ${v.balloon.color}">${v.balloon.kind === 'marry' ? '💍' : '!'}</span>${FM.Face ? FM.Face.img(v, 26) : icon(v)} ${esc(v.name)} <small>${balloonLabel(v.balloon)}</small></button>`).join('') + (need.length > 5 ? `<div class="nt more">+${need.length - 5}명 더</div>` : '');
     $('#notif').querySelectorAll('.nt[data-id]').forEach(b => b.onclick = () => UI.goTo(Sim.byId(b.dataset.id)));
     if (curTab === 'villagers' && $('#side').classList.contains('open')) paintVillagers();
   };
@@ -328,6 +328,7 @@
     return FM.INTERIORS[v.loc] ? FM.INTERIORS[v.loc].name : v.loc;
   }
   function paintVillagers(body = $('#sideBody')) {
+    if (UI.pv) return UI.pv(body);
     const s = st();
     const rows = s.villagers.map(v => {
       const r = Soc.rel(v.id, P);
@@ -436,6 +437,7 @@
   });
   let logFilter = 'all';
   function paintNews(body = $('#sideBody')) {
+    if (UI.pn) return UI.pn(body);
     const s = st();
     const nb = s.newsBoard || { items: [] };
     const R = s.rankings || {};
@@ -630,7 +632,7 @@
   // 주민 추가 / 캐릭터 만들기에서 데려오기
   // =========================================================
   UI.addVillager = function (look, name) {
-    if (!Sim.freeAptRoom()) return UI.toast('아파트 20호실이 가득 찼어요!');
+    if (st().villagers.filter(v => !v.child).length >= Sim.MAX_VILLAGERS || !Sim.freeHome()) return UI.toast(`섬이 가득 찼어요! (최대 ${Sim.MAX_VILLAGERS}명)`);
     const sel = (i, id) => `<select data-l="${id}"><option value="">🎲 무작위</option>${Object.entries(D.LAYERS[i]).map(([k, x]) => `<option value="${k}">${x.icon || ''} ${x.name}</option>`).join('')}</select>`;
     modal('➕ 새 주민 이주', `<label class="field">이름 <input id="avName" maxlength="8" value="${esc(name || '')}" placeholder="비우면 자동"></label>
       <div class="field">4-Layer 성격 (비우면 무작위 조합)${['L1', 'L2', 'L3', 'L4'].map((id, i) => `<div><small>${D.LAYER_NAMES[i]}</small> ${sel(i, id)}</div>`).join('')}
@@ -751,7 +753,7 @@
       $('#chFam').onclick = () => UI.familyTree();
       if ($('#chUp')) $('#chUp').onclick = () => { if (p.coins < next.price) return UI.toast('코인이 부족해요'); p.coins -= next.price; p.houseLevel = lv + 1; const room = s.rooms.home_p_in; if (room) { const sz = Sim.interiorSize('home_p_in'); room.furn.forEach(f => { f.x *= sz.w / FM.HOUSE_LEVELS[lv - 1].w; f.z *= sz.d / FM.HOUSE_LEVELS[lv - 1].d; }); } UI.toast(`🏡 집을 ${next.name}(으)로 증축했어요!`); closeModal(); };
       if ($('#chGrant')) $('#chGrant').onclick = () => UI.grantPlot();
-      if ($('#chDiv')) $('#chDiv').onclick = () => { if (!confirm('정말 이혼 조정을 신청할까요?')) return; const r = Soc.rel(spouse.id, P); Soc.doBreakup(r, 'PERSONALITY_CLASH'); p.spouse = null; p.lover = null; const m = Soc.marriageOf(spouse.id); if (m) m.marriage_stage = 'DIVORCED'; const room = Sim.freeAptRoom(); if (room) { Soc.moveHome(spouse, room); s.rooms[room] = s.rooms[room] || FM.defaultRoom(spouse); } Sim.log('divorce', `⚖️ ${p.name}와(과) ${spouse.name}이(가) 이혼했어요.`, [P, spouse.id], 3); closeModal(); };
+      if ($('#chDiv')) $('#chDiv').onclick = () => { if (!confirm('정말 이혼 조정을 신청할까요?')) return; const r = Soc.rel(spouse.id, P); Soc.doBreakup(r, 'PERSONALITY_CLASH'); p.spouse = null; p.lover = null; const m = Soc.marriageOf(spouse.id); if (m) m.marriage_stage = 'DIVORCED'; const room = Sim.freeHome(); if (room) { Soc.moveHome(spouse, room); s.rooms[room] = s.rooms[room] || FM.defaultRoom(spouse); } Sim.log('divorce', `⚖️ ${p.name}와(과) ${spouse.name}이(가) 이혼했어요.`, [P, spouse.id], 3); closeModal(); };
     }, true);
   };
   UI.grantPlot = function () {
@@ -951,6 +953,7 @@
           <div class="chips">${Object.entries(D.MATERIALS).map(([k, m]) => `<button data-mat="${k}" class="${f.mat === k ? 'on' : ''}" style="--c:${FM.PM.css(m.color)}">${m.name}</button>`).join('')}<button data-mat="">기본</button></div>
           <label>색 <input type="color" id="edCol" value="${f.color ? FM.PM.css(f.color) : '#ffffff'}"></label> <button id="edColClear" class="small">색 초기화</button>
           ${F.photo ? `<div class="chips photo-chips"><button id="edImg" class="main">🖼️ 내 이미지 붙이기</button>${f.img ? '<button id="edImgX">✖ 이미지 떼기</button>' : ''}</div>${f.img ? `<img class="ed-thumb" src="${f.img}" alt="">` : '<small class="muted">내 사진이나 그림 파일을 골라서 붙일 수 있어요</small>'}` : ''}</div>` : '<p class="muted">🖐️ 방 안의 가구를 <b>잡고 끌면</b> 옮겨져요 (벽걸이는 벽에 착 붙어요).<br>선택 후 <b>Q/R</b> 회전 · <b>방향키</b> 미세 이동 · <b>Delete</b> 회수</p>'}
+        ${FM.RoomKit ? `<div class="ed-sec"><b>🏠 방 스타일 한 번에 바꾸기</b><div class="chips"><select id="edStyle"><option value="">스타일 고르기…</option>${Object.entries(FM.RoomKit.STYLES).map(([k, x]) => `<option value="${k}" ${room.roomStyle === k ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>${room.roomStyle ? '<button id="edReroll">🎲 색·조명 다시 뽑기</button>' : ''}</div><small class="muted">가구 · 벽지 · 바닥 · 조명이 스타일에 맞게 통째로 바뀌어요 (무료)</small></div>` : ''}
         <details open><summary>1. 벽면 & 바닥</summary>
           <label>벽지 색 <input type="color" id="edWall" value="${FM.PM.css(room.wall || 0xf4efe6)}"></label>
           <label>바닥재 <select id="edFloor">${floorKinds.map(k => `<option ${room.floor === k ? 'selected' : ''} value="${k}">${k} (${D.FLOOR_SOUND[k] || ''})</option>`).join('')}</select></label>
@@ -988,6 +991,15 @@
         rebuild(); paintEditor(); UI.toast(`🖼️ ${F2.name}에 내 이미지를 붙였어요! 끌어서 옮겨보세요`);
       });
     });
+    if ($('#edStyle')) $('#edStyle').onchange = ev => {
+      const k = ev.target.value; if (!k) return;
+      const { w, d } = Sim.interiorSize(edIid);
+      const owner = st().villagers.find(v => v.home === edIid && !v.child);
+      const keys = owner ? owner.keys : (st().player.keys || {});
+      Object.assign(room, FM.RoomKit.styleRoom(k, w, d, (FM.INTERIORS[edIid] || {}).door, (Math.random() * 1e9) | 0, keys), { trash: [], theme: null, edited: true });
+      edSel = null; G().rebuildInterior(); paintEditor(); UI.toast(`🏠 ${FM.RoomKit.STYLES[k].name} 스타일로 바꿨어요!`);
+    };
+    if ($('#edReroll')) $('#edReroll').onclick = () => { const owner = st().villagers.find(v => v.home === edIid && !v.child); Object.assign(room, FM.RoomKit.variant(room.roomStyle, owner ? owner.keys : (st().player.keys || {}), (Math.random() * 1e9) | 0)); room.edited = true; G().rebuildInterior(); paintEditor(); };
     $('#edWall').oninput = ev => { room.wall = parseInt(ev.target.value.slice(1), 16); rebuild(); };
     $('#edFloor').onchange = ev => { room.floor = ev.target.value; rebuild(); };
     $('#edFloorC').oninput = ev => { room.floorColor = parseInt(ev.target.value.slice(1), 16); rebuild(); };

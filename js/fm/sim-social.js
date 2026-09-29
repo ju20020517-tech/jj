@@ -1051,9 +1051,9 @@
     const st = S();
     if (!st.rooms[iid]) {
       const s = Sim.interiorSize(iid);
-      st.rooms[iid] = st.rooms[old] ? Object.assign(JSON.parse(JSON.stringify(st.rooms[old])), {}) : FM.defaultRoom(v, s.w, s.d);
-      // 새 공간 크기에 맞게 가구 위치 조정
-      for (const f of st.rooms[iid].furn) { f.x = clamp(f.x * s.w / 8, -s.w / 2 + 0.6, s.w / 2 - 0.6); f.z = clamp(f.z * s.d / 6, -s.d / 2 + 0.6, s.d / 2 - 0.6); }
+      // 새 집 크기에 맞춰 성격 스타일 방을 새로 꾸밈 (예전 방에 직접 꾸민 게 있으면 그대로 옮김)
+      if (st.rooms[old] && st.rooms[old].edited) { st.rooms[iid] = JSON.parse(JSON.stringify(st.rooms[old])); for (const f of st.rooms[iid].furn) { f.x = clamp(f.x * s.w / 8, -s.w / 2 + 0.6, s.w / 2 - 0.6); f.z = clamp(f.z * s.d / 6, -s.d / 2 + 0.6, s.d / 2 - 0.6); } }
+      else st.rooms[iid] = FM.defaultRoom(v, s.w, s.d, (FM.INTERIORS[iid] || {}).door);
     }
     if (old && old.startsWith('apt') && !st.villagers.some(o => o !== v && o.home === old)) delete st.rooms[old];
     Sim.log('home', `🚚 ${v.name}이(가) ${FM.INTERIORS[iid].name}(으)로 이사했어요.`, [v.id], 1);

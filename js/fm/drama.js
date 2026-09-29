@@ -490,7 +490,26 @@
     DATING: ['#ff5d8a', 4, ''], MARRIED: ['#ff2d6a', 5, ''], EX: ['#9aa3ad', 2, '6 4'], EX_LOVER: ['#9aa3ad', 2, '6 4'], ENEMY: ['#2b2b30', 3, ''], NEMESIS: ['#5a3a3a', 2, '3 3'],
     RIVAL: ['#ff9a3a', 3, ''], RIVAL_FRIEND: ['#ffb13d', 2, ''], RIVAL_LOVE: ['#e84a3a', 3, '8 3'], BESTIE: ['#3ab86a', 3, ''], OLD_FRIEND: ['#7a9a5a', 3, '2 3'], SIBLING: ['#5ab8c8', 2, ''], MENTOR: ['#6a7ad8', 2, ''], HOBBY: ['#8ac86a', 2, ''], BUDDY: ['#8ac86a', 2, ''], SECRET: ['#9a6ad0', 2, '2 2'], CRUSH: ['#ff8fb1', 2, '4 3'], AFFAIR: ['#c040c0', 3, '1 4'],
   };
-  DR.openMap = function () {
+  DR.EDGE = EDGE;
+  // 두 사람 사이의 대표 관계 종류 (관계도 선)
+  DR.kindOf = function (a, b) {
+    if (!Soc.hasRel || !Soc.hasRel(a, b)) return null;
+    const r = rel(a, b); let k = r.status === 'DATING' || r.status === 'MARRIED' ? r.status : r.bond;
+    if (k === 'AFFAIR') { const af = st().affairs.find(x => !x.over && ((x.a === a && x.b === b) || (x.a === b && x.b === a))); if (!af || !(af.known || af.exposed || (af.witness || []).length)) k = null; }
+    if (!k && r.status === 'EX') k = 'EX';
+    return k && EDGE[k] ? k : null;
+  };
+  DR.rom = rom;
+  DR.dramaLines = function (id) {
+    const d = st(), out = [];
+    const has = (...ids) => !id || ids.includes(id);
+    for (const t of Object.values(d.tri)) if (has(t.a, t.b, t.t)) out.push(t.kind === 'couple' ? `🔺 ${nm(t.a)} → ${nm(t.t)} ♥ ${nm(t.b)} (연인 있는 사람을 짝사랑)` : `🔺 ${nm(t.a)} ⚔️ ${nm(t.b)} — 둘 다 ${nm(t.t)}을(를) 좋아함`);
+    for (const q of Object.values(d.sq)) if (has(...q.ids)) out.push(q.kind === 'swap' ? `🔷 ${nm(q.ids[0])}·${nm(q.ids[1])} 커플 ↔ ${nm(q.ids[2])}·${nm(q.ids[3])} 커플 엇갈린 마음` : `🔷 ${q.ids.map(nm).join(' → ')} 짝사랑 사슬`);
+    for (const af of d.affairs) if ((af.known || af.exposed || (af.witness || []).length) && has(af.a, af.b, af.partner)) out.push(`${af.exposed ? '💥' : '🔥'} ${nm(af.a)} ⇄ ${nm(af.b)} (연인 ${nm(af.partner)} 몰래) ${af.exposed ? '— 들통남' : af.over ? '— 정리함' : ''}`);
+    return out;
+  };
+  DR.histOf = function (a, b) { const k = Soc.hasRel(a, b) ? rel(a, b) : null; return k && k.history ? k.history : ''; };
+  DR.openMapAll = function () {
     const vs = alive(); const n = vs.length; const R = 170, cx = 220, cy = 210;
     const pos = {}; vs.forEach((v, i) => { const a = i / n * Math.PI * 2 - Math.PI / 2; pos[v.id] = [cx + Math.cos(a) * R, cy + Math.sin(a) * R]; });
     pos[P] = [cx, cy];
@@ -498,10 +517,8 @@
     const all = vs.map(v => v.id).concat([P]);
     for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
       const a = all[i], b = all[j]; if (!Soc.hasRel || !Soc.hasRel(a, b)) continue;
-      const r = rel(a, b); let k = r.status === 'DATING' || r.status === 'MARRIED' ? r.status : r.bond;
-      if (k === 'AFFAIR') { const af = st().affairs.find(x => !x.over && ((x.a === a && x.b === b) || (x.a === b && x.b === a))); if (!af || !(af.known || af.exposed || (af.witness || []).length)) k = null; }
-      if (!k && r.status === 'EX') k = 'EX';
-      if (k && EDGE[k]) edges.push([a, b, k]);
+      const k = DR.kindOf(a, b);
+      if (k) edges.push([a, b, k]);
     }
     const crushes = []; for (const v of vs) for (const o of all) if (o !== v.id && rom(v.id, o) >= 45 && Soc.partnerOf(v.id) !== o) crushes.push([v.id, o]);
     const svg = `<svg viewBox="0 0 440 420" style="width:100%;max-width:560px;display:block;margin:auto">
@@ -521,4 +538,5 @@
       <h4>🎭 진행 중인 드라마</h4>${dramas.length ? dramas.map(x => `<div class="muted" style="margin:3px 0">${x}</div>`).join('') : '<p class="muted">아직 조용해요... (주민들이 돌아다니다 보면 생겨요)</p>'}
       <h4>📜 사연</h4>${hist.length ? hist.map(x => `<div class="muted" style="margin:3px 0">${x}</div>`).join('') : '<p class="muted">-</p>'}`, null, true);
   };
+  DR.openMap = DR.openMapAll;
 })();

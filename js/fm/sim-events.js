@@ -122,7 +122,9 @@
   function broadcastNews() {
     const st = S();
     const since = st.lastNewsT || 0;
-    const items = st.log.filter(e => e.t > since && e.imp >= 2 && !e.secret).slice(-6).map(e => e.text.replace(/^[^\s]+\s/, ''));
+    const src = st.log.filter(e => e.t > since && e.imp >= 2 && !e.secret).slice(-6);
+    const items = src.map(e => e.text.replace(/^[^\s]+\s/, ''));
+    const cards = src.map((e, i) => ({ text: items[i], who: (e.who || []).slice(0, 3), type: e.type, icon: (e.text.match(/^(\S+)\s/) || [])[1] || '📰' }));
     if (st.flea && st.flea.sold && st.flea.sold.length) for (const s of st.flea.sold.splice(0)) items.push(`${s.who}님이 벼룩시장에서 '${s.item}'을(를) ${s.price.toLocaleString()}원에 판매했습니다`);
     computeRankings();
     const R = st.rankings;
@@ -131,8 +133,10 @@
     items.push(`오늘의 날씨: ${WEATHER[st.weather.type]}`);
     if (!items.length) items.push('오늘도 평화로운 친구모아 아일랜드입니다.');
     st.lastNewsT = st.time;
-    st.newsBoard = { items, at: st.time, anchor: (st.villagers.find(v => v.job === 'anchor') || {}).name || '친구모아 앵커' };
-    st.news.push({ day: day(), hm: hm(), items });
+    for (let i = cards.length; i < items.length; i++) cards.push({ text: items[i], who: [], type: 'info', icon: i === items.length - 1 ? '☀️' : '🏆' });
+    const anc = st.villagers.find(v => v.job === 'anchor');
+    st.newsBoard = { items, cards, at: st.time, anchor: anc ? anc.name : '친구모아 앵커', anchorId: anc ? anc.id : null };
+    st.news.push({ day: day(), hm: hm(), items, cards, anchorId: anc ? anc.id : null, seen: false });
     if (st.news.length > 40) st.news.shift();
     const anchor = st.villagers.find(v => v.job === 'anchor' && v.loc === 'studio_in');
     if (anchor) { Sim.say(anchor, `친구모아 뉴스입니다. ${items[0]}`, 6); anchor.pose = 'anchor'; }
@@ -774,7 +778,7 @@
       const r = Soc.rel(a.id, b.id);
       Soc.doBreakup(r, 'PERSONALITY_CLASH');
       m.marriage_stage = 'DIVORCED';
-      const room = Sim.freeAptRoom();
+      const room = Sim.freeHome();
       if (room) { Soc.moveHome(b, room); S().rooms[room] = S().rooms[room] || FM.defaultRoom(b); }
     } });
     Sim.log('divorce', `⚖️ ${a.name}와(과) ${b.name}이(가) 법원에서 재산(반려 물고기, 가구)을 두고 눈물의 몸싸움을 벌이며 이혼했어요.`, [a.id, b.id], 3);
