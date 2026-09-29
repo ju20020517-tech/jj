@@ -910,30 +910,66 @@
     head.add(g);
   }
 
+  // 안경: 얼굴 곡면을 따라 눈 위치에 딱 붙고, 다리는 머리 옆을 감싸 귀 쪽으로
+  function glassPath(kind) {
+    const pts = [];
+    const N = 40;
+    for (let i = 0; i < N; i++) {
+      const t = i / N * Math.PI * 2;
+      let x, y;
+      if (kind === 'square') {        // 둥근 사각 (웰링턴)
+        const c = Math.cos(t), s = Math.sin(t), p = 5;
+        x = Math.sign(c) * Math.pow(Math.abs(c), 2 / p) * 0.1; y = Math.sign(s) * Math.pow(Math.abs(s), 2 / p) * 0.078;
+      } else if (kind === 'heart') {
+        x = 16 * Math.pow(Math.sin(t), 3) / 17 * 0.1; y = (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 17 * 0.1 + 0.012;
+      } else if (kind === 'sun') {    // 살짝 아래가 넓은 둥근 선글라스
+        x = Math.cos(t) * 0.098; y = Math.sin(t) * (Math.sin(t) < 0 ? 0.088 : 0.074);
+      } else { x = Math.cos(t) * 0.086; y = Math.sin(t) * 0.086; }
+      pts.push(new THREE.Vector2(x, y));
+    }
+    return pts;
+  }
   function buildGlasses(head, l, hs) {
     if (l.glasses === 'none') return;
+    const kind = l.glasses;
     const g = new THREE.Group();
-    const frame = mat(l.glassesColor);
-    const lensMat = l.glasses === 'heart' ? new THREE.MeshLambertMaterial({ color: 0xff5d8a, transparent: true, opacity: 0.55, depthWrite: false }) : l.glasses === 'sun'
-      ? soften(new THREE.MeshLambertMaterial({ color: 0x1d2330 }))
-      : new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, depthWrite: false });
+    const frame = kind === 'heart' ? mat(0xff5d8a) : mat(l.glassesColor);
+    const lensMat = kind === 'heart' ? new THREE.MeshPhongMaterial({ color: 0xff8fb1, transparent: true, opacity: 0.55, shininess: 80, depthWrite: false })
+      : kind === 'sun' ? new THREE.MeshPhongMaterial({ color: 0x2a3244, shininess: 90, specular: 0x8899aa })
+      : new THREE.MeshPhongMaterial({ color: 0xeaf6ff, transparent: true, opacity: 0.16, shininess: 100, depthWrite: false });
+    const pts = glassPath(kind);
+    const rimGeo = geo('gRim-' + kind, () => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p.x, p.y, 0)), true), 48, kind === 'sun' ? 0.02 : 0.016, 6, true));
+    const lensGeo = geo('gLens-' + kind, () => new THREE.ShapeGeometry(new THREE.Shape(pts), 12));
+    const glint = geo('gGlint', () => new THREE.PlaneGeometry(0.022, 0.07));
+    const glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: kind === 'sun' ? 0.55 : 0.75, depthWrite: false });
+    // 얼굴 텍스처의 눈 위치(가로 0.32/0.68, 세로 0.47)를 머리 구면 좌표로
+    const R = HEAD_R + 0.004;
+    const yaw = 0.36, th = Math.PI * (0.3 + 0.47 * 0.46);
+    const ey = R * Math.cos(th) * hs[1];
     for (const s of [-1, 1]) {
-      const lx = s * 0.15 * hs[0];
-      let rim;
-      if (l.glasses === 'square') { rim = mesh(geo('gSq', () => new THREE.TorusGeometry(0.1, 0.014, 6, 4)), frame, lx, 0, 0); rim.rotation.z = Math.PI / 4; rim.scale.set(1.15, 0.9, 1); }
-      else rim = mesh(geo('gRound', () => new THREE.TorusGeometry(0.1, 0.014, 8, 28)), frame, lx, 0, 0);
-      g.add(rim);
-      const lens = mesh(geo('gLens', () => new THREE.CircleGeometry(0.095, 24)), lensMat, lx, 0, -0.005, false);
-      if (l.glasses === 'square') lens.scale.set(1.05, 0.85, 1);
-      g.add(lens);
-      const arm = mesh(capsule(0.01, 0.2), frame, s * 0.3 * hs[0], 0.02, -0.12, false);
-      arm.rotation.x = Math.PI / 2; arm.rotation.z = s * 0.3;
+      const side = new THREE.Group();
+      const x = s * R * Math.sin(yaw) * Math.sin(th) * hs[0], z = R * Math.cos(yaw) * Math.sin(th) * hs[2];
+      // 곡면 법선 방향으로 조금 띄움
+      const n = new THREE.Vector3(x / (hs[0] * hs[0]), 0, z / (hs[2] * hs[2])).normalize();
+      side.position.set(x + n.x * 0.035, ey, z + n.z * 0.035);
+      side.rotation.y = Math.atan2(n.x, n.z);
+      side.add(mesh(rimGeo, frame, 0, 0, 0, false));
+      side.add(mesh(lensGeo, lensMat, 0, 0, -0.004, false));
+      const gl = mesh(glint, glintMat, -0.035, 0.02, 0.004, false); gl.rotation.z = -0.6; side.add(gl);
+      if (kind !== 'sun') { const gl2 = mesh(glint, glintMat, -0.012, 0.035, 0.004, false); gl2.scale.set(0.6, 0.45, 1); gl2.rotation.z = -0.6; side.add(gl2); }
+      g.add(side);
+      // 다리: 머리 옆면을 따라 휘어져 귀 쪽까지 (타원 호)
+      const armR = R * hs[0] + 0.01;
+      const arm = mesh(geo('gArm', () => new THREE.TorusGeometry(1, 0.02, 5, 16, 0.8)), frame, 0, ey + 0.03, 0, false);
+      arm.scale.set(armR, armR, 0.55);
+      arm.rotation.x = Math.PI / 2;
+      arm.scale.y = armR * hs[2] / hs[0];   // 머리 앞뒤 비율
+      arm.rotation.z = s > 0 ? 0.2 : Math.PI - 1.0;   // 렌즈 바깥쪽에서 시작해 귀 뒤까지
       g.add(arm);
     }
-    const bridge = mesh(capsule(0.01, 0.06), frame, 0, 0.02, 0.01, false);
-    bridge.rotation.z = Math.PI / 2;
+    // 코다리 (살짝 올라간 아치)
+    const bridge = mesh(geo('gBridge', () => new THREE.TorusGeometry(0.045, 0.012, 5, 12, Math.PI)), frame, 0, ey + 0.02, R * hs[2] * 0.985 + 0.045, false);
     g.add(bridge);
-    g.position.set(0, -0.01, 0.405 * hs[2] + 0.035);
     head.add(g);
   }
 

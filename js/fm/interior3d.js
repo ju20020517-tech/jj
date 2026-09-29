@@ -40,74 +40,185 @@
   }
   // 특이 취향(Layer 4) 벽지 무늬 — 베이스 색 위에 포인트 색(accent)으로 그림
   function lum(c) { return (((c >> 16) & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + (c & 255) * 0.11) / 255; }
+  // ---------------------------------------------------------
+  // 벽지 — 톤온톤 · 작은 모티프 · 요즘 감성 (모든 무늬는 256px 안에서 이음매 없이 반복)
+  // ---------------------------------------------------------
+  const mixW = (a, b, t) => { const c = (x, sh) => (x >> sh) & 255; return [16, 8, 0].reduce((o, sh) => o | (Math.round(c(a, sh) + (c(b, sh) - c(a, sh)) * t) << sh), 0); };
+  const rgba = (c, a) => `rgba(${(c >> 16) & 255},${(c >> 8) & 255},${c & 255},${a})`;
+  // 너무 쨍한 벽색은 크림빛으로 살짝 눌러 세련되게 (어두운 무드 컬러는 그대로)
+  function refineWall(c) {
+    const col = new THREE.Color(c), o = {}; col.getHSL(o);
+    if (o.s > 0.55 && o.l > 0.38 && o.l < 0.8) return mixW(c, 0xfff8ef, 0.42);
+    if (o.s > 0.4 && o.l >= 0.8) return mixW(c, 0xfffaf4, 0.2);
+    return c;
+  }
+  I3.refineWall = refineWall;
+  // 은은한 라임워시(석회 도장) 결 — 모든 벽 바탕
+  function limewash(g, w, h, base) {
+    const dark = lum(base) < 0.45;
+    for (let i = 0; i < 26; i++) {
+      const x = (i * 97) % w, y = (i * 61 + (i % 3) * 40) % h, r = 30 + (i * 37) % 50;
+      for (const ox of [-w, 0, w]) for (const oy of [-h, 0, h]) {
+        const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
+        const c = i % 2 ? (dark ? 'rgba(255,255,255,0.025)' : 'rgba(255,255,255,0.07)') : (dark ? 'rgba(0,0,0,0.035)' : 'rgba(120,90,60,0.02)');
+        gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x + ox - r, y + oy - r, r * 2, r * 2);
+      }
+    }
+  }
+  // 반복 타일 배치 헬퍼: 가장자리를 넘는 모티프는 반대편에도 그려 이음매 없이
+  const tile = (w, h, fn) => (x, y, ...a) => { for (const ox of [-w, 0, w]) for (const oy of [-h, 0, h]) { const X = x + ox, Y = y + oy; if (X > -40 && X < w + 40 && Y > -40 && Y < h + 40) fn(X, Y, ...a); } };
   function drawAtmoPattern(g, w, h, kind, base, accent) {
-    const A = PM.css(accent), dark = lum(base) < 0.45;
-    const soft = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.45)', ink = dark ? 'rgba(255,255,255,0.5)' : 'rgba(60,40,40,0.18)';
+    const dark = lum(base) < 0.45;
+    const acc = mixW(accent, base, 0.3);                        // 포인트색을 바탕에 살짝 녹임
+    const tone = dark ? mixW(base, 0xffffff, 0.14) : mixW(base, 0x6a4a3a, 0.08);   // 톤온톤
+    const cream = dark ? mixW(base, 0xffffff, 0.35) : 0xfffdf8;
+    const leaf = dark ? 0x8fb88a : mixW(0x7fae7a, base, 0.25);
     g.lineCap = 'round'; g.lineJoin = 'round';
-    const heart = (x, y, r, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(x, y + r * 0.9); g.bezierCurveTo(x - r * 1.4, y - r * 0.2, x - r * 0.6, y - r * 1.2, x, y - r * 0.4); g.bezierCurveTo(x + r * 0.6, y - r * 1.2, x + r * 1.4, y - r * 0.2, x, y + r * 0.9); g.fill(); };
+    const heart = (x, y, r) => { g.beginPath(); g.moveTo(x, y + r * 0.9); g.bezierCurveTo(x - r * 1.4, y - r * 0.2, x - r * 0.6, y - r * 1.2, x, y - r * 0.4); g.bezierCurveTo(x + r * 0.6, y - r * 1.2, x + r * 1.4, y - r * 0.2, x, y + r * 0.9); g.fill(); };
+    const dot = (x, y, r) => { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
+    const spark = (x, y, r) => { g.beginPath(); g.moveTo(x, y - r); g.quadraticCurveTo(x, y, x + r, y); g.quadraticCurveTo(x, y, x, y + r); g.quadraticCurveTo(x, y, x - r, y); g.quadraticCurveTo(x, y, x, y - r); g.fill(); };
+    const gingham = (sz, a) => {
+      g.fillStyle = rgba(acc, a); for (let x = 0; x < w; x += sz * 2) g.fillRect(x, 0, sz, h);
+      for (let y = 0; y < h; y += sz * 2) g.fillRect(0, y, w, sz);
+    };
+    limewash(g, w, h, base);
     switch (kind) {
-      case 'vine':   // 덩굴 & 꽃
-        for (let x = 20; x < w; x += 64) {
-          g.strokeStyle = dark ? 'rgba(140,200,120,0.7)' : 'rgba(80,140,70,0.55)'; g.lineWidth = 3; g.beginPath();
-          for (let y = 0; y <= h; y += 8) g.lineTo(x + Math.sin(y * 0.06 + x) * 10, y); g.stroke();
-          for (let y = 10; y < h; y += 30) { const lx = x + Math.sin(y * 0.06 + x) * 10; g.fillStyle = dark ? 'rgba(150,210,130,0.75)' : 'rgba(100,170,90,0.6)'; g.beginPath(); g.ellipse(lx + (y % 60 ? 9 : -9), y, 8, 4, (y % 60 ? 0.6 : -0.6), 0, Math.PI * 2); g.fill(); }
-          for (let y = 40; y < h; y += 80) { const lx = x + Math.sin(y * 0.06 + x) * 10; for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; g.fillStyle = A; g.beginPath(); g.arc(lx + Math.cos(a) * 5, y + Math.sin(a) * 5, 4.5, 0, Math.PI * 2); g.fill(); } g.fillStyle = '#ffe38a'; g.beginPath(); g.arc(lx, y, 3, 0, Math.PI * 2); g.fill(); }
+      case 'vine': {   // 잔꽃 & 새싹 (디치 플로럴)
+        const sprig = tile(w, h, (x, y, flip) => {
+          g.save(); g.translate(x, y); g.scale(flip ? -1 : 1, 1); g.rotate(-0.35);
+          g.strokeStyle = rgba(leaf, 0.85); g.lineWidth = 1.6; g.beginPath(); g.moveTo(0, 10); g.quadraticCurveTo(-2, 0, 2, -8); g.stroke();
+          g.fillStyle = rgba(leaf, 0.8); g.beginPath(); g.ellipse(-4, 3, 4, 2, 0.8, 0, Math.PI * 2); g.fill(); g.beginPath(); g.ellipse(4, -1, 4, 2, -0.8, 0, Math.PI * 2); g.fill();
+          g.fillStyle = rgba(acc, 0.9); for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2; dot(2 + Math.cos(a) * 3.2, -10 + Math.sin(a) * 3.2, 2.6); }
+          g.fillStyle = '#fff3c4'; dot(2, -10, 1.6); g.restore();
+        });
+        for (let r = 0; r < 8; r++) for (let c = 0; c < 6; c++) sprig(c * 42.67 + (r % 2) * 21.3 + ((r * 7) % 5), r * 32 + 14, (r + c) % 2);
+        g.fillStyle = rgba(cream, 0.7); for (let r = 0; r < 8; r++) for (let c = 0; c < 6; c++) dot(c * 42.67 + (r % 2 ? 0 : 21.3) + 6, r * 32 + 2, 1.4);
+        break;
+      }
+      case 'dessert': {   // 파스텔 깅엄 + 작은 체리
+        gingham(16, 0.13);
+        const cherry = tile(w, h, (x, y) => {
+          g.strokeStyle = rgba(leaf, 0.9); g.lineWidth = 1.4; g.beginPath(); g.moveTo(x - 4, y); g.quadraticCurveTo(x - 2, y - 9, x + 2, y - 11); g.moveTo(x + 4, y + 1); g.quadraticCurveTo(x + 3, y - 8, x + 2, y - 11); g.stroke();
+          g.fillStyle = rgba(leaf, 0.9); g.beginPath(); g.ellipse(x + 5, y - 11, 4, 2, -0.3, 0, Math.PI * 2); g.fill();
+          g.fillStyle = rgba(mixW(0xe8506a, base, 0.15), 0.95); dot(x - 4, y + 2, 3.6); dot(x + 4, y + 3, 3.6);
+          g.fillStyle = 'rgba(255,255,255,0.7)'; dot(x - 5, y + 1, 1); dot(x + 3, y + 2, 1);
+        });
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) cherry(c * 64 + (r % 2) * 32 + 16, r * 64 + 24);
+        break;
+      }
+      case 'books': {   // 클래식 서재 스트라이프 (톤온톤 넓은 띠 + 가는 핀스트라이프)
+        for (let x = 0; x < w; x += 64) {
+          g.fillStyle = rgba(tone, 0.55); g.fillRect(x, 0, 32, h);
+          g.fillStyle = rgba(acc, 0.45); g.fillRect(x + 44, 0, 2, h); g.fillRect(x + 50, 0, 2, h);
+        }
+        // 줄 사이 작은 양장본 · 펼친 책
+        const book = tile(w, h, (x, y, open) => {
+          if (open) { g.fillStyle = rgba(cream, 0.9); g.beginPath(); g.moveTo(x, y + 2); g.quadraticCurveTo(x - 5, y - 2, x - 9, y); g.lineTo(x - 9, y + 8); g.quadraticCurveTo(x - 5, y + 6, x, y + 10); g.quadraticCurveTo(x + 5, y + 6, x + 9, y + 8); g.lineTo(x + 9, y); g.quadraticCurveTo(x + 5, y - 2, x, y + 2); g.fill(); g.strokeStyle = rgba(acc, 0.6); g.lineWidth = 1; g.beginPath(); g.moveTo(x, y + 2); g.lineTo(x, y + 10); g.stroke(); }
+          else { [[-6, 12, acc], [-1, 14, tone], [4, 11, cream]].forEach(([dx, hh, c]) => { g.fillStyle = rgba(c, 0.85); g.fillRect(x + dx, y + 10 - hh, 4.5, hh); }); g.fillStyle = rgba(acc, 0.7); g.fillRect(x - 7, y + 10, 16, 1.5); }
+        });
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) book(c * 64 + 48, r * 64 + 20 + (c % 2) * 32, (r + c) % 2);
+        break;
+      }
+      case 'waves': {   // 그루비 물결 라인
+        for (let y = 0, k = 0; y < h; y += 21.33, k++) {
+          g.strokeStyle = k % 2 ? rgba(acc, 0.55) : rgba(cream, 0.75); g.lineWidth = k % 2 ? 5 : 3;
+          g.beginPath(); for (let x = -4; x <= w + 4; x += 4) g.lineTo(x, y + 10 + Math.sin(x / w * Math.PI * 8 + k * 0.9) * 4.5); g.stroke();
+        }
+        g.strokeStyle = rgba(cream, 0.8); g.lineWidth = 1.2; for (let i = 0; i < 12; i++) { g.beginPath(); g.arc((i * 83) % w, (i * 59) % h + 4, 2 + (i % 3), 0, Math.PI * 2); g.stroke(); }
+        break;
+      }
+      case 'chevron': {   // 모던 셰브론: 둥글린 지그재그 + 가는 스트라이프 (톤온톤)
+        for (let y = 0, k = 0; y < h; y += 32, k++) {
+          g.strokeStyle = k % 2 ? rgba(acc, 0.5) : rgba(cream, 0.8); g.lineWidth = k % 2 ? 6 : 3;
+          g.beginPath(); for (let x = -16; x <= w + 16; x += 2) { const ph = ((x % 32) + 32) % 32 / 32; g.lineTo(x, y + 16 + (Math.abs(ph - 0.5) * 2 - 0.5) * 12 * (1 - 0.15 * Math.cos(ph * Math.PI * 2))); } g.stroke();
         }
         break;
-      case 'dessert':   // 격자 + 컵케이크 · 음료
-        g.strokeStyle = soft; g.lineWidth = 3; for (let i = 0; i <= w; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(w, i); g.stroke(); }
-        for (let y = 32; y < h; y += 64) for (let x = 32; x < w; x += 64) {
-          if (((x + y) / 64) % 2 < 1) { g.fillStyle = A; g.beginPath(); g.arc(x, y - 4, 11, Math.PI, 0); g.fill(); g.fillStyle = ink; g.fillRect(x - 9, y - 4, 18, 12); g.fillStyle = '#ff5d7a'; g.beginPath(); g.arc(x, y - 16, 3.5, 0, Math.PI * 2); g.fill(); }
-          else { g.fillStyle = ink; g.fillRect(x - 7, y - 10, 14, 20); g.fillStyle = A; g.fillRect(x - 7, y - 4, 14, 14); g.strokeStyle = A; g.lineWidth = 2; g.beginPath(); g.moveTo(x + 3, y - 10); g.lineTo(x + 8, y - 18); g.stroke(); }
+      }
+      case 'wavycheck': {   // 웨이비 체커보드
+        const img = g.getImageData(0, 0, w, h), d = img.data;
+        const ar = (acc >> 16) & 255, ag = (acc >> 8) & 255, ab = acc & 255, t = 0.42;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const u = x + 6 * Math.sin(y / 64 * Math.PI * 2), v = y + 6 * Math.sin(x / 64 * Math.PI * 2);
+          if ((Math.floor(u / 32) + Math.floor(v / 32)) & 1) { const i = (y * w + x) * 4; d[i] += (ar - d[i]) * t; d[i + 1] += (ag - d[i + 1]) * t; d[i + 2] += (ab - d[i + 2]) * t; }
         }
+        g.putImageData(img, 0, 0);
         break;
-      case 'books':   // 양장본 책장 실루엣 + 문서
-        for (let y = 0; y < h; y += 64) {
-          g.fillStyle = ink; g.fillRect(0, y + 58, w, 6);
-          let x = 4; while (x < w) { const bw = 7 + ((x * 13 + y) % 9), bh = 34 + ((x * 7 + y) % 18); g.fillStyle = (x / 10 | 0) % 3 === 0 ? A : soft; g.fillRect(x, y + 58 - bh, bw, bh); g.fillStyle = ink; g.fillRect(x + 1, y + 58 - bh + 6, bw - 2, 2); x += bw + 2; if ((x % 70) < 9) { g.fillStyle = soft; g.save(); g.translate(x + 8, y + 30); g.rotate(-0.15); g.fillRect(-7, -10, 16, 22); g.fillStyle = ink; for (let k = 0; k < 4; k++) g.fillRect(-4, -6 + k * 5, 10, 1.5); g.restore(); x += 22; } }
-        }
+      }
+      case 'vinyl': {   // 파스텔 미니 LP · 음표 · 점선 음파
+        const lp = tile(w, h, (x, y) => {
+          g.fillStyle = rgba(dark ? 0x1a1a22 : mixW(0x3a3440, base, 0.35), 0.85); dot(x, y, 11);
+          g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 1; for (const r of [8, 5.5]) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke(); }
+          g.fillStyle = rgba(acc, 1); dot(x, y, 3.6); g.fillStyle = rgba(cream, 1); dot(x, y, 1);
+        });
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) lp(c * 64 + (r % 2) * 32 + 16, r * 64 + 22);
+        g.fillStyle = rgba(acc, 0.7); g.font = 'bold 15px sans-serif'; g.textAlign = 'center';
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) g.fillText((r + c) % 2 ? '♪' : '♫', c * 64 + (r % 2 ? 0 : 32) + 16, r * 64 + 30);
+        g.fillStyle = rgba(cream, 0.75); for (let r = 0; r < 4; r++) for (let x = 0; x < w; x += 5) dot(x, r * 64 + 52 + Math.sin(x / w * Math.PI * 6) * Math.sin(x / w * Math.PI * 2 * 3 + r) * 5, 1.1);
         break;
-      case 'waves':   // 잔물결 + 거품
-        for (let y = 16; y < h; y += 26) { g.strokeStyle = (y / 26 | 0) % 2 ? A : soft; g.lineWidth = 3; g.beginPath(); for (let x = 0; x <= w; x += 4) g.lineTo(x, y + Math.sin(x / w * Math.PI * 4 + y) * 5); g.stroke(); }
-        for (let i = 0; i < 16; i++) { g.strokeStyle = soft; g.lineWidth = 1.5; g.beginPath(); g.arc((i * 71) % w, (i * 53) % h, 3 + (i % 3) * 2, 0, Math.PI * 2); g.stroke(); }
+      }
+      case 'hearts': {   // 코케트 리본 + 작은 하트
+        const bow = tile(w, h, (x, y) => {
+          g.fillStyle = rgba(acc, 0.85);
+          g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x - 6, y - 9, x - 15, y - 6, x - 13, y + 1); g.bezierCurveTo(x - 11, y + 7, x - 5, y + 4, x, y); g.fill();
+          g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x + 6, y - 9, x + 15, y - 6, x + 13, y + 1); g.bezierCurveTo(x + 11, y + 7, x + 5, y + 4, x, y); g.fill();
+          g.strokeStyle = rgba(acc, 0.85); g.lineWidth = 2.4; g.beginPath(); g.moveTo(x - 1, y + 2); g.quadraticCurveTo(x - 6, y + 9, x - 8, y + 15); g.moveTo(x + 1, y + 2); g.quadraticCurveTo(x + 6, y + 9, x + 9, y + 14); g.stroke();
+          g.fillStyle = rgba(mixW(accent, 0x5a3040, 0.2), 0.9); dot(x, y + 0.5, 2.6);
+        });
+        for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) bow(c * 64 + (r % 2) * 32 + 16, r * 64 + 22);
+        g.fillStyle = rgba(cream, 0.8); for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if ((r + c) % 3) heart(c * 64 + (r % 2 ? 16 : 48), r * 64 + 54, 3.4);
+        g.fillStyle = rgba(mixW(accent, base, 0.45), 0.9); g.font = 'italic 11px Georgia, serif'; g.textAlign = 'center';
+        g.fillText('love', 112, 184); g.fillText('xoxo', 48 + 128, 56); g.fillText('with love', 240, 248);
         break;
-      case 'chevron':   // 모던 스트라이프 & 셰브론
-        for (let y = 0; y < h; y += 42) { g.strokeStyle = (y / 42) % 2 ? A : soft; g.lineWidth = 7; g.beginPath(); for (let x = 0; x <= w; x += 32) g.lineTo(x, y + ((x / 32) % 2 ? 14 : 0)); g.stroke(); }
-        for (let x = 0; x < w; x += 128) { g.fillStyle = soft; g.fillRect(x + 60, 0, 4, h); }
+      }
+      case 'grid': {   // 윈도페인 체크 (가는 이중선)
+        g.fillStyle = rgba(acc, 0.35);
+        for (let x = 0; x < w; x += 64) { g.fillRect(x + 30, 0, 1.5, h); g.fillRect(x + 34, 0, 1.5, h); }
+        for (let y = 0; y < h; y += 64) { g.fillRect(0, y + 30, w, 1.5); g.fillRect(0, y + 34, w, 1.5); }
+        g.fillStyle = rgba(cream, 0.6); for (let y = 0; y < h; y += 64) for (let x = 0; x < w; x += 64) dot(x + 64, y + 64, 2);
+        g.strokeStyle = rgba(acc, 0.14); g.lineWidth = 1;
+        for (let y = 0; y < h; y += 128) for (let x = 0; x < w; x += 128) { g.save(); g.beginPath(); g.rect(x + 36, y + 36, 58, 58); g.clip(); for (let k = -64; k < 64; k += 6) { g.beginPath(); g.moveTo(x + 36 + k, y + 36); g.lineTo(x + 36 + k + 58, y + 94); g.stroke(); } g.restore(); }
         break;
-      case 'vinyl':   // 음표 · LP · 음파
-        for (let i = 0; i < 4; i++) { const x = 40 + (i % 2) * 128, y = 50 + (i >> 1) * 128; g.fillStyle = dark ? 'rgba(20,20,30,0.55)' : 'rgba(40,40,50,0.45)'; g.beginPath(); g.arc(x, y, 30, 0, Math.PI * 2); g.fill(); g.strokeStyle = 'rgba(255,255,255,0.18)'; for (let r = 12; r < 30; r += 5) { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke(); } g.fillStyle = A; g.beginPath(); g.arc(x, y, 9, 0, Math.PI * 2); g.fill(); }
-        g.font = '28px serif'; g.fillStyle = A; for (let i = 0; i < 6; i++) g.fillText(i % 2 ? '♪' : '♫', 100 + (i * 57) % 150, 20 + (i * 83) % 230);
-        g.strokeStyle = soft; g.lineWidth = 2; g.beginPath(); for (let x = 0; x <= w; x += 3) g.lineTo(x, 128 + Math.sin(x * 0.2) * Math.sin(x * 0.03) * 16); g.stroke();
+      }
+      case 'sacred': {   // 셀레스티얼: 초승달 · 반짝이 · 점선 별자리
+        const gold = dark ? 0xffe6a8 : mixW(0xd9b44a, base, 0.2);
+        const moon = tile(w, h, (x, y) => { g.fillStyle = rgba(gold, 0.85); dot(x, y, 7); g.fillStyle = PM.css(base); dot(x + 3.5, y - 2.5, 6); });
+        const S2 = tile(w, h, (x, y, r) => { g.fillStyle = rgba(gold, 0.8); spark(x, y, r); });
+        const pts = [[20, 30], [90, 70], [150, 20], [210, 90], [40, 150], [120, 130], [190, 190], [70, 220], [240, 240]];
+        pts.forEach(([x, y], i) => S2(x, y, i % 3 ? 3.5 : 6));
+        g.fillStyle = rgba(gold, 0.55); for (let i = 0; i < 40; i++) dot((i * 71) % w, (i * 113) % h, 0.9);
+        g.strokeStyle = rgba(gold, 0.4); g.lineWidth = 1; g.setLineDash([2, 4]); g.beginPath(); g.moveTo(90, 70); g.lineTo(150, 20); g.lineTo(210, 90); g.moveTo(40, 150); g.lineTo(120, 130); g.lineTo(190, 190); g.stroke(); g.setLineDash([]);
+        for (const [x, y] of [[180, 50], [60, 100], [220, 160], [120, 200]]) moon(x, y);
+        g.strokeStyle = rgba(gold, 0.45); g.lineWidth = 0.9;
+        for (const [cx, cy] of [[64, 36], [192, 150]]) for (let k = 0; k < 7; k++) { const a = k / 6 * Math.PI * 2, o = k ? 6 : 0; g.beginPath(); g.arc(cx + Math.cos(a) * o, cy + Math.sin(a) * o, 6, 0, Math.PI * 2); g.stroke(); }
+        // 모닥불 같은 반짝임이 아니라 벽이 어두울수록 더 또렷하게
         break;
-      case 'hearts':   // 레터링 & 하트
-        for (let y = 24; y < h; y += 48) for (let x = ((y / 48) % 2) * 32 + 20; x < w; x += 64) heart(x, y, 8, (x + y) % 3 ? A : soft);
-        g.font = 'italic 20px Georgia, serif'; g.fillStyle = ink; g.fillText('love', 90, 60); g.fillText('xoxo', 20, 180); g.fillText('♡ you', 150, 220);
+      }
+      case 'track': {   // 굵은 사선 스포티 라인 (바시티 감성, 톤 다운)
+        const band = (off, wd, col) => { g.fillStyle = col; for (let k = -h; k < w + h; k += 64) { g.beginPath(); g.moveTo(k + off, h); g.lineTo(k + off + wd, h); g.lineTo(k + off + wd + h, 0); g.lineTo(k + off + h, 0); g.fill(); } };
+        band(0, 16, rgba(acc, 0.42)); band(20, 4, rgba(cream, 0.85)); band(28, 4, rgba(acc, 0.3));
         break;
-      case 'grid':   // 깨끗한 격자 타일 & 빗살
-        g.strokeStyle = soft; g.lineWidth = 3; for (let i = 0; i <= w; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.stroke(); g.beginPath(); g.moveTo(0, i); g.lineTo(w, i); g.stroke(); }
-        g.strokeStyle = A; g.globalAlpha = 0.35; g.lineWidth = 1; for (let i = -h; i < w; i += 8) { if (((i + h) / 64 | 0) % 2) continue; g.beginPath(); g.moveTo(i, 0); g.lineTo(i + h, h); g.stroke(); } g.globalAlpha = 1;
+      }
+      // ---- 기본 벽 스타일도 같은 감성으로 ----
+      case 'polka': g.fillStyle = rgba(acc, 0.55); for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) dot(c * 32 + (r % 2) * 16 + 8, r * 32 + 16, 3.2); break;
+      case 'gingham': gingham(16, 0.2); break;
+      case 'terrazzo': {
+        const cols = [acc, mixW(acc, 0x6a8aa0, 0.5), mixW(0xffc890, base, 0.2), tone];
+        for (let i = 0; i < 70; i++) { const x = (i * 83) % w, y = (i * 47 + (i % 5) * 13) % h; g.fillStyle = rgba(cols[i % 4], 0.55); tile(w, h, (X, Y) => { g.beginPath(); g.ellipse(X, Y, 3 + i % 4, 2 + i % 3, i, 0, Math.PI * 2); g.fill(); })(x, y); }
         break;
-      case 'sacred':   // 신성기하학 (생명의 꽃) + 별자리
-        g.strokeStyle = A; g.lineWidth = 1.6; g.globalAlpha = 0.7;
-        for (const [cx, cy] of [[64, 64], [192, 192]]) for (let k = 0; k < 7; k++) { const a = k / 6 * Math.PI * 2; const ox = k ? Math.cos(a) * 18 : 0, oy = k ? Math.sin(a) * 18 : 0; g.beginPath(); g.arc(cx + ox, cy + oy, 18, 0, Math.PI * 2); g.stroke(); }
-        g.globalAlpha = 1;
-        const stars = [[170, 40], [200, 70], [230, 50], [210, 100], [40, 170], [70, 200], [30, 230], [90, 150]];
-        g.strokeStyle = soft; g.lineWidth = 1; g.beginPath(); stars.slice(0, 4).forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke(); g.beginPath(); stars.slice(4).forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke();
-        for (const [x, y] of stars) { g.fillStyle = '#fff6c0'; g.beginPath(); g.arc(x, y, 3, 0, Math.PI * 2); g.fill(); }
-        break;
-      case 'track':   // 굵은 사선 스포티 라인 & 트랙
-        for (let i = -h; i < w; i += 64) { g.fillStyle = A; g.beginPath(); g.moveTo(i, h); g.lineTo(i + 22, h); g.lineTo(i + 22 + h, 0); g.lineTo(i + h, 0); g.fill(); g.fillStyle = soft; g.beginPath(); g.moveTo(i + 28, h); g.lineTo(i + 34, h); g.lineTo(i + 34 + h, 0); g.lineTo(i + 28 + h, 0); g.fill(); }
-        g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 2; g.setLineDash([10, 8]); for (const y of [200, 230]) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } g.setLineDash([]);
-        break;
+      }
+      case 'whitebrick': for (let y = 0; y < h; y += 16) for (let x = (y / 16 % 2) * 16; x < w + 16; x += 32) { g.fillStyle = rgba(cream, 0.35 + ((x * 7 + y) % 5) * 0.03); g.fillRect(x + 1.5, y + 1.5, 29, 13); } break;
+      case 'plain': default: break;
     }
   }
   I3.drawAtmoPattern = drawAtmoPattern;
+  const MODERN = { heart: 'hearts', stripe: 'books', wainscot: 'plain', dots: 'polka', star: 'sacred', leaf: 'vine', brick: 'whitebrick', splatter: 'terrazzo', check: 'gingham', plain: 'plain' };
   function wallTex(theme, color, color2) {
+    if (!theme || MODERN[theme]) theme = 'p_' + (MODERN[theme || 'plain']);
+    if (theme.startsWith('p_')) color = refineWall(color);
     const css = PM.css(color);
     if (theme && theme.startsWith('p_')) {
       const acc = color2 !== undefined && color2 !== null ? color2 : (lum(color) < 0.45 ? 0xffe6a0 : 0xff8fb1);
-      return PM.ctex(`wall:${theme}:${color}:${acc}`, 256, 256, (g, w, h) => { g.fillStyle = css; g.fillRect(0, 0, w, h); drawAtmoPattern(g, w, h, theme.slice(2), color, acc); }, [2, 1]);
+      return PM.ctex(`wall2:${theme}:${color}:${acc}`, 256, 256, (g, w, h) => { g.fillStyle = css; g.fillRect(0, 0, w, h); drawAtmoPattern(g, w, h, theme.slice(2), color, acc); }, [2, 1]);
     }
     return PM.ctex(`wall:${theme}:${color}`, 256, 256, (g, w, h) => {
       g.fillStyle = css; g.fillRect(0, 0, w, h);
@@ -153,7 +264,7 @@
     });
   }
   function decorShell(group, I, room, themeId, w, d, res) {
-    const wallCol = room.wall || I.wall || 0xf4efe6;
+    const wallCol = refineWall(room.wall || I.wall || 0xf4efe6);
     const dark = lum(wallCol) < 0.35;
     const trimCol = dark ? mixC(wallCol, 0x000000, 0.35) : 0xfffaf2;
     const tm = mat(trimCol);
@@ -289,9 +400,13 @@
     fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; fl.name = 'floor';
     group.add(fl);
     const wallMap = room.patterns && room.patterns.wall ? patTex(room.patterns.wall) : wallTex(themeId || room.wallStyle || 'plain', room.wall || 0xf4efe6, room.wall2);
-    const wm = H.soften(new THREE.MeshLambertMaterial({ map: wallMap, side: THREE.DoubleSide }), 0.1);
+    // 무늬 한 장 ≈ 1.4m 로 촘촘하게 (벽 크기별로 반복 수 조절)
+    const TILE = 1.4;
+    const fineWall = !(room.patterns && room.patterns.wall) && !themeId;
+    const wallMat = (len) => { if (!fineWall) return H.soften(new THREE.MeshLambertMaterial({ map: wallMap, side: THREE.DoubleSide }), 0.1); const t = wallMap.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(Math.max(1, Math.round(len / TILE)), WALL_H / TILE); return H.soften(new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }), 0.1); };
+    const wm = wallMat(w), wmSide = wallMat(d);
     const back = new THREE.Mesh(new THREE.PlaneGeometry(w, WALL_H), wm); back.position.set(0, WALL_H / 2, -d / 2); back.receiveShadow = true; group.add(back);
-    for (const s of [-1, 1]) { const side = new THREE.Mesh(new THREE.PlaneGeometry(d, WALL_H), wm); side.position.set(s * w / 2, WALL_H / 2, 0); side.rotation.y = -s * Math.PI / 2; side.receiveShadow = true; group.add(side); side.name = 'sideWall'; }
+    for (const s of [-1, 1]) { const side = new THREE.Mesh(new THREE.PlaneGeometry(d, WALL_H), wmSide); side.position.set(s * w / 2, WALL_H / 2, 0); side.rotation.y = -s * Math.PI / 2; side.receiveShadow = true; group.add(side); side.name = 'sideWall'; }
     // 걸레받이
     const bb = mat(0xffffff);
     group.add(mesh(box(w, 0.12, 0.06, 0.02), bb, 0, 0.06, -d / 2 + 0.03));
