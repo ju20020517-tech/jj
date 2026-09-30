@@ -242,6 +242,12 @@
   function islandLegs(ax, az, bx, bz, opts = {}) {
     const legs = [];
     const walk = graphPath(ax, az, bx, bz);
+    // 일정 약속에 늦지 않게: 먼 길은 마을 택시 (길가에서 타고, 목적지 몇 걸음 앞에서 내림)
+    if (opts.taxi && walk.len > 60 && walk.pts.length > 1) {
+      const pts = walk.pts; let k = pts.length - 1; while (k > 0 && Math.hypot(pts[k][0] - bx, pts[k][1] - bz) < 7) k--;
+      legs.push({ k: 'walk', pts: [pts[0]] }, { k: 'taxi', x: pts[k][0], z: pts[k][1], t: Math.min(14, 3 + walk.len / 45) }, { k: 'walk', pts: pts.slice(k + 1) });
+      return legs;
+    }
     let useMetro = !!opts.viaMetro;
     let sa, sb;
     if (!opts.noMetro) {
@@ -339,6 +345,10 @@
         v.loc = 'island'; v.x = st.x + rnd(-1, 1); v.z = st.z + rnd(0.5, 1.5);
         v.route.shift();
       }
+    } else if (leg.k === 'taxi') {
+      if (v.loc !== 'metro') { v.loc = 'metro'; v.rideT = leg.t; v.rideTo = null; v.taxi = true; S.stats.taxiRides = (S.stats.taxiRides || 0) + 1; }
+      v.rideT -= dtR * S.speed;
+      if (v.rideT <= 0) { v.loc = 'island'; v.x = leg.x + rnd(-0.5, 0.5); v.z = leg.z + rnd(-0.5, 0.5); v.taxi = false; v.route.shift(); }
     } else if (leg.k === 'wait') {
       leg.t -= dtR; if (leg.t <= 0) v.route.shift();
     }
@@ -993,13 +1003,13 @@
   }
   Sim.nearby = nearbyVillagers;
 
-  function goSpot(v, sp, actId) {
+  function goSpot(v, sp, actId, ropts) {
     releaseSpot(v); freeUse(v);
     if (sp.seat) sp.occ = v.id;
     v.spot = sp;
     v.pendingAct = actId || null;
     const jx = sp.seat ? 0 : rnd(-0.6, 0.6), jz = sp.seat ? 0 : rnd(-0.6, 0.6);
-    planRoute(v, { loc: 'island', x: sp.x + jx, z: sp.z + jz });
+    planRoute(v, { loc: 'island', x: sp.x + jx, z: sp.z + jz }, ropts);
     v.state = v.run ? 'RUN' : 'WALK';
   }
   function goUse(v, u, actId) {
@@ -1134,7 +1144,8 @@
     return false;
   }
   function think(v) {
-    const blk = block(v);
+    let blk = block(v);
+    if (Sim.blockHook) { try { blk = Sim.blockHook(v, blk) || blk; } catch (e) { console.error('schedule', e); } }
     v.blockLabel = blk.label || '';
     if (v.hunger > 70 && !v.child && ['free', 'home', 'go'].includes(blk.k) && !v.status.hospital && goEat(v)) return;
     // 관계 레이어가 먼저 덮어씀 (육아 > 짝사랑/질투/이별 > 일상)
@@ -1215,7 +1226,7 @@
     if (blk.inside) {
       const p = MAP.P[blk.place];
       if (v.loc === p.interior) return venueAction(v, p.interior);
-      planRoute(v, { loc: p.interior, x: rnd(-2, 2), z: rnd(-1, 2) }); v.pendingAct = null; v.state = 'WALK'; return;
+      planRoute(v, { loc: p.interior, x: rnd(-2, 2), z: rnd(-1, 2) }, blk.metro ? { taxi: true } : undefined); v.pendingAct = null; v.state = 'WALK'; return;
     }
     const sp = chooseSpot(v, { tags: blk.tags, place: blk.place, district: blk.district, ignoreRange: true });
     if (!sp) return freeThink(v, blk);
@@ -1224,7 +1235,7 @@
       startAct(v, rollAction(v, sp, blk.acts));
       return;
     }
-    goSpot(v, sp, blk.acts ? rollAction(v, sp, blk.acts) : null);
+    goSpot(v, sp, blk.acts ? rollAction(v, sp, blk.acts) : null, blk.metro ? { taxi: true } : undefined);
   }
   // 공용 장소 실내에서 할 일
   function venueAction(v, iid) {

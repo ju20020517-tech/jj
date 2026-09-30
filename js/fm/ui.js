@@ -162,7 +162,7 @@
       const d = Math.hypot(v.x - p.x, v.z - p.z);
       if (d > 30) { p.x = v.x + 2.5; p.z = v.z + 2.5; if (!FM.T.canWalk(p.x, p.z, p.x, p.z)) { p.x = v.x + 1; p.z = v.z; } UI.toast(`🚶 ${v.name} 근처로 이동했어요`); G().fade(0.3); }
       else G().target = { x: v.x + 1.2, z: v.z + 1.2 };
-    } else if (v.loc === 'metro') UI.toast(`${v.name}은(는) 지하철을 타고 이동 중이에요`);
+    } else if (v.loc === 'metro') UI.toast(v.taxi ? `${v.name}은(는) 택시를 타고 약속 장소로 가는 중이에요 🚕` : `${v.name}은(는) 지하철을 타고 이동 중이에요`);
     else if (FM.INTERIORS[v.loc]) {
       const I = FM.INTERIORS[v.loc];
       if (I.kind === 'room' && I.place === 'apartment') { G().observe(v.loc); }
@@ -324,7 +324,7 @@
   };
   function locName(v) {
     if (v.loc === 'island') { const d = FM.T.district(v.x, v.z); return MAP.DISTRICTS[d].short + ' 지구'; }
-    if (v.loc === 'metro') return '🚇 지하철';
+    if (v.loc === 'metro') return v.taxi ? '🚕 택시' : '🚇 지하철';
     return FM.INTERIORS[v.loc] ? FM.INTERIORS[v.loc].name : v.loc;
   }
   function paintVillagers(body = $('#sideBody')) {
@@ -595,7 +595,7 @@
             <p>선호 선물: ${v.giftLikes.join(', ')} · 비선호: ${v.giftDislikes.join(', ') || '-'}</p>
           </div>
           <div><h4>🧠 지금 상태</h4>
-            <p>상태: <b>${(D.STATES[v.state] || { name: v.state }).name}</b> · 행동: ${esc(v.act ? v.act.name : '-')} · 손: ${esc(v.prop || '없음')}<br>스케줄: ${esc(v.blockLabel || '-')}<br>위치: ${esc(locName(v))} · 집: ${esc(FM.INTERIORS[v.home] ? FM.INTERIORS[v.home].name : '-')}<br>직업: ${Sim.JOB_NAMES[v.job]} · 🪙 ${Math.floor(v.coins)} · 빚 ${v.debt}<br>
+            <p>상태: <b>${(D.STATES[v.state] || { name: v.state }).name}</b> · 행동: ${esc(v.act ? v.act.name : '-')} · 손: ${esc(v.prop || '없음')}<br>스케줄: ${esc(v.blockLabel || '-')}<br>${FM.Schedule && FM.Schedule.describe(v) ? `📅 오늘 일정표: ${esc(FM.Schedule.describe(v))}<br>` : ''}위치: ${esc(locName(v))} · 집: ${esc(FM.INTERIORS[v.home] ? FM.INTERIORS[v.home].name : '-')}<br>직업: ${Sim.JOB_NAMES[v.job]} · 🪙 ${Math.floor(v.coins)} · 빚 ${v.debt}<br>
             배고픔 ${pct(v.hunger)}% · 에너지 ${pct(v.energy)} · 스트레스 ${pct(v.stress)} · 우울 ${pct(v.depression)} · 평판 ${pct(v.reputation)}<br>💭 속마음: <b>${esc(Sim.thought(v))}</b>${v.status.hospital ? `<br>🏥 입원 중: ${esc(v.status.disease)}` : ''}</p>
             <h4>🙋 나와의 관계</h4><p>${Soc.stageName(rp.friendship_stage)} · 친밀도 ${pct(rp.friendship_point)} · 신뢰도 ${pct(rp.trust_level)} · 우정 유형 ${D.FRIEND_ARCH[rp.friend_archetype].name}<br>설렘(→나) ${pct(Soc.F(v.id, P).romance)} · 상태 ${rp.status}${rp.permanent ? ' · 💎 영구 절친' : ''}</p>
           </div>

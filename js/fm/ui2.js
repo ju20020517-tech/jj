@@ -20,7 +20,7 @@
 
   function locName(v) {
     if (v.loc === 'island') { const d = FM.T.district(v.x, v.z); return FM.MAP.DISTRICTS[d].short + ' 지구'; }
-    if (v.loc === 'metro') return '지하철';
+    if (v.loc === 'metro') return v.taxi ? '택시' : '지하철';
     return FM.INTERIORS[v.loc] ? FM.INTERIORS[v.loc].name : v.loc;
   }
   const homeName = id => (FM.INTERIORS[id] ? FM.INTERIORS[id].name : '없음');
@@ -156,7 +156,7 @@
         <section class="pf-card"><h5>${m[0]} 지금</h5>
           <div class="kv"><span>위치</span><b>${esc(locName(v))}</b></div>
           <div class="kv"><span>하는 일</span><b>${esc(actName(v))}</b></div>
-          <div class="kv"><span>일정</span><b>${esc(v.blockLabel || '-')}</b></div>
+          <div class="kv"><span>일정</span><b>${esc(v.blockLabel || '-')}</b></div>${FM.Schedule && FM.Schedule.describe(v) ? `<div class="kv"><span>오늘 일정표</span><b>${esc(FM.Schedule.describe(v))}</b></div>` : ''}
           <div class="kv"><span>기분</span><b>${m[1]}</b></div>
           ${v.status.hospital ? `<div class="kv"><span>🏥 입원</span><b>${esc(v.status.disease)}</b></div>` : ''}
         </section>
