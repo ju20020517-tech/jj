@@ -339,7 +339,7 @@
       v.route.shift();
     } else if (leg.k === 'ride') {
       if (v.loc !== 'metro') { v.loc = 'metro'; v.rideT = leg.t; v.rideTo = leg.to; S.stats.metroRiders = (S.stats.metroRiders || 0) + 1; }
-      v.rideT -= dtR * S.speed; // 게임 분 단위 (1초 = 1분 × 배속)
+      v.rideT -= dtR * S.speed * Sim.CLOCK; // 게임 분 단위 (1초 = CLOCK분 × 배속)
       if (v.rideT <= 0) {
         const st = MAP.STATIONS[leg.to];
         v.loc = 'island'; v.x = st.x + rnd(-1, 1); v.z = st.z + rnd(0.5, 1.5);
@@ -347,7 +347,7 @@
       }
     } else if (leg.k === 'taxi') {
       if (v.loc !== 'metro') { v.loc = 'metro'; v.rideT = leg.t; v.rideTo = null; v.taxi = true; S.stats.taxiRides = (S.stats.taxiRides || 0) + 1; }
-      v.rideT -= dtR * S.speed;
+      v.rideT -= dtR * S.speed * Sim.CLOCK;
       if (v.rideT <= 0) { v.loc = 'island'; v.x = leg.x + rnd(-0.5, 0.5); v.z = leg.z + rnd(-0.5, 0.5); v.taxi = false; v.route.shift(); }
     } else if (leg.k === 'wait') {
       leg.t -= dtR; if (leg.t <= 0) v.route.shift();
@@ -417,6 +417,8 @@
     return Math.max(0.35, s) * S.speed;
   }
   Sim.speedOf = speedOf;
+  // 게임 시계 배율 — ×1 배속에서 실제 1초 = 게임 0.4분 (하루 = 실제 1시간). 걷는 속도는 그대로
+  Sim.CLOCK = 0.4;
 
   function loveArchetype(v) {
     const pts = { BOLD: 0, SHY: 0, TSUNDERE: 0, FREE: 0 };
@@ -1154,6 +1156,7 @@
     let blk = block(v);
     if (Sim.blockHook) { try { blk = Sim.blockHook(v, blk) || blk; } catch (e) { console.error('schedule', e); } }
     v.blockLabel = blk.label || '';
+    if (Sim.thinkHook) { try { if (Sim.thinkHook(v, blk)) return; } catch (e) { console.error('thinkHook', e); } }
     if (v.hunger > 70 && !v.child && ['free', 'home', 'go'].includes(blk.k) && !v.status.hospital && goEat(v)) return;
     // 관계 레이어가 먼저 덮어씀 (육아 > 짝사랑/질투/이별 > 일상)
     if (FM.Soc && FM.Soc.override) { if (FM.Soc.override(v, blk)) return; }
@@ -1232,7 +1235,7 @@
     v.run = !!blk.run;
     if (blk.inside) {
       const p = MAP.P[blk.place];
-      if (v.loc === p.interior) return venueAction(v, p.interior);
+      if (v.loc === p.interior) return Sim.venueAction(v, p.interior);
       planRoute(v, { loc: p.interior, x: rnd(-2, 2), z: rnd(-1, 2) }, blk.metro ? { taxi: true } : undefined); v.pendingAct = null; v.state = 'WALK'; return;
     }
     const sp = chooseSpot(v, { tags: blk.tags, place: blk.place, district: blk.district, ignoreRange: true });
@@ -1294,7 +1297,7 @@
       if (sp && sp !== v.spot) return goSpot(v, sp, rollAction(v, sp, blk.acts));
     }
     // 실내 공용 장소에 있으면 거기서 놀기
-    if (v.loc !== 'island' && v.loc !== v.home && INT[v.loc] && INT[v.loc].kind === 'venue' && chance(0.6)) return venueAction(v, v.loc);
+    if (v.loc !== 'island' && v.loc !== v.home && INT[v.loc] && INT[v.loc].kind === 'venue' && chance(0.6)) return Sim.venueAction(v, v.loc);
     // Priority 4: 일반 무작위 지점으로 산책 ──> [WALK]
     let sp = null;
     const radius = blk.radius;
@@ -1377,7 +1380,7 @@
     if (pa === 'hospital') return startAct(v, 'hospital', { state: 'SIT_REST', pose: 'sleep', dur: 20 });
     if (pa) return startAct(v, pa);
     if (v.spot) return startAct(v, rollAction(v, v.spot));
-    if (v.loc !== 'island' && INT[v.loc] && INT[v.loc].kind === 'venue') return venueAction(v, v.loc);
+    if (v.loc !== 'island' && INT[v.loc] && INT[v.loc].kind === 'venue') return Sim.venueAction(v, v.loc);
     v.idleT = rnd(...v.stats.idle) * 0.5;
   }
 
@@ -1414,7 +1417,7 @@
       return;
     }
     if (v.act) {
-      v.act.t -= dtR * S.speed;
+      v.act.t -= dtR * S.speed * Sim.CLOCK;
       if (v.act.id === 'jog' && !v.route) {
         // 광장 한 바퀴
         const a = rnd(0, Math.PI * 2), c = v.spot || v;
@@ -1486,7 +1489,7 @@
     if (!S) return;
     dtR = Math.min(dtR, 0.25);
     S.realT = (S.realT || 0) + dtR;
-    const dMin = dtR * S.speed;          // 1 실제 초 = 1 게임 분 (배속 적용)
+    const dMin = dtR * S.speed * Sim.CLOCK;   // 1 실제 초 = CLOCK 게임 분 (배속 적용)
     S.time += dMin;
     const d = day(), h = Math.floor(hour());
     if (d !== S.lastDay) { S.lastDay = d; FM.Soc && FM.Soc.daily && FM.Soc.daily(); FM.Ev && FM.Ev.daily && FM.Ev.daily(); emit('day', d); }
@@ -1507,7 +1510,7 @@
   Sim.fastForward = function (minutes, step = 0.2) {
     const sp = S.speed; S.speed = 30;
     let left = minutes;
-    while (left > 0) { Sim.tick(step); left -= step * S.speed; }
+    while (left > 0) { Sim.tick(step); left -= step * S.speed * Sim.CLOCK; }
     S.speed = sp;
   };
 })();

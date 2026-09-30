@@ -992,7 +992,7 @@
   let visitT = 0;
   Ev.playerHomeTick = function (dtR) {
     const st = S(), p = st.player;
-    visitT += dtR * st.speed;
+    visitT += dtR * st.speed * (Sim.CLOCK || 1);
     if (visitT < 45) return;
     visitT = 0;
     if (p.loc !== 'home_p_in') return;

@@ -533,7 +533,7 @@
     body.innerHTML = `
       <label class="field">내 이름 <input id="setName" value="${esc(p.name)}" maxlength="8"></label>
       <div class="field">나의 성격 (자녀에게 유전) ${['L1', 'L2', 'L3', 'L4'].map((L, i) => `<select data-l="${L}">${Object.entries(D.LAYERS[i]).map(([k, x]) => `<option value="${k}" ${p.keys && p.keys[L] === k ? 'selected' : ''}>${x.icon || ''} ${x.name}</option>`).join('')}</select>`).join('')}</div>
-      <div class="field">게임 속도 (1초 = 게임 ${s.speed}분) <div class="chips">${[0, 1, 4, 15, 60].map(n => `<button data-sp="${n}" class="${s.speed === n ? 'on' : ''}">${n ? '×' + n : '⏸'}</button>`).join('')}</div></div>
+      <div class="field">게임 속도 (실제 1초 = 게임 ${+(s.speed * (Sim.CLOCK || 1)).toFixed(1)}분) <div class="chips">${[0, 1, 4, 15, 60].map(n => `<button data-sp="${n}" class="${s.speed === n ? 'on' : ''}">${n ? '×' + n : '⏸'}</button>`).join('')}</div></div>
       <div class="field">볼륨 <input type="range" id="setVol" min="0" max="1" step="0.05" value="${FM.Audio.vol}"></div>
       <div class="field"><button class="btn small" id="setTitle">🏝️ 시작 화면으로</button> <button class="btn small" id="setAdd">➕ 새 주민 이주</button></div>
       <div class="field"><button class="btn small" id="setSkip">⏩ 1시간 건너뛰기</button> <button class="btn small" id="setSave">💾 지금 저장</button></div>

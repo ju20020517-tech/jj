@@ -99,7 +99,7 @@
     return v.sched;
   };
   const posOf = v => { if (v.loc === 'island' || v.loc === 'metro') return [v.x || 0, v.z || 0]; const I = FM.INTERIORS[v.loc], p = I && I.place && MAP.P[I.place]; if (p) return p.door || [p.x, p.z]; const ap = MAP.P.apartment; return ap ? [ap.x, ap.z] : [0, 0]; };
-  function travelH(v, place) { const p = MAP.P[place]; if (!p) return 0; const [x, z] = posOf(v), tx = p.door ? p.door[0] : p.x, tz = p.door ? p.door[1] : p.z; const d = Math.hypot(tx - x, tz - z); if (d < 12) return 0; const walkMin = d * 1.3 / 1.35; return Math.min(walkMin, d > 45 ? 14 + d * 0.03 : walkMin) / 60; }
+  function travelH(v, place) { const p = MAP.P[place]; if (!p) return 0; const [x, z] = posOf(v), tx = p.door ? p.door[0] : p.x, tz = p.door ? p.door[1] : p.z; const d = Math.hypot(tx - x, tz - z); if (d < 12) return 0; const walkMin = d * 1.3 / (1.35 / (FM.Sim.CLOCK || 1)); return Math.min(walkMin, d > 45 ? 14 + d * 0.03 : walkMin) / 60; }
   Sch.travelH = travelH;
   const curHour = () => { const h = Sim.time.hour(); return h < 5 ? h + 24 : h; };
   Sch.current = function (v) {
@@ -146,7 +146,7 @@
   Sim.tick = function (dtR) {
     const r = oTick.apply(this, arguments);
     const st = Sim.get(); if (!st) return r;
-    acc += dtR * (st.speed || 0); if (acc < 10) return r; acc = 0;
+    acc += dtR * (st.speed || 0) * (Sim.CLOCK || 1); if (acc < 10) return r; acc = 0;
     for (const v of st.villagers) {
       if (v.child || v.staff || v.visitor || v.sceneId || v.loc === 'metro' || v.status.hospital || !SOFT.has(v.state)) continue;
       const s = Sch.current(v); if (!s || s === v._slot) continue;
