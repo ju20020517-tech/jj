@@ -388,7 +388,7 @@
     const src = s.log.filter(e => e.imp >= 2 && !e.secret).slice(-5);
     const cards = src.map(e => ({ text: e.text.replace(/^[^\s]+\s/, ''), who: (e.who || []).slice(0, 3), icon: (e.text.match(/^(\S+)\s/) || [])[1] || '📰' }));
     if (!cards.length) cards.push({ text: `${s.villagers.length}명의 주민이 사는 친구모아 아일랜드에 오신 걸 환영합니다! 오늘도 즐거운 하루 보내세요`, who: s.villagers.slice(0, 3).map(v => v.id), icon: '🏝️' });
-    const anc = s.villagers.find(v => v.job === 'anchor');
+    const anc = (FM.Ev && FM.Ev.staffById('s_anchor')) || s.villagers.find(v => v.job === 'anchor');
     return { day: Sim.time.day(), hm: Sim.time.hm(), cards, anchorId: anc ? anc.id : null, special: true };
   }
   UI.newsShow = function (ep) {
@@ -474,7 +474,7 @@
     bx.innerHTML = `<span class="bk-tag">속보</span>${people.map(v => face(v, 28)).join('')}<span class="bk-t">${esc(J(e.text))}</span>`;
     bx.hidden = false; bx.classList.remove('in'); void bx.offsetWidth; bx.classList.add('in');
     clearTimeout(bx._t); bx._t = setTimeout(() => { bx.hidden = true; }, 6500);
-    bx.onclick = () => { bx.hidden = true; FM.UI.newsShow({ day: e.day, hm: e.hm, cards: [{ text: e.text.replace(/^[^\s]+\s/, ''), who: e.who || [], icon: (e.text.match(/^(\S+)\s/) || [])[1] || '📰' }], anchorId: (st().villagers.find(v => v.job === 'anchor') || {}).id, special: true }); };
+    bx.onclick = () => { bx.hidden = true; FM.UI.newsShow({ day: e.day, hm: e.hm, cards: [{ text: e.text.replace(/^[^\s]+\s/, ''), who: e.who || [], icon: (e.text.match(/^(\S+)\s/) || [])[1] || '📰' }], anchorId: (FM.Ev && FM.Ev.staffById('s_anchor') ? 's_anchor' : (st().villagers.find(v => v.job === 'anchor') || {}).id), special: true }); };
   }
   const BREAK_TYPES = { couple: 1, breakup: 1, wedding: 1, engage: 1, baby: 1, affair: 1, triangle: 1, confess: 1, divorce: 1 };
 

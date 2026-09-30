@@ -747,7 +747,7 @@
       if (dyn.aisleFlowers && dyn._fc !== fc) { dyn._fc = fc; dyn.aisleFlowers.forEach((f, i) => { f.material = mat(i % 2 ? fc : 0xffffff); }); }
     }
     updateWindows(st);
-    if ((dyn.boardT = (dyn.boardT || 0) - dt) < 0) { dyn.boardT = 1.2; drawBoard(st); }
+    if ((dyn.boardT = (dyn.boardT || 0) - dt) < 0) { dyn.boardT = 0.5; drawBoard(st); }
   };
   W.birdsFlee = function () { for (const b of dyn.birds) b.userData.flee = 3; };
 
@@ -790,26 +790,52 @@
 
   // 전광판 (1일 2회 친구모아 뉴스 + 실시간 랭킹)
   let boardCanvas = null, boardTex = null, scroll = 0;
+  // 광장 전광판 — 24시간 친구모아 뉴스 생방송 (앵커 얼굴 · 헤드라인 순환 · 하단 자막 흐름)
+  let boardStory = 0, storyT = 0, tickX = 0, anchorImg = null, anchorKey = ''; const faceImgs = new Map();
+  const wrap = (g, text, x, y, maxW, lh, maxL) => { let line = '', n = 0; for (const ch of text) { if (g.measureText(line + ch).width > maxW) { g.fillText(line, x, y + n * lh); line = ch; if (++n >= maxL - 1) { line = line; } if (n >= maxL) return; } else line += ch; } if (n < maxL) g.fillText(line, x, y + n * lh); };
+  function stories(st) {
+    const out = [];
+    for (const t of (st.newsBoard && st.newsBoard.items) || []) out.push({ tag: '📰 뉴스', text: FM.josa(t) });
+    for (const e of st.log.slice(-40).reverse()) if (e.imp >= 2 && !e.secret && out.length < 14) out.push({ tag: e.newsKind === 'drama' ? '🚨 속보' : '📡 현장', text: e.text.replace(/^[^\s]+\s/, '') });
+    const R = st.rankings || {};
+    if (R.insider && R.insider[0]) out.push({ tag: '🏆 랭킹', text: '섬 최고의 인싸 TOP 3 — ' + R.insider.map((x, i) => `${i + 1}위 ${x.name}`).join(' · ') });
+    if (R.rich && R.rich[0]) out.push({ tag: '💰 경제', text: '부자 주민 TOP 3 — ' + R.rich.map((x, i) => `${i + 1}위 ${x.name}`).join(' · ') });
+    const W2 = (FM.Ev && FM.Ev.WEATHER) || {}; out.push({ tag: '☀️ 날씨', text: `현재 섬 날씨는 ${W2[st.weather.type] || st.weather.type}. 외출하실 때 참고하세요!` });
+    const busy = {}; for (const v of st.villagers) if (v.loc && v.loc.endsWith('_in') && FM.INTERIORS[v.loc] && FM.INTERIORS[v.loc].kind === 'venue') busy[v.loc] = (busy[v.loc] || 0) + 1;
+    const top = Object.entries(busy).sort((a, b) => b[1] - a[1])[0]; if (top) out.push({ tag: '📍 지금 핫플', text: `지금 ${FM.INTERIORS[top[0]].name}에 주민 ${top[1]}명이 모여 있어요!` });
+    if (!out.length) out.push({ tag: '📰 뉴스', text: '오늘도 평화로운 친구모아 아일랜드입니다.' });
+    return out;
+  }
   function drawBoard(st) {
     if (!dyn.board) return;
     if (!boardCanvas) { boardCanvas = document.createElement('canvas'); boardCanvas.width = 1024; boardCanvas.height = 560; boardTex = new THREE.CanvasTexture(boardCanvas); dyn.board.material = new THREE.MeshBasicMaterial({ map: boardTex }); if (dyn.termBoard) dyn.termBoard.material = new THREE.MeshBasicMaterial({ map: boardTex }); }
-    const g = boardCanvas.getContext('2d');
-    g.fillStyle = '#0b0f24'; g.fillRect(0, 0, 1024, 560);
-    g.fillStyle = '#ff3a6a'; g.fillRect(0, 0, 1024, 70);
-    g.font = '44px Jua, sans-serif'; g.fillStyle = '#ffffff'; g.textBaseline = 'middle';
-    g.fillText('📺 친구모아 뉴스  ' + (st.newsBoard ? FM.Sim.time.hm() : ''), 24, 36);
-    const items = (st.newsBoard && st.newsBoard.items) || [];
-    g.font = '34px Jua, sans-serif'; g.fillStyle = '#ffe7a0';
-    scroll = (scroll + 1) % Math.max(1, items.length);
-    items.slice(0, 5).forEach((it, i) => { const text = FM.josa(it); g.fillStyle = i === 0 ? '#ffffff' : '#ffe7a0'; g.fillText('• ' + (text.length > 34 ? text.slice(0, 33) + '…' : text), 24, 110 + i * 50); });
-    const R = st.rankings || {};
-    g.fillStyle = '#1a2350'; g.fillRect(0, 370, 1024, 190);
-    g.font = '32px Jua, sans-serif'; g.fillStyle = '#7af0ff';
-    g.fillText('🏆 섬 최고의 인싸 TOP 3: ' + (R.insider || []).map((x, i) => `${i + 1}.${x.name}`).join('  '), 24, 410);
-    g.fillStyle = '#ff9a9a';
-    g.fillText('💸 가장 빚이 많은 주민 TOP 3: ' + ((R.debt || []).filter(x => x.val > 0).map((x, i) => `${i + 1}.${x.name}`).join('  ') || '없음'), 24, 460);
-    g.fillStyle = '#ffd84a';
-    g.fillText('💰 부자 TOP 3: ' + (R.rich || []).map((x, i) => `${i + 1}.${x.name}`).join('  '), 24, 510);
+    const g = boardCanvas.getContext('2d'), list = stories(st);
+    if ((storyT += 1) >= 12) { storyT = 0; boardStory++; }
+    const cur = list[boardStory % list.length];
+    // 앵커 얼굴 (방송국 전속 앵커)
+    const anc = (FM.Ev && FM.Ev.staffById && FM.Ev.staffById('s_anchor')) || st.villagers.find(v => v.job === 'anchor');
+    if (anc && FM.Face) { const u = FM.Face.url(anc, storyT % 8 < 4 ? 'smile' : 'happy'); if (u && u !== anchorKey) { anchorKey = u; let im = faceImgs.get(u); if (!im) { im = new Image(); im.onload = () => { if (anchorKey === u) { anchorImg = im; dyn.boardT = 0; } }; im.src = u; faceImgs.set(u, im); } else if (im.complete) anchorImg = im; } }
+    const bg = g.createLinearGradient(0, 0, 0, 560); bg.addColorStop(0, '#101a44'); bg.addColorStop(1, '#0a0f26'); g.fillStyle = bg; g.fillRect(0, 0, 1024, 560);
+    // 스튜디오 배경 줄무늬 & 로고
+    g.fillStyle = 'rgba(80,140,255,0.08)'; for (let x = -560; x < 1024; x += 60) { g.beginPath(); g.moveTo(x, 70); g.lineTo(x + 30, 70); g.lineTo(x + 520, 470); g.lineTo(x + 490, 470); g.fill(); }
+    g.fillStyle = '#ff3a6a'; g.fillRect(0, 0, 1024, 68); g.textBaseline = 'middle';
+    g.font = '42px Jua, sans-serif'; g.fillStyle = '#ffffff'; g.fillText('📺 친구모아 뉴스', 22, 36);
+    g.fillStyle = (Date.now() / 600 | 0) % 2 ? '#ffffff' : '#ffd0dc'; g.beginPath(); g.arc(398, 36, 11, 0, 7); g.fill(); g.font = '34px Jua, sans-serif'; g.fillText('LIVE', 416, 38);
+    g.fillStyle = '#ffffff'; g.textAlign = 'right'; g.fillText(`${FM.Sim.time.day()}일차 ${FM.Sim.time.hm()}`, 1000, 38); g.textAlign = 'left';
+    // 앵커
+    g.fillStyle = '#1c2a66'; g.fillRect(24, 96, 250, 250); g.strokeStyle = '#6ab0ff'; g.lineWidth = 4; g.strokeRect(24, 96, 250, 250);
+    if (anchorImg) g.drawImage(anchorImg, 29, 101, 240, 240); else { g.font = '120px sans-serif'; g.fillText('🎙️', 80, 220); }
+    g.fillStyle = '#ff3a6a'; g.fillRect(24, 336, 250, 44); g.font = '28px Jua, sans-serif'; g.fillStyle = '#fff'; g.fillText('🎙️ ' + (anc ? anc.name : '친구모아 앵커'), 36, 359);
+    // 헤드라인
+    g.fillStyle = cur.tag.includes('속보') ? '#ff3a3a' : '#ffd84a'; const tw = g.measureText(cur.tag).width; g.fillRect(300, 100, Math.max(160, tw + 60), 50); g.fillStyle = cur.tag.includes('속보') ? '#fff' : '#1a1a2a'; g.font = '32px Jua, sans-serif'; g.fillText(cur.tag, 316, 126);
+    g.fillStyle = '#ffffff'; g.font = '44px Jua, sans-serif'; wrap(g, cur.text, 300, 196, 690, 58, 4);
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.font = '24px Jua, sans-serif'; g.fillText(`${(boardStory % list.length) + 1} / ${list.length}`, 940, 440);
+    // 하단 자막 (계속 흐름)
+    g.fillStyle = '#ffd84a'; g.fillRect(0, 470, 150, 90); g.fillStyle = '#1a1a2a'; g.font = '34px Jua, sans-serif'; g.fillText('NEWS', 26, 516);
+    g.fillStyle = '#0b1230'; g.fillRect(150, 470, 874, 90);
+    const tick = list.map(x => `${x.tag} ${x.text}`).join('     ◆     ') + '     ◆     ';
+    g.save(); g.beginPath(); g.rect(150, 470, 874, 90); g.clip(); g.font = '36px Jua, sans-serif'; g.fillStyle = '#ffffff';
+    const tl = g.measureText(tick).width || 1; tickX = (tickX + 26) % tl; g.fillText(tick, 170 - tickX, 516); g.fillText(tick, 170 - tickX + tl, 516); g.restore();
     boardTex.needsUpdate = true;
   }
 

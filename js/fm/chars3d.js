@@ -210,6 +210,26 @@
       // 이모티콘에 맞춘 감정 몸짓 (장면 포즈가 없을 때)
       if (em && !moving && !(e.pose && e.sceneId)) { m.emoT = (m.emoT || 0) + dt; FM.Anim.POSES._emoGesture(c, em, m.emoT); }
       if (em) m.emo.position.y = 1.78 + Math.sin(st.realT * 5) * 0.05;
+      // 표정: 이모티콘 > 포즈 > 대화 중 리액션 > 기분에 따른 잔잔한 표정 변화
+      if (ISLE.M.setExpr) {
+        let ex = em ? FM.Anim.exprOfEmoji(em) : null;
+        if (!ex) { const pe = FM.Anim.exprOfPose(pose || (e.act && e.act.id)); if (pe !== undefined) ex = pe; else {
+          m.exprT = (m.exprT || 0) - dt;
+          if (m.exprT <= 0) {
+            const talking = e.state === 'TALK_NPC' || e.state === 'TALK' || (e.act && /chat|talk|gossip/.test(e.act.id || ''));
+            const md = e.mood !== undefined ? e.mood : 70, dep = e.depression || 0, str = e.stress || 0;
+            const pool = talking ? ['happy', 'laugh', 'smile', 'surprised', 'awkward', null, 'shy', 'smug']
+              : md > 75 ? [null, null, null, 'smile', 'smile', 'happy', 'laugh']
+              : md > 45 ? [null, null, null, null, 'smile', 'happy', str > 40 ? 'worried' : 'smile', 'sleepy']
+              : [null, 'sad', 'worried', dep > 50 ? 'despair' : 'pout', str > 60 ? 'angry' : 'sad'];
+            if (e.crush && e.crush.target && Math.random() < 0.3) pool.push('shy', 'love');
+            m.baseExpr = pool[Math.floor(Math.random() * pool.length)];
+            m.exprT = talking ? 1.8 + Math.random() * 2.2 : 5 + Math.random() * 10;
+          }
+          ex = m.baseExpr || null;
+        } }
+        ISLE.M.setExpr(c, ex);
+      }
       r.visible = !(e.child && e.child.stage === 'BABY' && viewLoc === 'island') && !(Ch.hidden && Ch.hidden.has(e.id));
     }
     // 보이지 않게 된 모델 정리

@@ -20,6 +20,7 @@
   // 스태프 NPC (부장님, 공무원, 판사, 의사, DJ, 셰프 ...)
   // =========================================================
   const STAFF = [
+    { id: 's_anchor', name: '나래', role: 'anchor', loc: 'studio_in', x: 0, z: -1.5, ry: 0, look: { species: 'cat', top: 'vest', shirt: 0x2a3a6a, shirt2: 0xffffff, bottom: 'skirt', pants: 0x2a3a6a, fur: 0xfff1e0, eyes: 'sparkle', brows: 'thin', mouth: 'smile', hairStyle: 'bob', hair: 0x3a2a24 } },
     { id: 's_boss', name: '부장님', role: 'boss', loc: 'office_in', x: 3, z: -4.7, ry: 0, look: { species: 'bear', top: 'vest', shirt: 0x2f3b4e, shirt2: 0xffffff, bottom: 'pants', pants: 0x2f3b4e, glasses: 'square', eyes: 'smug', brows: 'thick' } },
     { id: 's_clerk', name: '공무원', role: 'clerk', loc: 'hall_in', x: -4, z: -3.8, ry: 0, look: { species: 'dog', top: 'vest', shirt: 0x5b6b9a, bottom: 'pants', glasses: 'round', brows: 'worried' } },
     { id: 's_judge', name: '판사님', role: 'judge', loc: 'hall_in', x: 4.5, z: -4.2, ry: 0, look: { species: 'sheep', top: 'dress', shirt: 0x1a1a22, glasses: 'square', brows: 'thick' } },
@@ -29,6 +30,7 @@
     { id: 's_pub', name: '펍 사장님', role: 'pub', loc: 'pub_in', x: 2.5, z: -3.6, ry: 0, look: { species: 'tanuki', top: 'apron', shirt: 0xc0392b } },
     { id: 's_barista', name: '바리스타', role: 'barista', loc: 'cafe_in', x: 0, z: -2.8, ry: 0, look: { species: 'squirrel', top: 'apron', shirt: 0x8a5a3b, shirt2: 0xfff4e6 } },
     { id: 's_stylist', name: '헤어 디자이너', role: 'stylist', loc: 'mall_in', x: 5, z: -2.5, ry: Math.PI, look: { species: 'cat', top: 'tee', shirt: 0x14101f, hairStyle: 'spiky', fur: 0xff3a9a } },
+    { id: 's_grocer', name: '마켓 계산원', role: 'grocer', loc: 'mall_in', x: -1.3, z: 1.0, ry: 0, look: { species: 'rabbit', top: 'apron', shirt: 0x2e5a4a, shirt2: 0xfbf6ec } },
     { id: 's_clerk2', name: '편의점 알바', role: 'conv', loc: 'conv_in', x: 1.8, z: 0.4, ry: Math.PI, look: { species: 'hamster', top: 'vest', shirt: 0x7ad0a0 } },
     { id: 's_tea', name: '차관 주인장', role: 'tea', loc: 'tea_in', x: 0, z: -2.9, ry: 0, look: { species: 'koala', top: 'sweater', shirt: 0x6a4028 } },
     { id: 's_teacher', name: '선생님', role: 'teacher', loc: 'school_in', x: 0, z: -2.4, ry: Math.PI, look: { species: 'deer', top: 'sweater', shirt: 0x5fb070, glasses: 'round' } },
@@ -134,7 +136,7 @@
     if (!items.length) items.push('오늘도 평화로운 친구모아 아일랜드입니다.');
     st.lastNewsT = st.time;
     for (let i = cards.length; i < items.length; i++) cards.push({ text: items[i], who: [], type: 'info', icon: i === items.length - 1 ? '☀️' : '🏆' });
-    const anc = st.villagers.find(v => v.job === 'anchor');
+    const anc = Ev.staffById('s_anchor') || st.villagers.find(v => v.job === 'anchor');
     st.newsBoard = { items, cards, at: st.time, anchor: anc ? anc.name : '친구모아 앵커', anchorId: anc ? anc.id : null };
     st.news.push({ day: day(), hm: hm(), items, cards, anchorId: anc ? anc.id : null, seen: false });
     if (st.news.length > 40) st.news.shift();

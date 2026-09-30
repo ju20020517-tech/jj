@@ -67,6 +67,7 @@
     town:     { name: '광장의 왈츠', bpm: 112, chords: [[60, 64, 67], [65, 69, 72], [67, 71, 74], [60, 64, 67]], mel: 'waltz', inst: 'triangle', bass: true },
     tropical: { name: '에메랄드 해변', bpm: 116, chords: [[65, 69, 72], [60, 64, 67], [62, 65, 69], [60, 64, 67]], mel: 'island', inst: 'sine', drums: 'soft', bass: true },
     folk:     { name: '숲속 기타', bpm: 96, chords: [[67, 71, 74], [64, 67, 71], [60, 64, 67], [62, 66, 69]], mel: 'folk', inst: 'triangle', pad: true },
+    jazz:     { name: '블루문 재즈 라운지', bpm: 92, chords: [[62, 65, 69, 72], [55, 59, 62, 65], [60, 64, 67, 71], [57, 61, 64, 67]], mel: 'bossa', inst: 'triangle', drums: 'soft', bass: true },
     bossa:    { name: '카페 보사노바', bpm: 90, chords: [[62, 65, 69, 72], [67, 71, 74, 77], [60, 64, 67, 71], [57, 61, 64, 67]], mel: 'bossa', inst: 'triangle', drums: 'soft', bass: true },
     citypop:  { name: '네온 시티팝', bpm: 110, chords: [[65, 69, 72, 76], [64, 67, 71, 74], [62, 65, 69, 72], [67, 71, 74, 77]], mel: 'citypop', inst: 'square', drums: true, bass: true },
     organ:    { name: '대성당 오르간', bpm: 58, chords: [[48, 55, 60, 64], [53, 57, 60, 65], [55, 59, 62, 67], [48, 55, 60, 64]], mel: 'organ', inst: 'sawtooth', pad: true },
@@ -83,10 +84,10 @@
   };
   Au.TRACKS = TRACKS;
   // 장소 · 시간 · 날씨에 맞는 BGM 고르기
-  const PLACE_BGM = { plaza: 'town', apt_yard: 'town', apartment: 'town', cafe: 'bossa', metro: 'subway', studio: 'citypop', stairs: 'field', bridge: 'field', cliff: 'romance', cliff_lawn: 'romance', cathedral: 'organ', observatory: 'space', waterfall: 'zen', home_p: 'folk', park: 'folk', playground: 'kids', school: 'kids', library: 'healing', workshop: 'folk', teahouse: 'tea', skylounge: 'bossa', mall: 'citypop', arcade: 'chip', sushi: 'market', pub: 'market', club: 'club', conv: 'citypop', alley: 'market', office: 'work', cityhall: 'work', medical: 'calm', beach: 'tropical', ferry: 'shanty' };
+  const PLACE_BGM = { plaza: 'town', apt_yard: 'town', apartment: 'town', cafe: 'bossa', metro: 'subway', studio: 'citypop', stairs: 'field', bridge: 'field', cliff: 'romance', cliff_lawn: 'romance', cathedral: 'organ', observatory: 'space', waterfall: 'zen', home_p: 'folk', park: 'folk', playground: 'kids', school: 'kids', library: 'healing', workshop: 'folk', teahouse: 'tea', skylounge: 'bossa', mall: 'citypop', arcade: 'chip', sushi: 'market', pub: 'market', club: 'jazz', conv: 'citypop', alley: 'market', office: 'work', cityhall: 'work', medical: 'calm', beach: 'tropical', ferry: 'shanty' };
   const DISTRICT_BGM = { CORE: 'town', NORTH: 'field', WEST: 'folk', EAST: 'citypop', SOUTH: 'tropical' };
-  const NIGHT_KEEP = { club: 1, chip: 1, space: 1, market: 1, organ: 1, subway: 1 };
-  Au.INTERIOR_BGM = { cafe_in: 'bossa', studio_in: 'citypop', cathedral_in: 'organ', obs_in: 'space', school_in: 'kids', library_in: 'healing', workshop_in: 'folk', tea_in: 'tea', sky_in: 'bossa', mall_in: 'citypop', arcade_in: 'chip', sushi_in: 'market', pub_in: 'market', club_in: 'club', conv_in: 'citypop', office_in: 'work', hall_in: 'work', med_in: 'calm' };
+  const NIGHT_KEEP = { jazz: 1, club: 1, chip: 1, space: 1, market: 1, organ: 1, subway: 1 };
+  Au.INTERIOR_BGM = { cafe_in: 'bossa', studio_in: 'citypop', cathedral_in: 'organ', obs_in: 'space', school_in: 'kids', library_in: 'healing', workshop_in: 'folk', tea_in: 'tea', sky_in: 'bossa', mall_in: 'citypop', arcade_in: 'chip', sushi_in: 'market', pub_in: 'market', club_in: 'jazz', conv_in: 'citypop', office_in: 'work', hall_in: 'work', med_in: 'calm' };
   Au.placeBgm = function (x, z, h, weather) {
     const MAP = FM.MAP; let best = null, bd = 1e9;
     for (const P0 of Object.values(MAP.P)) { const d = Math.hypot(P0.x - x, P0.z - z); const r = P0.r || (P0.bld ? 16 : 12); if (d < r + 4 && d < bd) { bd = d; best = P0; } }

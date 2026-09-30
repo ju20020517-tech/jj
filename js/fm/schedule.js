@@ -32,7 +32,7 @@
   // 실내 장소별 좋아하는 시간대 (가중치 배수)
   const PEAK = {
     cafe: [[8, 11, 1.6], [14, 17, 1.3]], cathedral: [[8, 12, 1.5], [17, 19, 1.2]], observatory: [[19, 26, 1.8]], skylounge: [[18, 23, 2.2]], sushi: [[11.5, 14, 1.8], [18, 21, 1.5]],
-    pub: [[18, 25, 1.7]], club: [[21, 28, 2.2]], arcade: [[14, 23, 1.4]], library: [[9, 18, 1.3]], teahouse: [[15, 23, 1.4]], mall: [[11, 20, 1.3]], studio: [[10, 18, 1]],
+    pub: [[18, 25, 1.7]], club: [[19, 26, 2.2]], arcade: [[14, 23, 1.4]], library: [[9, 18, 1.3]], teahouse: [[15, 23, 1.4]], mall: [[11, 20, 1.3]], studio: [[10, 18, 1]],
     office: [[9, 18, 1]], workshop: [[10, 18, 1.2]], conv: [[0, 24, 0.6]], cityhall: [[9, 17, 0.7]], medical: [[9, 18, 0.5]], school: [[9, 16, 0.6]],
   };
   const NIGHT = new Set(['club', 'observatory', 'pub', 'skylounge', 'teahouse', 'conv', 'alley', 'arcade', 'cliff']);
@@ -156,5 +156,39 @@
       Sim.think(v);
     }
     return r;
+  };
+})();
+// 배고플 때 갈 식당 고르기 (sim-core goEat 이 부름)
+(() => {
+  const FM = window.FM, Sim = FM.Sim, MAP = FM.MAP, has = (v, k) => Sim.has(v, k);
+  const w = (v, t) => { let s = 0.4; for (const [k, x] of Object.entries(t)) if (has(v, k) || v.value === k || v.loveStyle === k) s += x; return s; };
+  const inWin = (h, a, b) => { const hh = h < a && b > 24 ? h + 24 : h; return hh >= a && hh < b; };
+  // [id, 이름, 시작, 끝, 가격, 가중치, 좋아하는 시간대, 야외 스팟 태그]
+  const R = [
+    ['cafe', '카페 앙상블 브런치', 8, 21, 35, v => w(v, { CHIC: 1.5, FRESH: 1.5, CUTIE: 1.5, ROMANTIC: 1, GOSSIP: 1 }), [[8, 11.5, 1.8], [14, 17, 1.3]]],
+    ['sushi', '24시 회전초밥', 11, 22, 55, v => w(v, { FOOD: 2.5, LAZY: 1, TOMBOY: 1.5, FRESH: 0.5 }), [[11.5, 14, 1.8], [18, 21, 1.5]]],
+    ['pub', '레트로 차이니스 펍', 17, 26, 50, v => w(v, { EXTROVERT: 1.5, FUN: 1.5, TOMBOY: 1.5, CRANKY: 1 }) + ((v.stress || 0) > 50 ? 1.5 : 0), [[18, 23, 1.6]]],
+    ['skylounge', '스카이라운지 파인 다이닝', 17, 24, 140, v => w(v, { SNOB: 2.5, MONEY: 2, ELEGANT: 2.5, DANDY: 2, CHARISMA: 1, ROMANTIC: 1 }) + (FM.Soc && FM.Soc.partnerOf && FM.Soc.partnerOf(v.id) ? 1.5 : 0), [[18, 22, 2]]],
+    ['club', '재즈바 블루문 디너', 18, 26, 70, v => w(v, { ARTISTIC: 2.5, MUSICIAN: 2.5, CLASSIC: 1.5, ROMANTIC: 1, NIGHT_OWL: 1.5, HIP: 1 }), [[19, 24, 1.6]]],
+    ['mall', '마켓 델리 코너', 10, 21, 30, v => w(v, { FOOD: 1.5, FAMILY: 1.5, DILIGENT: 1, FASHIONISTA: 1, CUTIE: 1 }), [[11.5, 14, 1.4]]],
+    ['conv', '24시 편의점 도시락', 0, 24, 15, v => w(v, { LAZY: 2, GAMER: 1.5, TOMBOY: 0.5 }) * 0.7, [[22, 29, 2]]],
+    ['alley', '미식 골목 포장마차', 16, 25, 25, v => w(v, { FOOD: 2, EXTROVERT: 1, BEAGLE: 1.5, FUN: 1 }), [[18, 23, 1.5]], 'food'],
+    ['beach', '해변 포장마차', 11, 21, 25, v => w(v, { FRESH: 1.5, FUN: 1, TOMBOY: 1 }) * 0.8, [[12, 14, 1.3]], 'pocha'],
+  ];
+  const pos = v => { if (v.loc === 'island') return [v.x, v.z]; const I = FM.INTERIORS[v.loc], p = I && I.place && MAP.P[I.place]; if (p) return p.door || [p.x, p.z]; const ap = MAP.P.apartment; return ap ? [ap.x, ap.z] : [0, 0]; };
+  Sim.pickRestaurant = function (v) {
+    const h = Sim.time.hour(), [x, z] = pos(v), poor = v.status && v.status.poorUntil || (v.coins || 0) < 40;
+    const list = [];
+    for (const [id, name, o, c, price, wf, peak, spot] of R) {
+      const P = MAP.P[id]; if (!P || !inWin(h, o, c)) continue;
+      if (!spot && !(P.interior && FM.INTERIORS[P.interior])) continue;
+      if (poor && price > 30) continue; if ((v.coins || 0) < price * 0.8 && price > 60) continue;
+      let s = Math.max(0.05, wf(v)); for (const [a, b, m] of peak) if (inWin(h, a, b)) s *= m;
+      const P0 = P.door || [P.x, P.z]; s /= 1 + Math.hypot(P0[0] - x, P0[1] - z) / 70;
+      if (v.lastMeal === id) s *= 0.35;
+      list.push([{ id, name, price, iid: spot ? null : P.interior, spot }, s * (0.6 + Math.random() * 0.8)]);
+    }
+    const tot = list.reduce((a, b) => a + b[1], 0); if (!tot) return null;
+    let r = Math.random() * tot; for (const [o, s] of list) if ((r -= s) < 0) return o; return list[0][0];
   };
 })();

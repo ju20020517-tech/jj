@@ -257,18 +257,32 @@
     if (kind === 'suitcase') { add(new THREE.BoxGeometry(0.5, 0.62, 0.22), 0xb0503a, 0, 0.36, 0); add(new THREE.TorusGeometry(0.09, 0.02, 6, 12, Math.PI), 0x3a2a20, 0, 0.67, 0); add(new THREE.BoxGeometry(0.52, 0.04, 0.24), 0xe8c070, 0, 0.36, 0); }
     else if (kind === 'sofa') { add(new THREE.BoxGeometry(1.8, 0.4, 0.7), 0x6a8ad0, 0, 0.3, 0); add(new THREE.BoxGeometry(1.8, 0.5, 0.18), 0x5a7ac0, 0, 0.6, -0.27); add(new THREE.BoxGeometry(0.18, 0.5, 0.7), 0x5a7ac0, -0.9, 0.45, 0); add(new THREE.BoxGeometry(0.18, 0.5, 0.7), 0x5a7ac0, 0.9, 0.45, 0); }
     else if (kind === 'box') { add(new THREE.BoxGeometry(0.6, 0.5, 0.6), 0xc89a62, 0, 0.25, 0); add(new THREE.BoxGeometry(0.62, 0.06, 0.12), 0xe8e0c8, 0, 0.51, 0); }
-    else if (kind === 'candles') { for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; add(new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8), 0xfff4e0, Math.cos(a) * 1.3, 0.1, Math.sin(a) * 1.3); add(new THREE.SphereGeometry(0.035, 6, 6), 0xffb040, Math.cos(a) * 1.3, 0.23, Math.sin(a) * 1.3, true); } const pl = new THREE.PointLight(0xffa040, 1.2, 5); pl.position.y = 0.6; g.add(pl); }
+    else if (kind === 'candles') { for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; add(new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8), 0xfff4e0, Math.cos(a) * 1.3, 0.1, Math.sin(a) * 1.3); add(new THREE.SphereGeometry(0.035, 6, 6), 0xffb040, Math.cos(a) * 1.3, 0.23, Math.sin(a) * 1.3, true); } g.userData.light = [0xffa040, 1.2, 5, 0.6]; }
     else if (kind === 'duck') { add(new THREE.SphereGeometry(0.22, 12, 10), 0xffd82a, 0, 0.22, 0); add(new THREE.SphereGeometry(0.13, 12, 10), 0xffd82a, 0.08, 0.46, 0.05); add(new THREE.ConeGeometry(0.05, 0.12, 8), 0xff8a2a, 0.08, 0.45, 0.19).rotation.x = Math.PI / 2; }
-    else if (kind === 'table') { add(new THREE.BoxGeometry(1.0, 0.06, 0.6), 0x6a4a30, 0, 0.62, 0); for (const [x, z] of [[-0.45, -0.25], [0.45, -0.25], [-0.45, 0.25], [0.45, 0.25]]) add(new THREE.BoxGeometry(0.05, 0.6, 0.05), 0x5a3a24, x, 0.3, z); add(new THREE.BoxGeometry(0.5, 0.4, 0.05), 0xd0b080, 0, 0.9, -0.1); const lp = new THREE.PointLight(0xffd090, 1.3, 4); lp.position.set(0, 1.4, 0); g.add(lp); }
+    else if (kind === 'table') { add(new THREE.BoxGeometry(1.0, 0.06, 0.6), 0x6a4a30, 0, 0.62, 0); for (const [x, z] of [[-0.45, -0.25], [0.45, -0.25], [-0.45, 0.25], [0.45, 0.25]]) add(new THREE.BoxGeometry(0.05, 0.6, 0.05), 0x5a3a24, x, 0.3, z); add(new THREE.BoxGeometry(0.5, 0.4, 0.05), 0xd0b080, 0, 0.9, -0.1); g.userData.light = [0xffd090, 1.3, 4, 1.4]; }
     else if (kind === 'bench') { add(new THREE.BoxGeometry(1.4, 0.08, 0.42), 0xc08a5a, 0, 0.42, 0); add(new THREE.BoxGeometry(1.4, 0.35, 0.06), 0xb07a4a, 0, 0.62, -0.2); for (const x of [-0.6, 0.6]) add(new THREE.BoxGeometry(0.06, 0.42, 0.4), 0x5a4a3a, x, 0.21, 0); }
     else if (kind === 'runway') { add(new THREE.BoxGeometry(1.2, 0.08, 4), 0xff6fa0, 0, 0.04, 0); for (let i = 0; i < 6; i++) add(new THREE.SphereGeometry(0.06, 6, 6), 0xffffff, (i % 2 ? 0.62 : -0.62), 0.12, -1.8 + Math.floor(i / 2) * 1.8, true); }
     else if (kind === 'podium') { add(new THREE.BoxGeometry(1.6, 0.9, 0.6), 0x5a3a22, 0, 0.45, 0); add(new THREE.BoxGeometry(1.7, 0.06, 0.66), 0x7a5a3a, 0, 0.92, 0); }
-    else if (kind === 'cake') { add(new THREE.CylinderGeometry(0.34, 0.36, 0.22, 20), 0xfff0f4, 0, 0.72, 0); add(new THREE.CylinderGeometry(0.25, 0.27, 0.18, 20), 0xffb8d0, 0, 0.92, 0); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; add(new THREE.CylinderGeometry(0.015, 0.015, 0.12, 6), 0x8fd3ff, Math.cos(a) * 0.15, 1.07, Math.sin(a) * 0.15); add(new THREE.SphereGeometry(0.025, 6, 6), 0xffb040, Math.cos(a) * 0.15, 1.15, Math.sin(a) * 0.15, true); } add(new THREE.CylinderGeometry(0.4, 0.4, 0.6, 12), 0xc08a5a, 0, 0.3, 0); const cl = new THREE.PointLight(0xffc070, 1.1, 3.5); cl.position.y = 1.3; g.add(cl); }
+    else if (kind === 'cake') { add(new THREE.CylinderGeometry(0.34, 0.36, 0.22, 20), 0xfff0f4, 0, 0.72, 0); add(new THREE.CylinderGeometry(0.25, 0.27, 0.18, 20), 0xffb8d0, 0, 0.92, 0); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; add(new THREE.CylinderGeometry(0.015, 0.015, 0.12, 6), 0x8fd3ff, Math.cos(a) * 0.15, 1.07, Math.sin(a) * 0.15); add(new THREE.SphereGeometry(0.025, 6, 6), 0xffb040, Math.cos(a) * 0.15, 1.15, Math.sin(a) * 0.15, true); } add(new THREE.CylinderGeometry(0.4, 0.4, 0.6, 12), 0xc08a5a, 0, 0.3, 0); g.userData.light = [0xffc070, 1.1, 3.5, 1.3]; }
     else if (kind === 'umbrella') { const can = add(new THREE.SphereGeometry(0.85, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), 0xff8fb1, 0, 1.75, 0); can.scale.y = 0.45; add(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 6), 0x6a4a3a, 0, 1.25, 0); }
     else if (kind === 'letter') { add(new THREE.BoxGeometry(0.3, 0.02, 0.2), 0xfff4e0, 0, 0.05, 0); add(new THREE.SphereGeometry(0.04, 6, 6), 0xff5d8a, 0, 0.07, 0); }
     g.userData.cine = true;
     return g;
   }
+  // 섬 장면용 조명 풀 — 드라마마다 새 조명을 추가하면 모든 재질 셰이더가 다시 컴파일되어 몇 초씩 멈춤.
+  // 처음부터 섬에 (세기 0으로) 넣어 두고 켜고 끄기만 함
+  const POOL = { ready: false };
+  function lightPool() {
+    const sc = FM.G && FM.G.islandScene; if (!sc) return null;
+    if (!POOL.ready) {
+      POOL.key = new THREE.PointLight(0xfff0e0, 0, 9); POOL.spot = new THREE.SpotLight(0xffffff, 0, 14, 0.55, 0.6);
+      POOL.props = [0, 1].map(() => new THREE.PointLight(0xffa040, 0, 5));
+      sc.add(POOL.key, POOL.spot, POOL.spot.target, ...POOL.props); POOL.ready = true;
+    }
+    return POOL;
+  }
+  Cut.lightPool = lightPool;
+  const poolT = setInterval(() => { if (lightPool()) clearInterval(poolT); }, 500);
   function buildStage(c) {
     const G = FM.G, T = FM.T;
     const venue = (c.venueUsed = venueFor(c));
@@ -300,10 +314,15 @@
     FM.Chars.hidden = hidden;
     // 밤에도 주인공 얼굴이 보이도록 부드러운 키 라이트
     const h = Sim.time.hour(), night = !inside && (h >= 19 || h < 6);
-    const key = new THREE.PointLight(0xfff0e0, night ? 1.1 : 0.45, 9); key.position.set(0, 2.8, 2.6); group.add(key);
+    const pool = inside ? null : lightPool(); let propLightN = 0;
+    group.updateMatrixWorld(true);
+    const wv = (x, y, z) => group.localToWorld(new THREE.Vector3(x, y, z));
+    let key; if (pool) { key = pool.key; key.position.copy(wv(0, 2.8, 2.6)); key.intensity = night ? 1.1 : 0.45; } else { key = new THREE.PointLight(0xfff0e0, night ? 1.1 : 0.45, 9); key.position.set(0, 2.8, 2.6); group.add(key); }
     const T2 = THEME[c.theme] || THEME.confess;
     let spot = null;
-    if (T2.props === 'spot') { spot = new THREE.SpotLight(0xffffff, night ? 1.6 : 0.9, 14, 0.55, 0.6); spot.position.set(0, 7, 2); spot.target.position.set(0, 0, 0); group.add(spot, spot.target); }
+    if (T2.props === 'spot') { if (pool) { spot = pool.spot; spot.position.copy(wv(0, 7, 2)); spot.target.position.copy(wv(0, 0, 0)); spot.target.updateMatrixWorld(); spot.intensity = night ? 1.6 : 0.9; } else { spot = new THREE.SpotLight(0xffffff, night ? 1.6 : 0.9, 14, 0.55, 0.6); spot.position.set(0, 7, 2); spot.target.position.set(0, 0, 0); group.add(spot, spot.target); } }
+    // 소품 조명 (촛불 · 케이크 · 테이블 스탠드): 섬에서는 풀 조명을 옮겨 씀
+    const lightProp = g => { const L = g.userData.light; if (!L) return; const [col, inten, dist, y] = L; if (pool) { const pl = pool.props[propLightN++]; if (!pl) return; g.updateMatrixWorld(true); pl.color.setHex(col); pl.intensity = inten; pl.distance = dist; pl.position.copy(g.localToWorld(new THREE.Vector3(0, y, 0))); } else { const pl = new THREE.PointLight(col, inten, dist); pl.position.y = y; g.add(pl); } };
     // 배우
     const keys = Object.keys(c.cast);
     const n = keys.length;
@@ -325,7 +344,7 @@
       actors[k] = { ch, home: new THREE.Vector3(x, localY(x, z), z), pose: null, poseT: 0, emo: null, emoT: 0, enter: i < 2 && n > 1 && !(c.slots && c.slots[k]) && !(c.hidden && c.hidden.includes(k)) ? (i === 0 ? -1 : 1) : 0 };
     });
     const props = [], propIds = {};
-    for (const pr of c.props || []) { const g = makeProp(pr.kind); g.position.set(pr.x || 0, localY(pr.x || 0, pr.z || 0), pr.z || 0); g.rotation.y = pr.ry || 0; group.add(g); props.push(g); if (pr.id) propIds[pr.id] = g; }
+    for (const pr of c.props || []) { const g = makeProp(pr.kind); g.position.set(pr.x || 0, localY(pr.x || 0, pr.z || 0), pr.z || 0); g.rotation.y = pr.ry || 0; group.add(g); lightProp(g); props.push(g); if (pr.id) propIds[pr.id] = g; }
     const faceAll = () => {
       for (const k of keys) {
         const a = actors[k]; const p = a.ch.root.position;
@@ -364,24 +383,23 @@
     const occRC = new THREE.Raycaster();
     const isMine = o => { for (let q = o; q; q = q.parent) if (q === group || (q.userData && q.userData.entity)) return true; return false; };
     let occT = 0, zoned = false;
+    // 가리는 물체 후보는 촬영 구역 정리 때 한 번만 모아 두고(무대 16m 안의 작은 물체 · 풀 인스턴스),
+    // 매번 섬 전체에 레이캐스트하는 대신 '카메라 → 얼굴' 선분과의 거리만 계산 (드라마 중 끊김 방지)
+    const occCand = [], occInst = [], segA = new THREE.Vector3(), segB = new THREE.Vector3(), segD = new THREE.Vector3(), segP = new THREE.Vector3();
+    const segDist = (p0) => { segD.subVectors(segB, segA); const L2 = segD.lengthSq() || 1; let t2 = segP.subVectors(p0, segA).dot(segD) / L2; if (t2 < 0.02 || t2 > 1) return 1e9; return segP.copy(segA).addScaledVector(segD, t2).distanceTo(p0); };
     const cullOccluders = () => {
-      const root = inside ? (cine.int && cine.int.group) : G.islandScene; if (!root) return;
+      if (!occCand.length && !occInst.length) return;
+      const dirty = new Set();
       for (const k of keys) {
         const hp = new THREE.Vector3(); actors[k].ch.head.getWorldPosition(hp);
-        for (const [xOff, yOff] of [[0, 0.1], [0, -0.4], [0, -0.75], [-0.3, -0.4], [0.3, -0.4]]) {
-          const target = hp.clone(); target.y += yOff; target.x += xOff;
-          const dir = target.clone().sub(cam.position); const len = dir.length(); dir.normalize();
-          occRC.set(cam.position, dir); occRC.far = len - 0.35; occRC.camera = cam;
-          let hits; try { hits = occRC.intersectObjects(root.children, true); } catch (e) { hits = []; }
-          for (const h3 of hits) {
-            const o = h3.object; if (isMine(o) || !o.visible) continue;
-            if (o.isInstancedMesh && h3.instanceId !== undefined) { o.getMatrixAt(h3.instanceId, tmpM); culledInst.push([o, h3.instanceId, tmpM.clone()]); o.setMatrixAt(h3.instanceId, zeroM); o.instanceMatrix.needsUpdate = true; continue; }
-            // 건물·지형처럼 큰 건 숨기지 않음
-            if (o.geometry) { if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere(); const r = o.geometry.boundingSphere.radius * Math.max(o.scale.x, o.scale.y, o.scale.z); if (r > 2.2) continue; }
-            o.visible = false; culled.push(o);
-          }
+        segA.copy(cam.position);
+        for (const yOff of [0.1, -0.45, -0.8]) {
+          segB.copy(hp); segB.y += yOff; segB.addScaledVector(segD.subVectors(segA, segB).normalize(), 0.35);
+          for (const cnd of occCand) if (!cnd.hid && cnd.o.visible && segDist(cnd.c) < cnd.r + 0.12) { cnd.o.visible = false; cnd.hid = true; culled.push(cnd.o); }
+          for (const ci of occInst) if (!ci.hid && segDist(ci.p) < 0.55) { ci.hid = true; ci.o.getMatrixAt(ci.i, tmpM); culledInst.push([ci.o, ci.i, tmpM.clone()]); ci.o.setMatrixAt(ci.i, zeroM); dirty.add(ci.o); }
         }
       }
+      for (const o of dirty) o.instanceMatrix.needsUpdate = true;
     };
     // 촬영 구역(배우 ~ 카메라 사이) 정리: 작은 소품·꽃·풀만 숨김
     const inv = new THREE.Matrix4(), wpos = new THREE.Vector3(), bs = new THREE.Sphere();
@@ -389,19 +407,22 @@
       if (!root) return;
       group.updateMatrixWorld(true); inv.copy(group.matrixWorld).invert();
       const inZone = v => { v.applyMatrix4(inv); return Math.abs(v.x) < 2.5 && v.z > -1.1 && v.z < (inside ? 9 : 6.5) && v.y < 2.6; };
+      const cw = new THREE.Vector3(); group.getWorldPosition(cw); const NEAR = inside ? 30 : 16;
       root.updateMatrixWorld(true);
       root.traverse(o => {
         if (!o.isMesh || !o.visible || isMine(o)) return;
         if (o.isInstancedMesh) {
           for (let i = 0; i < o.count; i++) {
             o.getMatrixAt(i, tmpM); wpos.setFromMatrixPosition(tmpM).applyMatrix4(o.matrixWorld);
-            if (inZone(wpos)) { culledInst.push([o, i, tmpM.clone()]); o.setMatrixAt(i, zeroM); o.instanceMatrix.needsUpdate = true; }
+            if (wpos.distanceTo(cw) < NEAR) occInst.push({ o, i, p: wpos.clone() });
+            if (inZone(wpos)) { culledInst.push([o, i, tmpM.clone()]); o.setMatrixAt(i, zeroM); o.instanceMatrix.needsUpdate = true; occInst[occInst.length - 1].hid = true; }
           }
           return;
         }
         if (!o.geometry) return;
         if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
         bs.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
+        if (bs.radius <= 2.2 && bs.center.distanceTo(cw) < NEAR) occCand.push({ o, c: bs.center.clone(), r: bs.radius });
         if (bs.radius > 1.6) return;               // 벽·바닥·건물은 그대로
         wpos.copy(bs.center);
         if (inZone(wpos)) { o.visible = false; culled.push(o); }
@@ -448,14 +469,15 @@
       actors, keys, shot, toScreen, group, props,
       snap: () => { for (const k of keys) { actors[k].ch.root.position.copy(actors[k].home); actors[k].faced = true; } faceAll(); },
       shake: s => { shake = Math.max(shake, s); },
-      pose: (k, p) => { const a = actors[k]; if (!a) return; a.pose = p; a.poseT = 0; resetRig(a.ch); },
-      emo: (k, e) => { const a = actors[k]; if (!a) return; a.emo = e; a.emoT = 0; },
+      pose: (k, p) => { const a = actors[k]; if (!a) return; a.pose = p; a.poseT = 0; resetRig(a.ch); const pe = FM.Anim.exprOfPose(p); if (pe !== undefined) ISLE.M.setExpr(a.ch, pe); },
+      expr: (k, e) => { const a = actors[k]; if (a && ISLE.M.setExpr) ISLE.M.setExpr(a.ch, e); },
+      emo: (k, e) => { const a = actors[k]; if (!a) return; a.emo = e; a.emoT = 0; const x = FM.Anim.exprOfEmoji(e); if (x) ISLE.M.setExpr(a.ch, x); },
       talk: (k, on) => { for (const kk of keys) actors[kk].talking = false; if (actors[k]) actors[k].talking = on; },
       move: (k, x, z, run) => { const a = actors[k]; if (!a) return; a.home.set(x, localY(x, z), z); a.faced = false; a.run = !!run; a.pose = null; },
       fly: (k, x1, h2, d) => { const a = actors[k]; if (!a) return; a.fly = { t: 0, d: d || 1, x0: a.ch.root.position.x, x1, h: h2 || 1, spin: 1 }; a.home.x = x1; },
       lift: (k, on) => { const a = actors[k]; if (a) { a.lift = on; a.poseT = 0; } },
       hide: (k, on) => { const a = actors[k]; if (a) a.ch.root.visible = !on; },
-      addProp: (kind, x, z, ry, id) => { const g = makeProp(kind); g.position.set(x, localY(x, z), z); g.rotation.y = ry || 0; group.add(g); props.push(g); if (id) propIds[id] = g; return g; },
+      addProp: (kind, x, z, ry, id) => { const g = makeProp(kind); g.position.set(x, localY(x, z), z); g.rotation.y = ry || 0; group.add(g); lightProp(g); props.push(g); if (id) propIds[id] = g; return g; },
       prop: id => propIds[id],
       raise: (k, over) => { const a = actors[k]; if (a) { a.raise = over; a.poseT = 0; a.fixed = true; } },
       home: k => actors[k] && actors[k].home.clone(),
@@ -463,6 +485,7 @@
       eyes: k => { const out = []; const hd = actors[k].ch.head; for (const dx of [-0.13, 0.13]) { const v = new THREE.Vector3(dx, 0.02, 0.4); hd.localToWorld(v); v.project(cam); out.push([(v.x + 1) / 2 * innerWidth, (1 - v.y) / 2 * innerHeight]); } return out; },
       dispose() {
         restoreOccluders();
+        if (pool) { pool.key.intensity = 0; pool.spot.intensity = 0; for (const pl of pool.props) pl.intensity = 0; }
         FM.Chars.hidden = null;
         if (group.parent) group.parent.remove(group);
         group.traverse(o => { if (o.geometry) o.geometry.dispose(); });
@@ -509,6 +532,11 @@
   const WARM_TH = { friend: 1, party: 1, umbrella: 1, makeup: 1, baby: 1, wedding: 1, propose: 1, reunion: 1 };
   const BGM_OF = { friend: 'healing', party: 'chip', umbrella: 'piano', confess: 'romance', reunion: 'romance', fate: 'night', propose: 'romance', wedding: 'wedding', breakup: 'piano', divorce: 'piano', runaway: 'piano', crushEnd: 'piano', affair: 'night', triangle: 'night', fight: 'club', brawl: 'club', jealous: 'shy', makeup: 'healing', baby: 'opera', scam: 'night', cult: 'deepsea', fashion: 'club' };
   Cut.BGM_OF = BGM_OF;
+  // 테마별 기본 표정 & 상대 리액션
+  const THEME_EXPR = { confess: 'shy', wedding: 'happy', divorce: 'sad', brawl: 'angry', affair: 'shocked', scam: 'smug', cult: 'determined', fashion: 'smug', runaway: 'worried', stork: 'happy', birthday: 'laugh', breakup: 'sad', reunion: 'cry', oath: 'determined' };
+  const REACT = { angry: ['shocked', 'worried', 'angry'], furious: ['shocked', 'sob', 'furious'], sad: ['worried', 'sad', 'cry'], cry: ['cry', 'worried', 'sad'], sob: ['cry', 'despair'], surprised: ['surprised', 'awkward'], shocked: ['shocked', 'surprised'],
+    love: ['shy', 'love', 'surprised'], shy: ['shy', 'surprised', 'smile'], happy: ['happy', 'smile', 'laugh'], laugh: ['laugh', 'happy'], pout: ['awkward', 'smug'], smug: ['pout', 'angry', 'awkward'], awkward: ['awkward', 'worried'], determined: ['surprised', 'determined'] };
+  const curExpr = {};
   function play(c) {
     const s = st();
     const T = THEME[c.theme] || THEME.confess;
@@ -623,10 +651,12 @@
       if (b.say && c.cast[b.say]) {
         const v = c.cast[b.say];
         const text = J(b.text); const hot = b.hot !== undefined ? b.hot : (WARM_TH[c.theme] ? false : HOT.test(text));
-        if (stage) { stage.shot(b.shot || (hot ? pick(['zoom', 'close', 'low']) : pick(['close', 'close', 'two', 'low'])), b.say); stage.talk(b.say, true); }
+        if (stage) { stage.shot(b.shot || (hot ? pick(['zoom', 'close', 'low']) : pick(['close', 'close', 'two', 'low'])), b.say); stage.talk(b.say, true);
+          const ex = b.expr || FM.Anim.exprOfText(text, hot) || THEME_EXPR[c.theme] || pick(['smile', null, 'happy']); curExpr[b.say] = ex; stage.expr(b.say, ex);
+          for (const k2 of stage.keys) if (k2 !== b.say) { const r = REACT[ex]; if (r && Math.random() < 0.75) stage.expr(k2, pick(r)); } }
         el.classList.toggle('lines', hot);
         if (hot) { stage && stage.shake(0.6); sfx('thud'); }
-        talkBox(v.id === P ? v.name + ' (나)' : v.name, FM.Face.img(v, 64), text, hot, c.pitch && c.pitch[b.say], v);
+        talkBox(v.id === P ? v.name + ' (나)' : v.name, FM.Face.img(v, 64, '', curExpr[b.say]), text, hot, c.pitch && c.pitch[b.say], v);
         return;
       }
       if (b.narr) { if (stage && b.shot) stage.shot(b.shot[0], b.shot[1]); talkBox(b.who || '내레이션', `<span class="cs-narr">${esc(b.icon || '🎙️')}</span>`, b.narr, b.hot); return; }

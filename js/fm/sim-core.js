@@ -723,7 +723,7 @@
     emit('log', e);
     return e;
   };
-  Sim.byId = id => (id === 'P' ? S.player : S.villagers.find(v => v.id === id));
+  Sim.byId = id => (id === 'P' ? S.player : S.villagers.find(v => v.id === id) || (typeof id === 'string' && id.startsWith('s_') && FM.Ev && FM.Ev.staffById ? FM.Ev.staffById(id) : undefined));
   Sim.nameOf = id => (id === 'P' ? S.player.name : (Sim.byId(id) || {}).name || '???');
 
   // ---------------------------------------------------------
@@ -1130,6 +1130,13 @@
   // 한 명의 두뇌
   // 배고프면 먹으러 감 (집 주방 / 카페 / 편의점 / 포장마차 / 회전초밥)
   function goEat(v) {
+    // 식당 고르기 (schedule.js): 거리 · 시간대 · 성격 · 지갑 사정에 맞춰 카페 · 초밥 · 펍 · 스카이라운지 · 재즈바 · 마켓 델리 · 편의점 · 포장마차
+    const cookHome = v.loc === v.home ? (v.stats.range === 'HOME' || has(v, 'HOMEBODY') || chance(0.4)) : v.stats.range === 'HOME' && !chance(0.35);
+    if (!cookHome && Sim.pickRestaurant) {
+      const r = Sim.pickRestaurant(v);
+      if (r && r.spot) { const sp = SPOTS.find(s2 => s2.tags.includes(r.spot) && !s2.occ); if (sp) { goSpot(v, sp, 'eat_snack', { taxi: true }); v.blockLabel = `🍽️ ${r.name}에서 식사`; return true; } }
+      else if (r && r.iid) { planRoute(v, { loc: r.iid, x: rnd(-1, 1), z: rnd(-0.5, 1) }, { taxi: true }); v.pendingAct = 'eat_out'; v.eatPrice = r.price; v.blockLabel = `🍽️ ${r.name}에서 식사`; v.lastMeal = r.id; v.state = 'WALK'; return true; }
+    }
     if (v.loc === v.home || v.stats.range === 'HOME') {
       const k = furnUses(v.home, u => ['cook', 'breakfast', 'nibble', 'eat'].includes(u.u.act))[0];
       if (k) { if (v.loc !== v.home) { planRoute(v, { loc: v.home, x: 0, z: 0 }); v.pendingAct = null; return true; } goUse(v, k); return true; }
@@ -1239,7 +1246,11 @@
   }
   // 공용 장소 실내에서 할 일
   function venueAction(v, iid) {
-    const uses = furnUses(iid, u => !useOcc[u.key] || useOcc[u.key] === v.id).filter(u => !['staff', 'boss', 'anchor', 'hearing'].includes(u.u.act));
+    let uses = furnUses(iid, u => !useOcc[u.key] || useOcc[u.key] === v.id).filter(u => !['staff', 'boss', 'anchor', 'hearing'].includes(u.u.act));
+    // 무대 악기는 예술 · 음악 성향 주민만 (그런 주민은 연주를 우선)
+    const artist = Sim.canPerform && Sim.canPerform(v);
+    uses = uses.filter(u => u.u.act !== 'perform' || artist);
+    if (artist) { const perf = uses.filter(u => u.u.act === 'perform'); if (perf.length && chance(0.7)) { Sim.emote(v, pick(['🎷', '🎶', '🎸', '🥁', '🎹']), 3); return goUse(v, pick(perf)); } }
     if (!uses.length) { const s = interiorSize(iid); planRoute(v, { loc: iid, x: rnd(-s.w / 3, s.w / 3), z: rnd(-s.d / 3, s.d / 3) }); v.pendingAct = 'look_around'; return; }
     goUse(v, pick(uses));
   }
@@ -1354,7 +1365,14 @@
       FM.Ev && FM.Ev.onFurn && FM.Ev.onFurn(v, u, a);
       return;
     }
-    if (pa === 'eat_out') { v.hunger = 15; v.coins -= 45; if (v.coins < 0) { v.debt -= v.coins; v.coins = 0; } return startAct(v, 'eat_snack', { state: 'SIT_REST', pose: 'eat', dur: 8, name: '외식' }); }
+    if (pa === 'eat_out') {
+      v.coins -= v.eatPrice || 45; v.eatPrice = 0; if (v.coins < 0) { v.debt -= v.coins; v.coins = 0; }
+      // 가게 테이블 · 바 · 카운터 자리에 실제로 앉아서 먹음
+      const FOOD = ['dine', 'sushi', 'pub', 'cafe', 'eat', 'mocktail', 'breakfast', 'buy_kimbap', 'tea'];
+      const seats = INT[v.loc] ? furnUses(v.loc, u => FOOD.includes(u.u.act) && (!useOcc[u.key] || useOcc[u.key] === v.id)) : [];
+      if (seats.length) { v.hunger = Math.min(v.hunger, 25); Sim.emote(v, pick(['😋', '🍽️', '😊']), 2.5); return goUse(v, pick(seats)); }
+      v.hunger = 15; return startAct(v, 'eat_snack', { state: 'SIT_REST', pose: 'eat', dur: 8, name: '외식' });
+    }
     if (pa === 'corner') return startAct(v, 'corner', { state: 'HOME_LIFE', pose: 'sadSit', dur: 20, name: '불 끄고 구석에 앉아있음' });
     if (pa === 'hospital') return startAct(v, 'hospital', { state: 'SIT_REST', pose: 'sleep', dur: 20 });
     if (pa) return startAct(v, pa);

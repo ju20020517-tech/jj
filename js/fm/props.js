@@ -34,9 +34,11 @@
       g.font = `${Math.floor(h * 0.52)}px Jua, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
       if (glow) { g.shadowColor = glow; g.shadowBlur = 18; }
       g.fillStyle = fg;
-      let size = Math.floor(h * 0.52);
-      while (g.measureText(text).width > w - 30 && size > 12) { size -= 2; g.font = `${size}px Jua, sans-serif`; }
-      g.fillText(text, w / 2, h / 2 + 2);
+      const lines = String(text).split('\n'), n = lines.length;
+      let size = Math.floor(n > 1 ? Math.min(h * 0.7 / n, h * 0.4) : h * 0.52); g.font = `${size}px Jua, sans-serif`;
+      const widest = () => Math.max(...lines.map(l => g.measureText(l).width));
+      while (widest() > w - 30 && size > 12) { size -= 2; g.font = `${size}px Jua, sans-serif`; }
+      lines.forEach((l, i) => g.fillText(l, w / 2, h / 2 + 2 + (i - (n - 1) / 2) * size * 1.18));
     });
   }
   PM.signTex = signTex;
@@ -224,6 +226,9 @@
     popcorn: [['c', 0.06, 0.12, 0, 0, 0, 0, 0xff4d4d], ['s', 0.06, 0.6, 0, 0, 0.07, 0, 0xfff4d6]], diary: [['b', 0.15, 0.19, 0.04, 0, 0, 0, 0x9a5ad0]], letter: [['b', 0.14, 0.1, 0.005, 0, 0, 0, 0xffe0ec]], pen: [['c', 0.006, 0.14, 0, 0, 0, 0, 0x2b2b30]],
     paperBoat: [['C', 0.08, 0.06, 0, 0, 0, 0, 0xffffff, 'rz180']], hose: [['t', 0.08, 0.015, 0, 0, 0, 0, 0x4fae4a, 'rx90']], surfboard: [['k', 0.1, 1.1, 0, 0, 0, 0, 0xff8fb1, 'rx90']], tube: [['t', 0.3, 0.1, 0, 0, 0, 0, 0xff6f61, 'rx90']],
     radio: [['b', 0.2, 0.13, 0.08, 0, 0, 0, 0xff8f6a]], ring: [['t', 0.03, 0.008, 0, 0, 0, 0, 0xffd23a], ['s', 0.012, 1, 0, 0, 0.035, 0, 0xe8f6ff, 'e']], flower: [['c', 0.005, 0.2, 0, 0, 0.05, 0, 0x5fb070], ['s', 0.04, 1, 0, 0, 0.16, 0, 0xff4d6d]],
+    sax: [['c', 0.035, 0.42, 0, 0, 0.05, 0.12, 0xd8a838, 'rx20'], ['C', 0.07, 0.12, 0, 0.02, -0.18, 0.2, 0xd8a838, 'rx160'], ['c', 0.012, 0.12, 0, 0, 0.28, 0.08, 0x2b2b30, 'rx-40']],
+    eguitar: [['b', 0.28, 0.2, 0.05, 0, 0, -0.05, 0xc0392b], ['s', 0.1, 1, 0, -0.08, -0.08, 0, 0xc0392b], ['b', 0.035, 0.5, 0.03, 0, 0.14, 0.28, 0x3a2418, 'rz-60'], ['b', 0.06, 0.06, 0.05, 0, 0.36, 0.42, 0x2b2b30, 'rz-60']],
+    sticks: [['c', 0.008, 0.36, 0, 0, 0.12, 0.06, 0xe8d0a0, 'rx50']],
     kid_dumbbell: [['c', 0.01, 0.12, 0, 0, 0, 0, 0x55595f, 'rz90'], ['s', 0.03, 1, 0, -0.06, 0, 0, 0xff8fb1], ['s', 0.03, 1, 0, 0.06, 0, 0, 0xff8fb1]],
   };
   PM.prop = function (name) {

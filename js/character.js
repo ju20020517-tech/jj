@@ -214,10 +214,19 @@
   }
 
   // 얼굴: 머리 앞쪽을 덮는 구면 조각에 입히는 투명 텍스처
-  function faceTex(l, blink) {
+  // 표정 전용 얼굴 텍스처 (작은 해상도 · 최근 사용 순 캐시) — 기본 얼굴 캐시를 밀어내지 않음
+  const exprCache = new Map();
+  function exprTex(key, draw) {
+    if (exprCache.has(key)) { const t = exprCache.get(key); exprCache.delete(key); exprCache.set(key, t); return t; }
+    if (exprCache.size > 90) { const k0 = exprCache.keys().next().value; exprCache.get(k0).dispose(); exprCache.delete(k0); }
+    const c = document.createElement('canvas'); c.width = 256; c.height = 192; const g = c.getContext('2d'); g.scale(0.5, 0.5); draw(g, 512, 384);
+    const t = new THREE.CanvasTexture(c); t.anisotropy = 4; if (THREE.sRGBEncoding && texCache.size) { const any = texCache.values().next().value; if (any && any.encoding !== undefined) t.encoding = any.encoding; }
+    exprCache.set(key, t); return t;
+  }
+  function faceTex(l, blink, small) {
     const sp = SPECIES[l.species];
-    const keyStr = ['face', l.species, l.eyes, l.eyeColor, l.brows, l.mouth, l.blush, l.marking, l.markColor, l.fur, l.skin, l.hair, blink ? 1 : 0].join('|');
-    return canvasTex(keyStr, 512, 384, (g, w, h) => {
+    const keyStr = ['face', l.species, l.eyes, l.eyeColor, l.brows, l.mouth, l.blush, l.marking, l.markColor, l.fur, l.skin, l.hair, l.fx || '', blink ? 1 : 0].join('|');
+    const draw = (g, w, h) => {
       g.clearRect(0, 0, w, h);
       const base = l.species === 'human' ? l.skin : l.fur;
       const mark = hex(l.markColor);
@@ -328,6 +337,12 @@
               break;
             }
             case 'star': oval(x, 28, 36, true); break;
+            case 'sad': { oval(x, 25, 31); const s = i === 0 ? -1 : 1; g.fillStyle = lid; g.beginPath(); g.moveTo(x - 50, ey - 60); g.lineTo(x + 50, ey - 60); g.lineTo(x + 50, ey - 8 + s * 10); g.lineTo(x - 50, ey - 8 - s * 10); g.closePath(); g.fill(); g.strokeStyle = '#2b201c'; g.lineWidth = 8; g.beginPath(); g.moveTo(x - 34, ey - 8 - s * 8); g.lineTo(x + 34, ey - 8 + s * 8); g.stroke(); break; }
+            case 'closed': g.strokeStyle = '#1f1714'; g.lineWidth = 11; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 24, ey - 4); g.quadraticCurveTo(x, ey + 16, x + 24, ey - 4); g.stroke(); break;
+            case 'shock': g.fillStyle = '#fff'; ellipse(g, x, ey, 30, 37); g.strokeStyle = '#1f1714'; g.lineWidth = 6; g.beginPath(); g.ellipse(x, ey, 30, 37, 0, 0, Math.PI * 2); g.stroke(); g.fillStyle = '#1f1714'; circle(g, x, ey + 2, 10); break;
+            case 'heart': g.fillStyle = '#ff3f74'; heart(g, x, ey - 4, 30); g.fillStyle = '#fff'; circle(g, x - 10, ey - 12, 6); break;
+            case 'x': { const s = i === 0 ? 1 : -1; g.strokeStyle = '#1f1714'; g.lineWidth = 11; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath(); g.moveTo(x - s * 20, ey - 22); g.lineTo(x + s * 18, ey); g.lineTo(x - s * 20, ey + 22); g.stroke(); break; }
+            case 'glare': { oval(x, 25, 30); const s = i === 0 ? -1 : 1; g.fillStyle = lid; g.beginPath(); g.moveTo(x - 50, ey - 60); g.lineTo(x + 50, ey - 60); g.lineTo(x + 50, ey - 4 - s * 12); g.lineTo(x - 50, ey - 4 + s * 12); g.closePath(); g.fill(); g.strokeStyle = '#2b201c'; g.lineWidth = 9; g.beginPath(); g.moveTo(x - 36, ey - 4 + s * 10); g.lineTo(x + 36, ey - 4 - s * 10); g.stroke(); break; }
             default: oval(x, 27, 35);
           }
         });
@@ -338,8 +353,35 @@
         const mx = w * 0.5, my = h * (sp.muzzle === 'pig' || sp.muzzle === 'koala' ? 0.8 : l.species === 'frog' ? 0.62 : 0.71);
         drawMouth(g, l.mouth, mx, my, l.species === 'frog' ? 2 : 1);
       }
-    });
+      if (l.fx) drawFx(g, w, h, l.fx, ex, ey);
+    };
+    return small ? exprTex(keyStr, draw) : canvasTex(keyStr, 512, 384, draw);
   }
+  // 표정 효과: 눈물 · 땀 · 화남 핏줄 · 진한 볼터치 · 우울 세로줄
+  function drawFx(g, w, h, fx, ex, ey) {
+    const has = k => fx.includes(k);
+    if (has('blush')) for (const x of [w * 0.16, w * 0.84]) { g.fillStyle = 'rgba(255,90,130,0.55)'; ellipse(g, x, h * 0.66, 46, 26); }
+    if (has('tears')) for (const [i, x] of ex.entries()) {
+      const s = i === 0 ? -1 : 1, x0 = x + s * 14;
+      const gr = g.createLinearGradient(0, ey + 20, 0, h); gr.addColorStop(0, 'rgba(140,205,255,0.95)'); gr.addColorStop(1, 'rgba(140,205,255,0.35)');
+      g.fillStyle = gr; g.beginPath(); g.moveTo(x0 - 9, ey + 26); g.quadraticCurveTo(x0 + s * 6, h * 0.75, x0 + s * 4, h * 0.98); g.lineTo(x0 + s * 20, h * 0.98); g.quadraticCurveTo(x0 + s * 18, h * 0.72, x0 + 9, ey + 26); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.8)'; ellipse(g, x0 + s * 4, h * 0.72, 3, 9);
+    }
+    if (has('sweat')) { const x = w * 0.86, y = h * 0.2; g.fillStyle = '#9fd8ff'; g.beginPath(); g.moveTo(x, y - 34); g.quadraticCurveTo(x + 24, y + 4, x, y + 16); g.quadraticCurveTo(x - 24, y + 4, x, y - 34); g.fill(); g.strokeStyle = '#5aa8e0'; g.lineWidth = 3; g.stroke(); g.fillStyle = '#fff'; ellipse(g, x - 6, y, 4, 7); }
+    if (has('anger')) { const x = w * 0.16, y = h * 0.16; g.strokeStyle = '#e8243a'; g.lineWidth = 8; g.lineCap = 'round'; for (const [a, b] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { g.beginPath(); g.moveTo(x + a * 6, y + b * 22); g.quadraticCurveTo(x + a * 6, y + b * 6, x + a * 22, y + b * 6); g.stroke(); } }
+    if (has('gloom')) { g.strokeStyle = 'rgba(80,60,130,0.55)'; g.lineWidth = 6; for (let i = 0; i < 7; i++) { const x = w * 0.22 + i * w * 0.093; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, ey - 70 - (i % 2) * 14); g.stroke(); } }
+    if (has('sparkle')) { g.fillStyle = '#ffe36a'; for (const [x, y, r] of [[w * 0.1, h * 0.2, 14], [w * 0.9, h * 0.16, 11], [w * 0.93, h * 0.42, 8]]) star(g, x, y, r); }
+  }
+  // 감정 표정 테이블 (기본 얼굴 위에 눈 · 눈썹 · 입 · 효과만 덮어씀)
+  const EXPR = {
+    happy: { eyes: 'happy', mouth: 'grin', fx: 'blush' }, laugh: { eyes: 'happy', mouth: 'open', fx: 'blush,sparkle' }, smile: { eyes: 'closed', mouth: 'smile' },
+    sad: { eyes: 'sad', brows: 'worried', mouth: 'frown' }, cry: { eyes: 'sad', brows: 'worried', mouth: 'wavy', fx: 'tears' }, sob: { eyes: 'x', brows: 'worried', mouth: 'scream', fx: 'tears' },
+    angry: { brows: 'angry', mouth: 'frown', fx: 'anger' }, furious: { eyes: 'glare', brows: 'angry', mouth: 'scream', fx: 'anger' },
+    surprised: { eyes: 'shock', mouth: 'o' }, shocked: { eyes: 'shock', brows: 'worried', mouth: 'scream', fx: 'sweat,gloom' },
+    shy: { eyes: 'closed', mouth: 'w', fx: 'blush' }, love: { eyes: 'heart', mouth: 'smile', fx: 'blush' }, worried: { brows: 'worried', mouth: 'wavy', fx: 'sweat' },
+    smug: { eyes: 'smug', brows: 'thin', mouth: 'grin' }, sleepy: { eyes: 'sleepy', mouth: 'flat' }, determined: { eyes: 'sparkle', brows: 'angry', mouth: 'flat' },
+    despair: { eyes: 'sad', brows: 'worried', mouth: 'wavy', fx: 'gloom,tears' }, pout: { eyes: 'glare', brows: 'angry', mouth: 'pout', fx: 'blush' }, awkward: { eyes: 'dot', brows: 'worried', mouth: 'wavy', fx: 'sweat' },
+  };
   function drawMouth(g, style, mx, my, s = 1) {
     g.lineWidth = 10; g.strokeStyle = '#6a3a2e'; g.lineJoin = 'round'; g.lineCap = 'round';
     const W = 30 * s;
@@ -364,6 +406,15 @@
       g.beginPath(); g.moveTo(mx - 18 * s, my); g.lineTo(mx + 18 * s, my); g.stroke();
     } else if (style === 'pout') {
       g.beginPath(); g.moveTo(mx - 18 * s, my + 8); g.quadraticCurveTo(mx, my - 12, mx + 18 * s, my + 8); g.stroke();
+    } else if (style === 'frown') {
+      g.beginPath(); g.moveTo(mx - W * 0.7, my + 12); g.quadraticCurveTo(mx, my - 16, mx + W * 0.7, my + 12); g.stroke();
+    } else if (style === 'o') {
+      g.fillStyle = '#8a2f36'; ellipse(g, mx, my + 4, 10 * s, 13);
+    } else if (style === 'wavy') {
+      g.beginPath(); g.moveTo(mx - W * 0.8, my + 4); for (let i = 1; i <= 4; i++) g.lineTo(mx - W * 0.8 + i * W * 0.4, my + (i % 2 ? -6 : 4)); g.stroke();
+    } else if (style === 'scream') {
+      g.fillStyle = '#7a2430'; g.beginPath(); g.ellipse(mx, my + 8, 22 * s, 26, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ff8a8a'; ellipse(g, mx, my + 22, 12 * s, 8); g.fillStyle = '#fff'; g.fillRect(mx - 14, my - 16, 28, 6);
     }
   }
 
@@ -597,7 +648,7 @@
     root.traverse(o => { if (o.isMesh && o !== face) o.castShadow = true; });
 
     return {
-      root, shape: shapeG, body, head, legL, legR, armL, armR, face, faceTex: tFace, blinkTex: tBlink, look: l, size: sp.size || 1, blanket,
+      root, shape: shapeG, body, head, legL, legR, armL, armR, face, faceTex: tFace, blinkTex: tBlink, baseFace: tFace, baseBlink: tBlink, expr: null, look: l, size: sp.size || 1, blanket,
       phase: 0, blinkT: 2 + Math.random() * 3, actionT: 0, idleT: Math.random() * 10,
       lastRot: 0, headYaw: 0, talkT: 0, waveT: 0,
     };
@@ -1200,6 +1251,15 @@
   }
 
   M.character = build;
+  // 표정 바꾸기 (null = 평소 얼굴). 같은 표정 텍스처는 캐시에서 재사용
+  M.EXPR = EXPR;
+  M.setExpr = function (c, expr) {
+    if (!c || !c.face || c.expr === (expr || null)) return;
+    c.expr = expr || null;
+    if (!expr || !EXPR[expr]) { c.faceTex = c.baseFace; c.blinkTex = c.baseBlink; }
+    else { const l = Object.assign({}, c.look, EXPR[expr]); c.faceTex = faceTex(l, false, true); c.blinkTex = faceTex(l, true, true); }
+    c.face.material.map = c.faceTex;
+  };
   M.animate = animate;
   ISLE.SPECIES = SPECIES;
   ISLE.CHAR_OPT = OPT;

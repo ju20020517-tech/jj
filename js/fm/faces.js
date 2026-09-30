@@ -30,8 +30,8 @@
     try {
       if (!R) init();
       const l = Object.assign({}, look);
-      if (emo === 'happy') { l.eyes = 'happy'; l.mouth = 'grin'; }
       const c = ISLE.M.character(l);
+      if (emo && ISLE.M.setExpr) ISLE.M.setExpr(c, emo);
       c.root.rotation.y = -0.2;
       scene.add(c.root);
       c.root.updateMatrixWorld(true);
@@ -46,8 +46,8 @@
     } catch (e) { console.error('face', e); return ''; }
   };
   // <img> 태그 (크기 px)
-  Face.img = function (v, px = 40, cls = '') {
-    const u = Face.url(v);
+  Face.img = function (v, px = 40, cls = '', emo) {
+    const u = Face.url(v, emo);
     if (!u) { const ic = v && v.look && ISLE.SPECIES[v.look.species] ? ISLE.SPECIES[v.look.species].icon : '🙂'; return `<span class="face-emo ${cls}" style="font-size:${px * 0.7}px">${ic}</span>`; }
     return `<img class="face ${cls}" src="${u}" width="${px}" height="${px}" alt="" draggable="false">`;
   };

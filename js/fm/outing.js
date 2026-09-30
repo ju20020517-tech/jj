@@ -35,7 +35,7 @@
     ['arcade', 11, 24, '오락실', v => w(v, { GAMER: 4, FUN: 2.5, LAZY: 1, PRANKSTER: 1, BEAGLE: 3, TOMBOY: 2, HIP: 1, CUTIE: 1, CLUMSY: 0.5 })],
     ['sushi', 11, 22, '회전초밥', v => w(v, { FOOD: 2.5, LAZY: 2, TOMBOY: 1.5, FRESH: 1, BEAGLE: 1, FUN: 1 }) + (v.hunger > 55 ? 2 : 0)],
     ['pub', 17, 26, '레트로 펍', v => w(v, { EXTROVERT: 1.5, FUN: 1.5, CRANKY: 1, TOMBOY: 2, CHARISMA: 1, HIP: 1, MUSICIAN: 0.5 }) + ((v.stress || 0) > 50 ? 2 : 0)],
-    ['club', 21, 28, '클럽', v => w(v, { FUN: 2.5, EXTROVERT: 2, MUSICIAN: 2, NIGHT_OWL: 1.5, HIP: 3.5, BEAGLE: 1.5, CHARISMA: 1.5, FRESH: 1, PLAYBOY: 2 })],
+    ['club', 18, 27, '재즈바 블루문', v => w(v, { ARTISTIC: 3.5, MUSICIAN: 4, MUSIC: 3, CLASSIC: 2, ROMANTIC: 1.5, ELEGANT: 1.5, NIGHT_OWL: 1.5, HIP: 1.5, CHARISMA: 1, EXTROVERT: 1 })],
     ['conv', 0, 24, '편의점', v => w(v, { LAZY: 1.5, TOMBOY: 1, BEAGLE: 0.5, GAMER: 1 }) + 0.3 + (v.hunger > 50 ? 1 : 0)],
     ['office', 9, 19, '오피스 타워', v => w(v, { MONEY: 2, DILIGENT: 1 }) * (v.job === 'office' ? 0.3 : 1)],
     ['cityhall', 9, 18, '시청 · 법원', v => w(v, { CRANKY: 2, LEADER: 2, JUSTICE: 1.5, CHARISMA: 2, CLASSIC: 1, TRADITION: 0.5 })],

@@ -200,6 +200,7 @@
     prank:          { name: '깜짝 놀래키기', state: 'TALK_NPC', pose: 'surprise', dur: 2, social: true, prank: true },
     hide_face:      { name: '얼굴 가리기', state: 'INTERACT_OBJ', pose: 'hideFace', emote: '😳', dur: 3 },
     sing:           { name: '노래 부르기', state: 'INTERACT_OBJ', pose: 'sing', prop: 'mic', emote: '🎵', dur: 6 },
+    perform:        { name: '재즈 연주', state: 'INTERACT_OBJ', pose: 'guitar', emote: '🎷', dur: 12 },
     play_guitar:    { name: '악기 연주', state: 'INTERACT_OBJ', pose: 'guitar', prop: 'guitar', emote: '🎸', dur: 7 },
     listen_radio:   { name: '라디오 듣기', state: 'INTERACT_OBJ', pose: 'sway', need: 'radio', emote: '📻', dur: 7 },
     show_off:       { name: '옷 자랑', state: 'INTERACT_OBJ', pose: 'spin', emote: '👗', dur: 3 },

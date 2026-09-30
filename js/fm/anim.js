@@ -108,6 +108,12 @@
   A.fidget = (c, t) => { c.body.rotation.y = S(t * 3) * 0.4; arms(c, -0.8, 0.3, -0.8, -0.3); c.head.rotation.x = 0.2; };
   A.sweep = (c, t) => { arms(c, -0.9, 0.2, -0.9, -0.3); c.body.rotation.y = S(t * 4) * 0.35; c.body.rotation.x = 0.2; };
   A.sing = (c, t) => { arms(c, 0, -0.5 - S(t * 3) * 0.4, -2.2, -0.3); c.head.rotation.x = -0.2; c.body.rotation.z = S(t * 4) * 0.08; };
+  // 재즈 연주 포즈 (색소폰 · 드럼 · 피아노 · 첼로 · 베이스)
+  A.sax = (c, t) => { arms(c, -1.25, 0.45, -1.1 + S(t * 6) * 0.08, -0.35); c.head.rotation.x = -0.12; c.body.rotation.x = -0.08 + S(t * 2) * 0.06; c.body.rotation.z = S(t * 1.7) * 0.07; };
+  A.drums = (c, t) => { const a = S(t * 14), b = S(t * 14 + 1.6); arms(c, -0.9 + a * 0.35, 0.35, -0.9 + b * 0.35, -0.35); c.head.rotation.x = Math.abs(S(t * 7)) * 0.12; legs(c, -1.4, -1.4 + Math.abs(S(t * 7)) * 0.3); };
+  A.piano = (c, t) => { arms(c, -1.1, 0.25 + S(t * 9) * 0.1, -1.1, -0.25 + S(t * 8 + 1) * 0.1); c.body.rotation.z = S(t * 1.5) * 0.08; c.head.rotation.z = S(t * 1.5 + 0.5) * 0.1; legs(c, -1.4, -1.4); };
+  A.cello = (c, t) => { arms(c, -0.9, -0.6 + S(t * 3) * 0.35, -0.5, 0.4); c.head.rotation.z = 0.15; c.body.rotation.x = 0.1; legs(c, -1.4, -1.4); };
+  A.bass = (c, t) => { arms(c, -0.9, 0.55, -0.7 + S(t * 8) * 0.15, -0.3); c.body.rotation.y = S(t * 2) * 0.1; c.head.rotation.x = S(t * 4) * 0.08; };
   A.guitar = (c, t) => { arms(c, -1.0, 0.5, -0.8 + S(t * 12) * 0.25, -0.2); c.body.rotation.z = S(t * 3) * 0.06; };
   A.sway = (c, t) => { c.body.rotation.z = S(t * 2.5) * 0.12; c.head.rotation.z = S(t * 2.5) * 0.15; };
   A.spin = (c, t) => { c.body.rotation.y = t * 8; arms(c, 0, -1.3, 0, 1.3); };
@@ -221,4 +227,31 @@
     },
   };
   const NO_SEAT = { stand: 1, float: 1, levitateDance: 1, dance: 1, cheer: 1, jog: 1, bounce: 1, swim: 1, hangWall: 1 };
+
+  // ---------------------------------------------------------
+  // 감정 → 표정 (이모티콘 · 대사 · 포즈로 얼굴 표정 고르기)
+  // ---------------------------------------------------------
+  const EMO_EXPR = { '😊': 'happy', '🙂': 'smile', '😄': 'laugh', '😆': 'laugh', '😂': 'laugh', '🤣': 'laugh', '🥰': 'love', '😍': 'love', '❤️': 'love', '💕': 'love', '💗': 'love', '💓': 'love', '💘': 'love', '😘': 'love',
+    '😢': 'cry', '😭': 'sob', '😿': 'cry', '💧': 'sad', '😞': 'sad', '😔': 'sad', '💔': 'despair', '😩': 'despair', '😠': 'angry', '😡': 'furious', '💢': 'angry', '🤬': 'furious', '😤': 'pout', '🙄': 'pout',
+    '😱': 'shocked', '😲': 'surprised', '😮': 'surprised', '😯': 'surprised', '❗': 'surprised', '‼️': 'shocked', '❓': 'awkward', '😅': 'awkward', '💦': 'worried', '😰': 'worried', '😟': 'worried', '🤔': 'worried',
+    '😳': 'shy', '☺️': 'shy', '😏': 'smug', '😎': 'smug', '😴': 'sleepy', '💤': 'sleepy', '🥱': 'sleepy', '🎉': 'laugh', '🥳': 'laugh', '👏': 'happy', '✨': 'happy', '🎵': 'smile', '🎶': 'smile', '💪': 'determined', '🔥': 'determined', '😇': 'smile' };
+  const POSE_EXPR = { cry: 'cry', sob: 'sob', kneelCry: 'sob', despair: 'despair', angry: 'angry', shout: 'furious', stomp: 'angry', punch: 'furious', laugh: 'laugh', cheer: 'laugh', dance: 'happy', kiss: 'love', hug: 'love', blush: 'shy', shy: 'shy', faint: 'shocked', gasp: 'shocked', shock: 'shocked', sleep: null, dozeDesk: 'sleepy', think: 'worried', pray: 'smile', sing: 'happy', proposal: 'shy', kneel: 'determined' };
+  FM.Anim.exprOfEmoji = e => { if (!e) return null; for (const [k, v] of Object.entries(EMO_EXPR)) if (e.includes(k)) return v; return null; };
+  FM.Anim.exprOfPose = p => (p && POSE_EXPR[p] !== undefined ? POSE_EXPR[p] : undefined);
+  const HOTTER = { sad: 'cry', cry: 'sob', angry: 'furious', surprised: 'shocked', worried: 'shocked', happy: 'laugh', shy: 'love' };
+  FM.Anim.exprOfText = (t, hot) => {
+    t = t || ''; let e = null;
+    if (/💢|용서 못|닥쳐|배신|최악|짜증|열받|화나|어떻게 그럴|이 나쁜|뻔뻔/.test(t)) e = 'angry';
+    else if (/ㅠ|흑|훌쩍|눈물|울지|슬퍼|미안해|이별|헤어지|떠나|잊지 못|보고 싶/.test(t)) e = 'sad';
+    else if (/헉|설마|말도 안|뭐\?|뭐라고|어떻게 이런|세상에|엥|깜짝|!\?|\?!/.test(t)) e = 'surprised';
+    else if (/좋아해|사랑|결혼해|두근|♥|❤|💕|설레|내 마음/.test(t)) e = /결혼|사랑해/.test(t) ? 'love' : 'shy';
+    else if (/하하|ㅋㅋ|최고|축하|고마워|행복|야호|신난|대박|멋져|맛있/.test(t)) e = /ㅋㅋ|하하|야호/.test(t) ? 'laugh' : 'happy';
+    else if (/흥|칫|몰라|됐거든|웃기지/.test(t)) e = 'pout';
+    else if (/훗|역시 나|내가 누군|당연하지/.test(t)) e = 'smug';
+    else if (/\.\.\.|…|저기|음\.|글쎄|그게|아니 그러니까/.test(t)) e = 'awkward';
+    else if (/반드시|절대|해내|지킬|맹세|약속할게/.test(t)) e = 'determined';
+    if (hot && e && HOTTER[e]) e = HOTTER[e];
+    if (!e && hot) e = 'shocked';
+    return e;
+  };
 })();
