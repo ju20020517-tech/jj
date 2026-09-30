@@ -274,7 +274,7 @@
     { id: 'CONFESSION_READY', name: '고백 준비', min: 90, max: 100, field: '플레이어에게 달려와 [분홍색 고민 풍선 (!)]을 띄움.', mind: '플레이어의 코칭에 따라 고백 여부를 최종 결정함.' },
   ];
   D.CONFESS_SPOTS = [
-    { id: 'beach_sunset', name: '해질녘 바닷가' }, { id: 'sunset_cliff', name: '노을 언덕' },
+    { id: 'beach_sunset', name: '해질녘 바닷가' }, { id: 'sunset_cliff', name: '노을 정원 가제보' },
     { id: 'fountain', name: '광장 분수대' }, { id: 'cafe', name: '카페' },
   ];
   // 질투

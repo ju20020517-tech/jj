@@ -30,13 +30,14 @@
     { id: 's_waiter', name: '웨이터 제이', role: 'waiter', loc: 'sky_in', x: 7.1, z: 5.0, ry: -40 * R, look: { species: 'dog', top: 'vest', shirt: 0x1a1a22, shirt2: 0xffffff } },
   ];
   // 얼굴이 벽/등 쪽을 보던 직원들 자리 보정 (카메라 · 손님 쪽을 보도록)
-  const FIX = { s_pub: [2.5, -3.2, 0], s_clerk2: [-3.4, 1.3, 60], s_dj: [6.95, 0.2, -60], s_teacher: [0, -2.4, 0], s_grocer: [-1.3, 0.85, 0], s_stylist: [5.2, -5.15, 0] };
+  const FIX = { s_barista: [0, -3.8, 0], s_tea: [-3.9, -1.45, 0], s_pub: [3.4, -4.15, 0], s_clerk2: [-3.4, 1.3, 60], s_dj: [6.95, 0.2, -60], s_teacher: [-0.8, -4.2, 0], s_grocer: [-1.3, 0.85, 0], s_stylist: [5.2, -5.15, 0] };
   function addStaff() {
     const E = Ev(); if (!E || !E.staff) return;
     for (const d of NEW_STAFF) {
       if (E.staff.some(s => s.id === d.id)) continue;
       E.staff.push(Object.assign({}, d, { home: d.loc, sx: d.x, sz: d.z, state: 'INTERACT_OBJ', pose: 'stand', bubble: null, emote: null, route: null, sceneId: null, keys: { L1: 'SNOB', L2: 'DILIGENT', L3: 'FORMAL', L4: 'CLEAN' }, stats: { speed: 0, idle: [3, 5] }, status: {}, staff: true, look: window.ISLE && ISLE.normalizeLook ? ISLE.normalizeLook(d.look) : d.look }));
     }
+    for (const [id, nm] of Object.entries({ s_pub: '반점 사장님', s_tea: '다실 주인장' })) { const s = E.staffById(id); if (s) s.name = nm; }
     for (const [id, [x, z, f]] of Object.entries(FIX)) { const s = E.staffById(id); if (s) { s.x = s.sx = x; s.z = s.sz = z; s.ry = f * R; } }
     for (const s of E.staff) s.np = null;
   }
@@ -50,26 +51,26 @@
   // =========================================================
   const sp = (x, z, f, pose, prop, label, say, o) => ({ x, z, f, pose, prop: prop || null, label, say: say || null, o: o ? 1 : 0 });
   const WORK = {
-    s_barista: { st: sp(0, -2.8, 0, 'stand'), inside: (x, z) => z < -2.3 && Math.abs(x) < 0.8, out: [[0.55, -2.45], [1.25, -2.45], [1.5, -1.6]],
-      spots: [sp(0.4, -2.75, 0, 'cook', 'teacup', '커피 내리는 중', ['에스프레소 한 샷 추출~ ☕', '라떼 아트 도전!', '우유 스팀 치이익~']), sp(-0.4, -2.75, 0, 'cook', 'pudding', '디저트 담는 중', ['갓 구운 스콘 나왔어요!', '수플레 팬케이크 굽는 중~']), sp(-3.4, 2.0, -120, 'water', 'wateringCan', '화분 물 주는 중', null, 1), sp(1.8, 0.1, 0, 'sweep', 'broom', '바닥 청소', null, 1)],
+    s_barista: { st: sp(0, -3.8, 0, 'stand'), inside: (x, z) => z < -3.3 && Math.abs(x) < 0.8, out: [[0.55, -3.45], [1.25, -3.45], [1.5, -2.6]],
+      spots: [sp(0.4, -3.75, 0, 'cook', 'teacup', '커피 내리는 중', ['에스프레소 한 샷 추출~ ☕', '라떼 아트 도전!', '우유 스팀 치이익~']), sp(-0.4, -3.75, 0, 'cook', 'pudding', '디저트 담는 중', ['갓 구운 스콘 나왔어요!', '수플레 팬케이크 굽는 중~']), sp(-3.9, 3.0, -150, 'water', 'wateringCan', '화분 물 주는 중', null, 1), sp(1.8, -0.9, 0, 'sweep', 'broom', '바닥 청소', null, 1)],
       serve: ['cafe', 'sit'], tray: 'teacup', lines: ['주문하신 라떼 나왔습니다~ ☕', '수플레 팬케이크 나왔어요! 🥞', '맛있게 드세요 😊', '리필 필요하시면 불러 주세요~'] },
     s_chef: { st: sp(0, -2.05, 0, 'stand'), lane: { axis: 'z', v: -2.05, min: -2.1, max: 2.1, f: 0 },
       spots: [sp(-1.4, -2.05, 180, 'cook', 'spatula', '초밥 쥐는 중', ['샤리는 체온으로!']), sp(1.4, -2.05, 180, 'cook', null, '생선 손질 중', ['오늘 참치 상태 최고!']), sp(-0.7, -2.05, 0, 'cook', null, '초밥 내는 중', ['참치 뱃살 한 접시!', '연어 초밥 나왔습니다!']), sp(0.8, -2.05, 0, 'cook', 'bowl', '미소국 담는 중')],
       serve: ['sushi', 'sit'], tray: 'bowl', lines: ['오마카세 한 점 드려요! 🍣', '장어 초밥 서비스~', '와사비 괜찮으세요?', '이건 오늘 들어온 성게입니다!'] },
-    s_pub: { st: sp(2.5, -3.2, 0, 'stand'), inside: (x, z) => z < -2.4 && x > 0.8, out: [[0.6, -3.1], [0.6, -1.6]],
-      spots: [sp(1.6, -3.2, 0, 'cook', 'bowl', '탕수육 튀기는 중', ['탕수육 소스는 부먹이지!']), sp(3.5, -3.2, 0, 'cook', 'spatula', '짜장 볶는 중'), sp(-3.1, -2.0, 160, 'cook', null, '딤섬 찌는 중', ['딤섬 다 쪄졌다~'], 1)],
-      serve: ['pub'], tray: 'bowl', lines: ['탕수육 나왔어요~ 🥢', '꿔바로우 서비스!', '고량주는 적당히~', '딤섬 따끈할 때 드세요!'] },
+    s_pub: { st: sp(3.4, -4.15, 0, 'stand'), inside: (x, z) => z < -3.2 && x > 1.9, out: [[1.6, -4.15], [1.4, -2.8]],
+      spots: [sp(2.5, -4.15, 0, 'cook', 'bowl', '탕수육 튀기는 중', ['탕수육 소스는 부먹이지!']), sp(4.4, -4.15, 0, 'cook', 'spatula', '짜장 볶는 중', ['불맛 제대로 입혀야지!']), sp(1.2, -3.0, 160, 'cook', null, '딤섬 찌는 중', ['딤섬 다 쪄졌다~'], 1), sp(-3.9, 3.2, -90, 'reach', 'teacup', '보이차 따르는 중', null, 1)],
+      serve: ['pub'], tray: 'bowl', lines: ['탕수육 나왔어요~ 🥢', '꿔바로우 서비스!', '짬뽕 국물 뜨거우니 조심!', '딤섬 따끈할 때 드세요!'] },
     s_dj: { st: sp(6.95, 0.2, -60, 'stand'), lane: { axis: 'x', v: 6.95, min: -1.6, max: 2.0, f: -70 },
       spots: [sp(6.95, -1.2, -60, 'cook', 'drink', '칵테일 셰이킹', ['셰이킹~ 셰이킹~ 🍸']), sp(6.95, 1.5, -60, 'cook', 'drink', '잔 닦는 중', ['오늘 밤 추천은 블루문 칵테일']), sp(6.95, 0.6, -40, 'stand', null, '재즈 감상', ['이 색소폰 솔로... 좋다 🎷'])],
       serve: ['mocktail'], tray: 'drink', lines: ['블루문 칵테일 나왔습니다 🍸', '논알콜 모히또 한 잔!', '오늘 연주 멋지죠?', '얼음 하나 더 넣어 드렸어요'] },
     s_clerk2: { st: sp(-3.4, 1.3, 60, 'stand'), inside: (x, z) => x < -3.0 && z > -0.2, out: [[-3.5, -0.1]],
       spots: [sp(-3.65, -1.2, -90, 'reach', 'snack', '과자 진열 중', ['유통기한 체크 완료!'], 1), sp(-1.8, -1.95, 180, 'reach', 'can', '음료 채우는 중', null, 1), sp(-1.2, 0.2, 0, 'sweep', 'broom', '바닥 청소', ['어서오세요~!'], 1), sp(1.1, 1.0, 0, 'sweep', 'broom', '바닥 청소', null, 1), sp(-3.4, 1.9, 60, 'type', null, '포스기 정산', ['삑! 삑!'])],
       serve: ['eat'], tray: 'kimbap', lines: ['전자레인지 다 됐어요~', '삼각김밥 1+1 챙겨 가세요!'] },
-    s_tea: { st: sp(0, -2.9, 0, 'stand'), inside: (x, z) => z < -2.6 && Math.abs(x) < 1.6, out: [[1.8, -2.95], [1.9, -1.4]],
-      spots: [sp(-0.9, -2.95, 0, 'cook', 'teacup', '차 우리는 중', ['대추차 우리는 중이에요~ 🍵']), sp(0.9, -2.95, 0, 'cook', 'teacup', '다기 데우는 중'), sp(-3.8, -2.15, 180, 'dj', null, 'LP 바꾸는 중', ['오늘은 가야금 산조로...'], 1), sp(3.2, -2.2, 135, 'water', 'wateringCan', '화분 물 주기', null, 1)],
-      serve: ['tea_heal'], tray: 'teacup', lines: ['따뜻한 대추차 한 잔 드세요 🍵', '마음이 편해지는 국화차예요', '약과도 하나 드릴게요~'] },
-    s_teacher: { st: sp(0, -2.4, 0, 'talk', 'book'),
-      spots: [sp(-1.6, -2.9, 180, 'write', 'pen', '판서 중', ['자, 칠판 보세요~']), sp(1.6, -2.9, 180, 'write', 'pen', '판서 중'), sp(1.4, -2.3, 0, 'point', null, '질문 받는 중', ['질문 있는 사람?']), sp(-1.3, 1.0, 0, 'look', 'book', '책상 사이 순회', null)],
+    s_tea: { st: sp(-3.9, -1.45, 0, 'cook', 'teacup'),
+      spots: [sp(-3.5, -1.45, 0, 'cook', 'teacup', '말차 격불 중', ['말차를 곱게 풀어요... 🍵']), sp(-4.3, -1.45, 0, 'cook', null, '무쇠 주전자 물 데우는 중'), sp(-1.2, -2.7, 180, 'water', 'wateringCan', '안뜰 정원 물 주기', ['이끼가 촉촉해야 예뻐요']), sp(1.2, -2.6, 180, 'reach', null, '석등 불 켜기')],
+      via: { '-1.2,-2.7': [[-0.4, -1.5], [-0.4, -2.5]], '1.2,-2.6': [[0.4, -1.5], [0.4, -2.4]] }, serve: ['tea_heal'], tray: 'teacup', lines: ['따뜻한 말차 한 잔 드세요 🍵', '화과자도 곁들여 보세요~', '코타츠 따뜻하죠?', '천천히 쉬다 가세요'] },
+    s_teacher: { st: sp(-0.8, -4.2, 0, 'talk', 'book'),
+      spots: [sp(-1.8, -4.45, 180, 'write', 'pen', '판서 중', ['자, 칠판 보세요~']), sp(0.2, -4.45, 180, 'write', 'pen', '판서 중'), sp(1.2, -3.4, 30, 'point', null, '화이트보드 설명', ['이 단어 따라 읽어 볼까요?']), sp(4.6, -2.95, 0, 'write', 'pen', '채점 중', ['오, 100점!']), sp(-2.7, 0.7, 0, 'look', 'book', '책상 사이 순회', null)],
       serve: ['class'], tray: null, lines: ['잘하고 있어요! 👍', '여기 글씨 예쁘다~', '다 풀었으면 손 들기!'] },
     s_librarian: { st: sp(-4.2, 3.8, 0, 'stand'),
       spots: [sp(-6.35, -6.1, 180, 'reach', 'book', '책 정리 중'), sp(-2.45, -6.1, 180, 'reach', 'book', '책 정리 중'), sp(-0.4, -3.1, 180, 'reach', 'book', '반납 도서 꽂기'), sp(-6.2, 4.85, 0, 'reach', 'book', '북 트롤리 정리', ['반납 도서가 한가득!']), sp(-3.6, 3.75, 0, 'write', 'pen', '대출 기록')],

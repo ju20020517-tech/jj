@@ -54,8 +54,10 @@
   // ===== 북쪽 고지대 =====
   place('bridge', { name: '아찔한 은하수 구름다리', district: 'NORTH', x: 0, z: -50, tags: ['bridge'],
     spots: [[0, -50, ['bridge']]], desc: '고지대와 하부 주거/상업 구역을 잇는 유일한 도보 통로' });
-  place('cliff', { name: '맹세와 비련의 노을 절벽', district: 'NORTH', x: -74, z: -92, r: 10, tags: ['hill', 'stars', 'confess', 'breakup', 'quiet'],
-    spots: [[-76, -91, ['bench', 'hill'], { seat: true, face: -Math.PI / 2 }], [-76, -93, ['bench', 'hill'], { seat: true, face: -Math.PI / 2 }], [-72, -86, ['hill', 'flowers']], [-78, -98, ['hill']]],
+  place('cliff', { name: '노을 정원 & 맹세의 가제보', district: 'NORTH', x: -74, z: -92, r: 12, tags: ['hill', 'stars', 'confess', 'breakup', 'quiet', 'garden', 'romance'],
+    spots: [[-79.9, -89.6, ['bench', 'hill', 'sunset'], { seat: true, face: -Math.PI / 2 }], [-79.9, -94.4, ['bench', 'hill', 'sunset'], { seat: true, face: -Math.PI / 2 }],
+      [-73.25, -91.55, ['bench', 'gazebo'], { seat: true, face: -Math.PI / 2 }], [-73.25, -92.45, ['bench', 'gazebo'], { seat: true, face: -Math.PI / 2 }],
+      [-69.5, -87.2, ['hill', 'flowers']], [-78.5, -96.8, ['hill', 'flowers']], [-68.2, -85.6, ['fountain', 'flowers']], [-80.8, -92, ['hill', 'sunset']], [-74, -99.9, ['bridge', 'hill']]],
     desc: '해 질 녘(18:00~19:00)에만 주변이 짙은 주황색과 보라색 그라데이션으로 물드는 곳' });
   place('cliff_lawn', { name: '절벽 아래 잔디밭', district: 'NORTH', x: -98, z: -92, tags: ['lawn'], spots: [[-98, -92, ['lawn']]] });
   place('cathedral', { name: '축복의 마블 대성당 & 비밀 서약 정원', district: 'NORTH', x: 12, z: -90,
@@ -151,7 +153,7 @@
     c_apt: [0, -7], c_agw: [-10, -4], c_age: [10, -4], c_pl: [0, 1], c_plw: [-13, 10], c_ple: [13, 10], c_pls: [0, 21],
     c_cafe: [20, 11], c_metro: [-20, 22], c_news: [20, 22], c_s: [0, 38], c_w: [-34, 10], c_e: [34, 10], c_n: [0, -22], c_nt: [0, -40], c_nw1: [-17.5, -7], c_nw2: [-17.5, -22.5], c_ne1: [17.5, -7], c_ne2: [17.5, -22.5],
     // 북쪽
-    n_b: [0, -60], n_c: [12, -66], n_cd: [12, -75], n_g: [-8, -76], n_w: [-36, -66], n_wf: [-40, -61], n_cl: [-70, -90], n_e: [40, -72],
+    n_b: [0, -60], n_c: [12, -66], n_cd: [12, -75], n_g: [-8, -76], n_w: [-36, -66], n_wf: [-40, -61], n_cl: [-61, -92], n_e: [40, -72],
     n_metro: [30, -69], n_tower: [26, -80], n_ce: [24, -75], n_camp: [52, -82], n_obs: [66, -86],
     // 협곡 / 절벽 아래 저지대
     g_pond: [-40, -47], g_mid: [-72, -48], g_w: [-104, -48], l_lawn: [-98, -80],
