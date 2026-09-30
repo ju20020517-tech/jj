@@ -11,6 +11,8 @@
 
   let scene, sun, hemi, amb, sky, skyMat, sea, seaTex, starPts, milky, rainPts, fogCol;
   const dyn = { waters: [], fires: [], bulbs: [], lampLights: [], jets: [], birds: [], cars: [], windows: {}, board: null, termBoard: null, wedding: null, weddingTrash: [], fireflies: null, sandNames: [], leaves: null, pets: [] };
+  // 성당 앞 상설 웨딩 가든 영역 (roomkit12) — 풀 · 꽃 · 가로등을 비움
+  const inGarden = (x, z) => { const r = FM.GARDEN_RECT; return !!r && x > r[0] - 0.4 && x < r[1] + 0.4 && z > r[2] - 0.4 && z < r[3] + 0.4; };
   W.dyn = dyn;
 
   // ---------------------------------------------------------
@@ -414,7 +416,7 @@
     const cols = [0xff7aa8, 0xffc933, 0xff4d5e, 0xff9a3d, 0xffffff, 0xb69cff, 0xff8fd0, 0x7ab8ff];
     const types = ['tulip', 'cosmos', 'pansy', 'mum'];
     const pts = [];
-    for (const f of FM.DECOR.flowers) { const n = Math.round(f.r * f.r * 7); const ty = types[Math.floor(f.col * 97) % 4]; for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * f.r; pts.push([f.x + Math.cos(a) * r, f.z + Math.sin(a) * r, cols[Math.floor((f.col * 8 + i * 0.37) % 8)], ty]); } }
+    for (const f of FM.DECOR.flowers) { const n = Math.round(f.r * f.r * 7); const ty = types[Math.floor(f.col * 97) % 4]; for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * f.r; if (!inGarden(f.x + Math.cos(a) * r, f.z + Math.sin(a) * r)) pts.push([f.x + Math.cos(a) * r, f.z + Math.sin(a) * r, cols[Math.floor((f.col * 8 + i * 0.37) % 8)], ty]); } }
     // 건물 앞 꽃밭 (문 양옆)
     for (const pl of Object.values(MAP.P)) {
       if (!pl.bld || !pl.door) continue;
@@ -423,7 +425,7 @@
       for (const sgn of [-1, 1]) for (let i = 0; i < 9; i++) {
         const along = sgn * (1.6 + (i % 3) * 0.45 + Math.min(half - 2.6, 2.2) * 0.4), out = 0.9 + Math.floor(i / 3) * 0.35;
         const x = pl.door[0] + rx * along + fx * (out - 0.5), z = pl.door[1] + rz * along + fz * (out - 0.5);
-        if (T.blockedByBuilding(x, z, 0.1) || T.inWater(x, z)) continue;
+        if (T.blockedByBuilding(x, z, 0.1) || T.inWater(x, z) || inGarden(x, z)) continue;
         pts.push([x, z, cols[(i + (pl.x | 0)) % 8], types[((pl.z | 0) + sgn + 8) % 4]]);
       }
     }
@@ -488,7 +490,7 @@
       if (y < 0.5 || T.inWater(px, pz) || T.surface(px, pz) === 'sand') continue;
       const e = 0.6, slope = Math.max(Math.abs(T.height(px + e, pz) - T.height(px - e, pz)), Math.abs(T.height(px, pz + e) - T.height(px, pz - e))) / (2 * e);
       if (slope > 0.5) continue;
-      if (Math.hypot(px, pz - 10) < 15 || T.blockedByBuilding(px, pz, 0.8) || nearRoad(segs, px, pz)) continue;
+      if (Math.hypot(px, pz - 10) < 15 || T.blockedByBuilding(px, pz, 0.8) || nearRoad(segs, px, pz) || inGarden(px, pz)) continue;
       pts.push([px, y, pz]);
       if (pts.length > 4200) break;
     }
@@ -539,7 +541,7 @@
     dyn.fountain = f;
     // 가로등 (도로 교차점)
     for (const n of Object.values(MAP.N)) {
-      if (Math.random() < 0.55 || T.onBridge(n[0], n[1]) || T.onStairs(n[0], n[1])) continue;
+      if (Math.random() < 0.55 || T.onBridge(n[0], n[1]) || T.onStairs(n[0], n[1]) || inGarden(n[0] + 2, n[1] + 1.5)) continue;
       const l = PM.decor('lamp'); place(l, n[0] + 2, n[1] + 1.5); l.traverse(o => { if (o.userData.lampBulb) dyn.bulbs.push(o); });
     }
     // 벤치 / 테이블 / 선베드 / 해먹 ... (스폿 기반)
@@ -580,10 +582,13 @@
     for (let i = 0; i < 4; i++) { const car = PM.decor('car', [0xff6f61, 0x4fc1e9, 0xffd84a, 0x8ee07a][i]); car.userData.lane = i % 2 ? 1.8 : -1.8; car.userData.t = Math.random(); car.userData.dir = i % 2 ? 1 : -1; scene.add(car); dyn.cars.push(car); }
     // 결혼식 장식 (웨딩 아치, 꽃길, 의자)
     const wg = new THREE.Group();
-    const arch = PM.decor('arch'); arch.position.set(12, 0, -70.5); wg.add(arch);
-    const path = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 16), new THREE.MeshLambertMaterial({ color: 0xff8fb1 })); path.rotation.x = -Math.PI / 2; path.position.set(12, 0.07, -63); wg.add(path); dyn.aislePath = path;
-    for (let i = 0; i < 8; i++) for (const s of [-1, 1]) { const ch = PM.decor('chair'); ch.position.set(12 + s * 3.2, 0, -66 + i * 1.1); ch.rotation.y = Math.PI; wg.add(ch); }
-    for (let i = 0; i < 16; i++) for (const s of [-1, 1]) { const fl = mesh(sphere(0.18), mat([0xff4d6d, 0xffffff, 0xffd84a][i % 3]), 12 + s * 1.3, 0.15, -70 + i); wg.add(fl); dyn.aisleFlowers = dyn.aisleFlowers || []; dyn.aisleFlowers.push(fl); }
+    // 상설 야외 웨딩 가든(roomkit12)이 있으면 아치 · 의자는 가든 것을 쓰고, 결혼식 때는 꽃잎 길과 꽃만 덧깖
+    const garden = FM.CeremonyGarden ? FM.CeremonyGarden(scene, T, PM) : null;
+    if (!garden) { const arch = PM.decor('arch'); arch.position.set(12, 0, -70.5); wg.add(arch); }
+    const path = new THREE.Mesh(new THREE.PlaneGeometry(garden ? 1.6 : 2.2, garden ? 12.6 : 16), new THREE.MeshLambertMaterial({ color: 0xff8fb1, transparent: !!garden, opacity: garden ? 0.55 : 1, polygonOffset: true, polygonOffsetFactor: -6 })); const wgY = T.height(12, -66), pY0 = T.height(12, -73.1), pY1 = T.height(12, -60.5);
+    path.rotation.x = -Math.PI / 2 + (garden ? Math.atan2(pY0 - pY1, 12.6) : 0); path.position.set(12, garden ? (pY0 + pY1) / 2 - wgY + 0.1 : 0.07, garden ? -66.8 : -63); wg.add(path); dyn.aislePath = path;
+    if (!garden) for (let i = 0; i < 8; i++) for (const s of [-1, 1]) { const ch = PM.decor('chair'); ch.position.set(12 + s * 3.2, 0, -66 + i * 1.1); ch.rotation.y = Math.PI; wg.add(ch); }
+    for (let i = 0; i < (garden ? 12 : 16); i++) for (const s of [-1, 1]) { const fl = mesh(sphere(0.18), mat([0xff4d6d, 0xffffff, 0xffd84a][i % 3]), 12 + s * (garden ? 0.95 : 1.3), 0.15 + (garden ? T.height(12, -72 + i) - wgY + 0.06 : 0), garden ? -72 + i : -70 + i); wg.add(fl); dyn.aisleFlowers = dyn.aisleFlowers || []; dyn.aisleFlowers.push(fl); }
     wg.position.y = T.height(12, -66); wg.visible = false; scene.add(wg); dyn.wedding = wg;
     // 반딧불이 (센트럴 파크)
     const n = 60, fp = new Float32Array(n * 3);
