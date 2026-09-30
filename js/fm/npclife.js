@@ -30,7 +30,7 @@
     { id: 's_waiter', name: '웨이터 제이', role: 'waiter', loc: 'sky_in', x: 7.1, z: 5.0, ry: -40 * R, look: { species: 'dog', top: 'vest', shirt: 0x1a1a22, shirt2: 0xffffff } },
   ];
   // 얼굴이 벽/등 쪽을 보던 직원들 자리 보정 (카메라 · 손님 쪽을 보도록)
-  const FIX = { s_pub: [2.5, -3.2, 0], s_clerk2: [-3.4, 1.3, 60], s_dj: [6.95, 0.2, -60], s_teacher: [0, -2.4, 0], s_grocer: [-1.3, 0.85, 0] };
+  const FIX = { s_pub: [2.5, -3.2, 0], s_clerk2: [-3.4, 1.3, 60], s_dj: [6.95, 0.2, -60], s_teacher: [0, -2.4, 0], s_grocer: [-1.3, 0.85, 0], s_stylist: [5.2, -5.15, 0] };
   function addStaff() {
     const E = Ev(); if (!E || !E.staff) return;
     for (const d of NEW_STAFF) {
@@ -84,8 +84,8 @@
     s_grocer: { st: sp(-1.3, 0.85, 0, 'stand'),
       spots: [sp(-4.3, 0.75, 0, 'reach', null, '아이스크림 채우기'), sp(-1.2, -1.9, -90, 'reach', 'bag', '빵 진열', ['갓 구운 식빵 나왔어요~']), sp(-0.35, -3.2, -90, 'reach', 'drink', '주스 채우기'), sp(-3.3, 3.0, 0, 'reach', 'apple', '과일 진열', ['사과 특가 세일!']), sp(-0.8, 3.7, 0, 'water', 'wateringCan', '꽃 물 주기')],
       via: { '-3.3,3': [[-3.0, 0.8], [-3.0, 2.9]], '-0.8,3.7': [[0.2, 0.6], [0.2, 3.7]] }, serve: ['shop'], tray: 'bag', lines: ['봉투 필요하세요?', '이거 오늘 특가예요!', '포인트 적립해 드릴게요~'], near: [-6, 1.5, -4, 5] },
-    s_stylist: { st: sp(5.2, -4.9, 0, 'stand'), inside: (x, z) => x > 3.9 && x < 6.5 && z < -4.7, out: (tx) => (tx < 5.2 ? [[3.6, -5.0]] : [[6.8, -5.0]]),
-      spots: [sp(2.35, -4.6, -90, 'reach', null, '옷 정리 중', ['신상 원피스 들어왔어요~'], 1), sp(8.05, -4.6, 90, 'reach', null, '옷 정리 중', null, 1), sp(2.2, -2.2, 150, 'reach', null, '모자 진열', null, 1), sp(5.2, -4.95, 0, 'write', 'pen', '재고 기록')],
+    s_stylist: { st: sp(5.2, -5.15, 0, 'stand'), inside: (x, z) => x > 3.9 && x < 6.5 && z < -4.7, out: (tx) => (tx < 5.2 ? [[3.6, -5.0]] : [[6.8, -5.0]]),
+      spots: [sp(2.35, -4.6, -90, 'reach', null, '옷 정리 중', ['신상 원피스 들어왔어요~'], 1), sp(8.05, -4.6, 90, 'reach', null, '옷 정리 중', null, 1), sp(2.2, -2.2, 150, 'reach', null, '모자 진열', null, 1), sp(4.6, -5.2, 0, 'write', 'pen', '재고 기록')],
       serve: ['shop', 'tryon', 'mirror', 'fashion_war'], tray: null, lines: ['손님 너무 잘 어울려요! ✨', '그 색이 딱이에요~', '사이즈 하나 작은 걸로 드릴까요?', '이건 이번 시즌 신상이에요!'], near: [0, 10, -7, 0] },
     s_doctor: { st: sp(-6.3, -0.45, 0, 'stand'), inside: (x, z) => z < 0.2, out: [[-4.0, -0.5], [-4.0, 1.2]],
       spots: [sp(-5.9, -3.6, 180, 'write', 'pen', '진료 기록'), sp(-3.8, -0.95, 180, 'reach', 'pill', '약장 확인'), sp(-7.2, -0.45, 0, 'type', null, '처방전 입력')],
@@ -569,6 +569,57 @@
   FM.bus.on('hour', h => { if (h >= 10 && h <= 20 && chance(0.25)) try { visitFriend(); } catch (e) { console.error('npclife visit', e); } });
 
   // =========================================================
+  // 4-1. 가게 음식은 가게 안에서, 자리에 앉아서, 먹는 모션으로
+  // =========================================================
+  const SHOPS = ['cafe_in', 'sushi_in', 'pub_in', 'sky_in', 'club_in', 'tea_in', 'conv_in', 'mall_in', 'library_in'];
+  const EAT_ACTS = ['dine', 'sushi', 'pub', 'cafe', 'eat', 'mocktail', 'breakfast', 'tea', 'tea_heal', 'eat_seat', 'eat_snack'];
+  const PICKUP = ['cafe', 'buy_kimbap'];   // 서서 고르는 곳 (뷔페 · 계산대 · 진열대) → 고른 뒤 자리에 앉아서 먹음
+  const MENU = {
+    cafe_in: [['eat', 'sandwich'], ['drink', 'teacup'], ['eat', 'pudding']], sushi_in: [['eat', 'bowl'], ['drink', 'teacup']], pub_in: [['eat', 'bowl'], ['drink', 'drink']],
+    sky_in: [['eat', 'bowl'], ['drink', 'drink']], club_in: [['drink', 'drink'], ['eat', 'snack']], tea_in: [['drink', 'teacup'], ['eat', 'pudding']], conv_in: [['eat', 'kimbap'], ['drink', 'can']],
+    mall_in: [['drink', 'teacup'], ['eat', 'sandwich']], library_in: [['drink', 'teacup'], ['eat', 'pudding']],
+  };
+  const DRINKS = ['mocktail', 'tea', 'tea_heal'];
+  FM.bus.on('act', ({ v, id }) => {
+    if (!v || v.staff || !v.act) return;
+    // 섬의 카페 테라스에서는 음식을 먹지 않고 쉬기만 (가게 음식은 안에서)
+    if (v.loc === 'island' && id === 'eat_snack' && v.spot && v.spot.tags && v.spot.tags.includes('cafe')) { v.pose = 'sit'; v.prop = null; v.act.name = '테라스에서 쉬는 중'; v.act.id = 'sit_rest'; return; }
+    if (!SHOPS.includes(v.loc) || !EAT_ACTS.includes(id)) return;
+    const seated = (v.act.seatH || 0) > 0 || ['eat', 'drink', 'sit'].includes(v.act.pose || v.pose) && !['reach', 'stand'].includes(v.pose);
+    if (!seated) { if (PICKUP.includes(id)) { v._eatSeat = v.loc; v.act.t = Math.min(v.act.t, 3); v.act.name = '음식 고르는 중'; } return; }
+    const m = MENU[v.loc] || [['eat', 'bowl']];
+    const first = DRINKS.includes(id) ? m.find(x => x[0] === 'drink') || m[0] : m[0];
+    v.pose = first[0]; v.prop = first[1]; v.act.food = { i: 0, t: rnd(3, 5) };
+    v.act.name = DRINKS.includes(id) ? '앉아서 마시는 중' : '앉아서 식사 중';
+    v.act.t = Math.max(v.act.t, rnd(10, 16));
+    v._eatSeat = null;
+  });
+  function tickFood(dt) {
+    const occ = Sim.useOcc;
+    for (const v of S().villagers) {
+      const a = v.act;
+      if (a && a.food && !v.moving && !v.sceneId) {
+        a.food.t -= dt;
+        if (a.food.t <= 0) {
+          const m = MENU[v.loc] || [['eat', 'bowl']];
+          const opts = a.id === 'mocktail' ? m.filter(x => x[0] === 'drink').concat([['drink', 'drink']]) : m;
+          a.food.i = (a.food.i + 1) % opts.length; a.food.t = rnd(3.5, 6);
+          v.pose = opts[a.food.i][0]; v.prop = opts[a.food.i][1];
+          if (chance(0.3)) Sim.emote(v, pick(['😋', '🍽️', '☕', '✨']), 2);
+        }
+        continue;
+      }
+      // 고른 음식을 들고 빈자리에 앉기
+      if (v._eatSeat && !v.act && !v.moving && !(v.route && v.route.length) && !v.sceneId) {
+        const iid = v._eatSeat; v._eatSeat = null;
+        if (v.loc !== iid) continue;
+        const seats = Sim.furnUses(iid, u => (EAT_ACTS.includes(u.u.act) || u.u.pose === 'sit') && ((u.u.seatH || 0) > 0 || ['eat', 'drink', 'sit'].includes(u.u.pose)) && !['staff', 'perform'].includes(u.u.act) && !occ[u.key]);
+        if (seats.length) { seats.sort((x, y) => Math.hypot(x.x - v.x, x.z - v.z) - Math.hypot(y.x - v.x, y.z - v.z)); Sim.goUse(v, seats[Math.floor(Math.random() * Math.min(3, seats.length))], 'eat_seat'); v.prop = (MENU[iid] || [['eat', 'bowl']])[0][1]; }
+      }
+    }
+  }
+
+  // =========================================================
   // 5. 틱 (게임 루프에 연결)
   // =========================================================
   const oTick = Sim.tick;
@@ -583,6 +634,7 @@
         const E = Ev();
         if (E && E.staff) for (const s of E.staff) tickStaff(s, d * k);
         tickSocial(d * k);
+        tickFood(d * k);
         tickMood(d * st.speed * (Sim.CLOCK || 1));
       }
     } catch (e) { console.error('npclife tick', e); }

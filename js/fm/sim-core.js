@@ -1147,7 +1147,7 @@
     const opts = v.status.poorUntil ? ['conv'] : [T.district(v.x, v.z) === 'EAST' ? pick(['sushi', 'pub', 'conv']) : T.district(v.x, v.z) === 'SOUTH' ? 'pocha' : pick(['cafe', 'conv'])];
     const o = opts[0];
     if (o === 'pocha') { const sp = SPOTS.find(s => s.tags.includes('pocha') && !s.occ); if (sp) { goSpot(v, sp, 'eat_snack'); return true; } }
-    if (o === 'cafe') { const sp = SPOTS.find(s => s.tags.includes('cafe') && !s.occ); if (sp) { goSpot(v, sp, 'eat_snack'); return true; } }
+    if (o === 'cafe') { planRoute(v, { loc: 'cafe_in', x: rnd(-1, 1), z: rnd(-0.5, 1) }); v.pendingAct = 'eat_out'; v.eatPrice = 35; v.state = 'WALK'; return true; }   // 카페 음식은 카페 안에서
     const p = MAP.P[o];
     if (p && p.interior) { planRoute(v, { loc: p.interior, x: rnd(-1, 1), z: rnd(-0.5, 1) }); v.pendingAct = 'eat_out'; return true; }
     return false;
@@ -1374,7 +1374,10 @@
       const FOOD = ['dine', 'sushi', 'pub', 'cafe', 'eat', 'mocktail', 'breakfast', 'buy_kimbap', 'tea'];
       const seats = INT[v.loc] ? furnUses(v.loc, u => FOOD.includes(u.u.act) && (!useOcc[u.key] || useOcc[u.key] === v.id)) : [];
       if (seats.length) { v.hunger = Math.min(v.hunger, 25); Sim.emote(v, pick(['😋', '🍽️', '😊']), 2.5); return goUse(v, pick(seats)); }
-      v.hunger = 15; return startAct(v, 'eat_snack', { state: 'SIT_REST', pose: 'eat', dur: 8, name: '외식' });
+      // 빈 식탁이 없으면 아무 의자에라도 앉아서, 그것도 없으면 자리가 없어 다른 곳으로
+      const any = INT[v.loc] ? furnUses(v.loc, u => (u.u.seatH > 0 || u.u.pose === 'sit') && !['staff', 'boss', 'anchor', 'hearing', 'hospital'].includes(u.u.act) && (!useOcc[u.key] || useOcc[u.key] === v.id)) : [];
+      if (any.length) { v.hunger = Math.min(v.hunger, 25); return goUse(v, pick(any), 'eat_seat'); }
+      Sim.emote(v, '😣', 2.5); Sim.say(v, '자리가 꽉 찼네... 다른 데 가야지', 2.5); v.idleT = 1; return;
     }
     if (pa === 'corner') return startAct(v, 'corner', { state: 'HOME_LIFE', pose: 'sadSit', dur: 20, name: '불 끄고 구석에 앉아있음' });
     if (pa === 'hospital') return startAct(v, 'hospital', { state: 'SIT_REST', pose: 'sleep', dur: 20 });
@@ -1446,7 +1449,7 @@
     const sleeping = v.act && v.act.id === 'sleep';
     v.hunger = clamp(v.hunger + dMin * (sleeping ? 0.03 : 0.065), 0, 100);
     v.energy = clamp(v.energy + dMin * (sleeping ? 0.25 : -0.06), 0, 100);
-    if (v.act && ['eat_snack', 'sushi', 'pub', 'dine', 'cook', 'breakfast', 'eat', 'bbq', 'nibble', 'buy_kimbap', 'cafe', 'snack', 'sandwich'].includes(v.act.id)) v.hunger = clamp(v.hunger - dMin * 3, 0, 100);
+    if (v.act && ['eat_snack', 'eat_seat', 'sushi', 'pub', 'dine', 'cook', 'breakfast', 'eat', 'bbq', 'nibble', 'buy_kimbap', 'cafe', 'snack', 'sandwich', 'mocktail', 'tea_heal'].includes(v.act.id)) v.hunger = clamp(v.hunger - dMin * 3, 0, 100);
     let ds = 0;
     if (v.act && ['work_desk', 'copier', 'staff', 'anchor', 'work_home'].includes(v.act.id)) ds += 0.035;
     if (v.act && ['sleep', 'tea_heal', 'massage', 'sofa', 'nap', 'club_dance', 'karaoke', 'jacuzzi', 'bathe'].includes(v.act.id)) ds -= 0.06;
