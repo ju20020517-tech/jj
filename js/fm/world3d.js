@@ -450,41 +450,56 @@
     return { tulip, cosmos: ring(8, 0.085, 0.085, 0.035, 0.25), pansy: ring(5, 0.055, 0.07, 0.06, 0.15), mum, stem };
   }
   function makeFlowers() {
-    const cols = [0xff7aa8, 0xffc933, 0xff4d5e, 0xff9a3d, 0xffffff, 0xb69cff, 0xff8fd0, 0x7ab8ff];
-    const types = ['tulip', 'cosmos', 'pansy', 'mum'];
-    const pts = [];
-    for (const f of FM.DECOR.flowers) { const n = Math.round(f.r * f.r * 7); const ty = types[Math.floor(f.col * 97) % 4]; for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * f.r; if (!inGarden(f.x + Math.cos(a) * r, f.z + Math.sin(a) * r)) pts.push([f.x + Math.cos(a) * r, f.z + Math.sin(a) * r, cols[Math.floor((f.col * 8 + i * 0.37) % 8)], ty]); } }
+    const FL = FM.Flora;
+    const cols = [0xff7aa8, 0xffc933, 0xff4d5e, 0xff9a3d, 0xffffff, 0xb69cff, 0xff8fd0, 0x7ab8ff, 0xfff0a0, 0xff6f86];
+    const types = FL ? ['tulip', 'daisy', 'cosmos', 'rose', 'marigold', 'pansy'] : ['tulip', 'cosmos', 'pansy', 'mum'];
+    const pts = [], mounds = [];
+    // 동네 꽃밭: 잎 덤불 위로 꽃이 소복이 (한 꽃밭에 두 종류 섞어서)
+    for (const f of FM.DECOR.flowers) {
+      if (inGarden(f.x, f.z)) continue;
+      const n = Math.round(f.r * f.r * 13), t1 = types[Math.floor(f.col * 97) % types.length], t2 = types[Math.floor(f.col * 53 + 2) % types.length];
+      for (let i = 0; i < n; i++) { const a = i * 2.39996 + f.col * 9, r = Math.sqrt((i + 0.5) / n) * f.r; const x = f.x + Math.cos(a) * r, z = f.z + Math.sin(a) * r; pts.push([x, z, cols[Math.floor((f.col * 10 + i * 0.37) % 10)], i % 3 ? t1 : t2]); }
+      for (let i = 0; i < 5; i++) { const a = i * 1.3 + f.col * 5, r = (i ? 0.55 : 0) * f.r; mounds.push([f.x + Math.cos(a) * r, f.z + Math.sin(a) * r, f.r * (i ? 0.5 : 0.75)]); }
+    }
     // 건물 앞 꽃밭 (문 양옆)
     for (const pl of Object.values(MAP.P)) {
       if (!pl.bld || !pl.door) continue;
       const dx = pl.door[0] - pl.x, dz = pl.door[1] - pl.z, l = Math.hypot(dx, dz) || 1, fx = dx / l, fz = dz / l, rx = -fz, rz = fx;
       const half = (Math.abs(fx) > Math.abs(fz) ? pl.bld.d : pl.bld.w) / 2;
-      for (const sgn of [-1, 1]) for (let i = 0; i < 9; i++) {
-        const along = sgn * (1.6 + (i % 3) * 0.45 + Math.min(half - 2.6, 2.2) * 0.4), out = 0.9 + Math.floor(i / 3) * 0.35;
+      for (const sgn of [-1, 1]) for (let i = 0; i < 12; i++) {
+        const along = sgn * (1.6 + (i % 4) * 0.38 + Math.min(half - 2.6, 2.2) * 0.4), out = 0.85 + Math.floor(i / 4) * 0.3;
         const x = pl.door[0] + rx * along + fx * (out - 0.5), z = pl.door[1] + rz * along + fz * (out - 0.5);
         if (T.blockedByBuilding(x, z, 0.1) || T.inWater(x, z) || inGarden(x, z)) continue;
-        pts.push([x, z, cols[(i + (pl.x | 0)) % 8], types[((pl.z | 0) + sgn + 8) % 4]]);
+        pts.push([x, z, cols[(i + (pl.x | 0)) % 10], types[((pl.z | 0) + sgn + 12) % types.length]]);
+        if (i % 4 === 1) mounds.push([x, z, 0.32]);
       }
     }
-    const G2 = flowerGeos();
     const m4 = new THREE.Matrix4(), c = new THREE.Color(), q = new THREE.Quaternion(), s3 = new THREE.Vector3(1, 1, 1), p3 = new THREE.Vector3();
-    const stemM = sway(new THREE.MeshLambertMaterial({ vertexColors: true }), 0.1, 'fstem');
-    const stems = new THREE.InstancedMesh(G2.stem, stemM, pts.length);
-    const byType = {}; for (const pt of pts) (byType[pt[3]] = byType[pt[3]] || []).push(pt);
-    pts.forEach(([x, z], i) => { p3.set(x, T.height(x, z), z); q.setFromEuler(new THREE.Euler(0, x * 7, 0)); s3.setScalar(0.9 + Math.abs(Math.sin(x * 5 + z)) * 0.35); m4.compose(p3, q, s3); stems.setMatrixAt(i, m4); });
-    stems.receiveShadow = true; scene.add(stems);
-    const centers = [];
-    for (const [ty, list] of Object.entries(byType)) {
-      const headM = sway(H.mat(0xffffff).clone(), 0.1, 'fhead');
-      const inst = new THREE.InstancedMesh(G2[ty], headM, list.length);
-      list.forEach(([x, z, col], i) => {
-        const k = 0.9 + Math.abs(Math.sin(x * 5 + z)) * 0.35, y = T.height(x, z) + 0.34 * k;
-        p3.set(x, y, z); q.setFromEuler(new THREE.Euler(ty === 'tulip' ? 0 : -0.25, x * 7, 0)); s3.setScalar(k * (ty === 'mum' ? 1 : 1.25)); m4.compose(p3, q, s3); inst.setMatrixAt(i, m4); inst.setColorAt(i, c.set(col));
-        if (ty === 'cosmos' || ty === 'pansy') centers.push([x, y + 0.02, z, ty === 'pansy' ? 0x5a2a6a : 0xffd23a]);
-      });
-      inst.castShadow = false; scene.add(inst);
+    // 잎 덤불
+    if (mounds.length) {
+      const mi = new THREE.InstancedMesh(lumpy(3.1, 0.16, 10, 7), sway(AC.tm('leaf', 0xffffff).clone(), 0.04, 'fmound'), mounds.length);
+      mounds.forEach(([x, z, r], i) => { p3.set(x, T.height(x, z) + r * 0.12, z); q.setFromEuler(new THREE.Euler(0, x * 3, 0)); s3.set(r, r * 0.42, r); m4.compose(p3, q, s3); mi.setMatrixAt(i, m4); mi.setColorAt(i, c.set(0x5aa848).offsetHSL(Math.sin(x) * 0.02, 0, Math.sin(z * 2) * 0.04)); });
+      mi.castShadow = true; mi.receiveShadow = true; scene.add(mi);
     }
-    if (centers.length) { const ci = new THREE.InstancedMesh(new THREE.SphereGeometry(0.035, 5, 3), sway(H.mat(0xffffff).clone(), 0.1, 'fhead'), centers.length); centers.forEach(([x, y, z, col], i) => { m4.makeTranslation(x, y, z); ci.setMatrixAt(i, m4); ci.setColorAt(i, c.set(col)); }); scene.add(ci); }
+    const stemG = FL ? FL.stemGeo(0.36) : flowerGeos().stem;
+    const stemM = sway(FL ? H.mat(0x4f9e3e).clone() : new THREE.MeshLambertMaterial({ vertexColors: true }), 0.1, 'fstem');
+    const stems = new THREE.InstancedMesh(stemG, stemM, pts.length);
+    const byType = {}; for (const pt of pts) (byType[pt[3]] = byType[pt[3]] || []).push(pt);
+    const kOf = (x, z) => 0.9 + Math.abs(Math.sin(x * 5 + z)) * 0.35;
+    pts.forEach(([x, z], i) => { p3.set(x, T.height(x, z), z); q.setFromEuler(new THREE.Euler(0, x * 7, 0)); s3.setScalar(kOf(x, z)); m4.compose(p3, q, s3); stems.setMatrixAt(i, m4); });
+    stems.receiveShadow = true; scene.add(stems);
+    const G2 = FL ? null : flowerGeos();
+    for (const [ty, list] of Object.entries(byType)) {
+      const headM = sway(H.mat(0xffffff).clone(), 0.1, 'fhead'); headM.side = THREE.DoubleSide;
+      const inst = new THREE.InstancedMesh(FL ? FL.geo(ty) : G2[ty], headM, list.length);
+      const cen = FL && FL.CENTER[ty] ? new THREE.InstancedMesh(FL.centerGeo(ty), sway(H.mat(0xffffff).clone(), 0.1, 'fhead'), list.length) : null;
+      list.forEach(([x, z, col], i) => {
+        const k = kOf(x, z), y = T.height(x, z) + 0.36 * k;
+        p3.set(x, y, z); q.setFromEuler(new THREE.Euler(ty === 'tulip' ? 0 : -0.3 - Math.abs(Math.sin(x * 3)) * 0.25, x * 7, 0, 'YXZ')); s3.setScalar(k * 1.35); m4.compose(p3, q, s3); inst.setMatrixAt(i, m4); inst.setColorAt(i, c.set(col));
+        if (cen) { cen.setMatrixAt(i, m4); cen.setColorAt(i, c.set(ty === 'daffodil' ? 0xffa020 : FL.CENTER[ty][1])); }
+      });
+      inst.castShadow = true; scene.add(inst); if (cen) scene.add(cen);
+    }
   }
 
   // 3D 풀 (바람에 살랑살랑)
@@ -624,6 +639,7 @@
     const garden = FM.CeremonyGarden ? FM.CeremonyGarden(scene, T, PM) : null;
     if (FM.SunsetGarden) { try { FM.SunsetGarden(scene, T, PM); } catch (e) { console.error('sunset garden', e); } }
     if (FM.Beach) { try { FM.Beach(scene, T, PM); } catch (e) { console.error('beach', e); } }
+    if (FM.TownLife) { try { FM.TownLife(scene, T, PM); } catch (e) { console.error('townlife', e); } }
     if (!garden) { const arch = PM.decor('arch'); arch.position.set(12, 0, -70.5); wg.add(arch); }
     const path = new THREE.Mesh(new THREE.PlaneGeometry(garden ? 1.6 : 2.2, garden ? 12.6 : 16), new THREE.MeshLambertMaterial({ color: 0xff8fb1, transparent: !!garden, opacity: garden ? 0.55 : 1, polygonOffset: true, polygonOffsetFactor: -6 })); const wgY = T.height(12, -66), pY0 = T.height(12, -73.1), pY1 = T.height(12, -60.5);
     path.rotation.x = -Math.PI / 2 + (garden ? Math.atan2(pY0 - pY1, 12.6) : 0); path.position.set(12, garden ? (pY0 + pY1) / 2 - wgY + 0.1 : 0.07, garden ? -66.8 : -63); wg.add(path); dyn.aislePath = path;

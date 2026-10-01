@@ -166,62 +166,11 @@
   function stoneLantern() { const g = new THREE.Group(); const S = 0xb8b0a4; g.add(M(box(0.5, 0.12, 0.5, 0.03), tm('stone', S), 0, 0.06, 0)); g.add(M(cyl(0.1, 0.12, 0.6, 8), tm('stone', S), 0, 0.42, 0)); g.add(M(box(0.44, 0.08, 0.44, 0.02), tm('stone', S), 0, 0.76, 0)); g.add(M(box(0.34, 0.3, 0.34, 0.03), tm('stone', S), 0, 0.95, 0)); const l = M(box(0.18, 0.16, 0.36, 0.01), glow(0xffc870), 0, 0.95, 0); l.userData.noBake = true; g.add(l); const r = M(geo('slRoof', () => new THREE.ConeGeometry(0.42, 0.28, 4)), tm('stone', S), 0, 1.24, 0); r.rotation.y = PI / 4; g.add(r); g.add(M(sphere(0.06, 8, 6), tm('stone', S), 0, 1.42, 0)); return g; }
 
   // =========================================================
-  // ☕ 카페 앙상블 — 유럽 타운하우스 3채
-  // =========================================================
-  BLD.cafe = (p) => {
-    const g = new THREE.Group(); const { w, d } = p.bld;
-    const HS = [{ f: 0.34, h: 6.6, c: 0xf7e3b5, roof: 0xb8553a, aw: [0x2e7a52, 0xfff8ec], sh: 0x2e7a52 }, { f: 0.32, h: 7.7, c: 0xf3c6ae, roof: 0x4f5866, aw: [0xc0392b, 0xfff8ec], sh: 0x7a3a2a }, { f: 0.34, h: 6.9, c: 0xe2ead6, roof: 0xa8492e, aw: [0x2f4b6e, 0xfff8ec], sh: 0x2f4b6e }];
-    g.add(K.base(w, d, 0.45, 0xd9d0c2, 'stone'));
-    // 앞 돌길 (운하 둑 느낌)
-    g.add(tbox(w + 2.6, 0.06, 3.0, 'cobble', 0xe6ddd0, 0, 0.0, d / 2 + 1.7, 0.01, 1.3));
-    g.add(tbox(w + 2.6, 0.22, 0.3, 'stone', 0xcfc6b8, 0, 0.0, d / 2 + 3.2, 0.03, 1));
-    let x0 = -w / 2;
-    HS.forEach((c, i) => {
-      const hw = w * c.f, cx = x0 + hw / 2; x0 += hw;
-      const hs = new THREE.Group(); hs.position.x = cx; g.add(hs);
-      hs.add(tbox(hw - 0.05, c.h, d, 'plaster', c.c, 0, 0.4, 0, 0.06, 1.4));
-      // 1층 상점 정면 (짙은 원목 틀 + 쇼윈도)
-      hs.add(tbox(hw - 0.3, 2.7, 0.14, 'plank', 0x3a2a22, 0, 0.42, d / 2 + 0.05, 0.03, 0.6));
-      const sw = M(box(hw - 0.9, 1.7, 0.03, 0.01), cafeWin(), i === 1 ? 0 : 0, 1.85, d / 2 + 0.14); if (i === 1) { sw.scale.x = 0.32; sw.position.x = -hw / 2 + 0.55; } hs.add(sw);
-      if (i === 1) { const sw2 = M(box(hw - 0.9, 1.7, 0.03, 0.01), cafeWin(), hw / 2 - 0.55, 1.85, d / 2 + 0.14); sw2.scale.x = 0.32; hs.add(sw2); }
-      for (const xx of [-hw / 2 + 0.3, hw / 2 - 0.3]) hs.add(M(box(0.12, 2.7, 0.2, 0.02), 0x2a1e18, xx, 1.77, d / 2 + 0.12));
-      hs.add(M(box(hw - 0.3, 0.4, 0.06, 0.02), 0x2a1e18, 0, 2.95, d / 2 + 0.16));
-      // 층 사이 흰 띠 · 처마 몰딩
-      hs.add(M(box(hw, 0.16, d + 0.12, 0.03), 0xfbf8f2, 0, 3.32, 0));
-      hs.add(M(box(hw + 0.1, 0.2, d + 0.2, 0.04), 0xfbf8f2, 0, c.h + 0.32, 0));
-      // 위층 창 (덧창 · 꽃상자)
-      const rows = c.h > 7.2 ? [4.35, 6.4] : [4.4];
-      for (const y of rows) for (const s of [-1, 1]) at(hs, K.window(0.82, 1.3, { shutters: c.sh, curtain: '#fff4dc', seed: i * 3 + (s > 0 ? 1 : 0) }), s * hw * 0.24, y, d / 2 + 0.02);
-      if (c.h <= 7.2) at(hs, K.window(0.7, 0.9, { box: false, curtain: '#fff4dc' }), 0, c.h - 0.6, d / 2 + 0.02);
-      // 지붕 (박공면이 정면)
-      const r = frontGable(hw + 0.12, d, 2.5, c.roof, { kind: 'rooftile', wallKind: 'plaster', wallColor: c.c, over: 0.35 }); r.position.y = c.h + 0.4; hs.add(r);
-      // 줄무늬 차양 + 간판
-      const aw = K.awning(hw - 0.5, 1.5, c.aw[0], c.aw[1]); aw.position.set(0, 3.12, d / 2 + 0.14); hs.add(aw);
-      // 뒷면 · 옆면 창
-      for (const y of [1.9, 4.4]) at(hs, K.window(0.8, 1.1, { box: false, curtain: '#fff4dc' }), 0, y, -d / 2 - 0.02, PI);
-    });
-    // 덩굴 (왼쪽 집 모서리 · 오른쪽 집 전면)
-    at(g, K.vines(5.8, 1.4, 0xffffff), -w / 2 + 0.35, 0.4, d / 2 + 0.06); at(g, K.vines(6.2, 1.8, 0xff8fb1), w / 2 - 0.9, 0.4, d / 2 + 0.06);
-    // 가운데 집 프렌치 발코니 · 문
-    at(g, K.balcony(1.9, 0.55, 0x2a2a2a, { flowers: true, floorColor: 0x8a8a8a }), w * (-0.5 + 0.34 + 0.16), 5.55, d / 2 + 0.02);
-    const dr = K.door(1.25, 2.3, 0x2e4a3a, { frame: 0x2a1e18, lamp: false, matColor: 0x9a3a2a }); dr.position.set(0, 0.42, d / 2 + 0.08); g.add(dr);
-    const sg = PM.sign('카페 앙상블  ·  Brunch & Coffee', 4.6, 0.36, '#2a1e18', '#ffe2a8'); sg.position.set(0, 2.95, d / 2 + 0.21); g.add(sg);
-    at(g, K.hangSign('☕', '#fff4dc', '#3a2a22', 0.8), w / 2 - 0.2, 3.55, d / 2 + 0.05, PI / 2);
-    for (const x of [-w * 0.33, w * 0.33]) at(g, wallLamp(), x, 2.55, d / 2 + 0.12);
-    // 굴뚝 · 꽃 화분 · 자전거 · 칠판
-    at(g, K.chimney(1.3, 0xb8553a), -w / 2 + 1.0, 6.9, -1.2);
-    for (const x of [-w / 2 + 0.6, -1.3, 1.3, w / 2 - 0.6]) { const pl = K.planter(0xc87a4a, [0xff6f86, 0xffffff, 0xffd84a, 0xb69cff][Math.abs(Math.round(x)) % 4]); pl.scale.setScalar(0.85); pl.position.set(x, 0.42, d / 2 + 0.55); g.add(pl); }
-    at(g, bike(0x2e7a52), -w / 2 + 1.6, 0.06, d / 2 + 2.6, 0.1);
-    const cb = new THREE.Group(); cb.add(M(box(0.8, 1.0, 0.06, 0.02), 0x2e3a30, 0, 0.7, 0)); const ct = PM.sign('오늘의 수플레 🥞\n라떼 · 크루아상', 0.7, 0.8, '#2e3a30', '#ffffff'); ct.position.set(0, 0.72, 0.04); cb.add(ct); for (const s of [-1, 1]) { const l = M(box(0.05, 1.3, 0.05, 0.01), tm('plank', 0x9a6a44), s * 0.4, 0.6, 0.08); l.rotation.x = 0.18; cb.add(l); } at(g, cb, 2.4, 0.06, d / 2 + 1.6, -0.25);
-    return g;
-  };
-
-  // =========================================================
   // 🍣 회전초밥 (일본 거리 상점) / 🥟 홍등반점 (중국 누각)
   // =========================================================
   function sushiShop(p) {
     const g = new THREE.Group(); const { w, d } = p.bld;
-    const ROOF = 0x3c3f46, WOOD = 0x4a3426, PL = 0xf3ede2;
+    const ROOF = 0x3c3f46, WOOD = 0x7a5234, PL = 0xead6b8;
     g.add(K.base(w, d, 0.45, 0xbdb5a8, 'stone'));
     // 1층: 회벽 + 앞면 짙은 원목, 격자(코시)
     g.add(tbox(w, 3.0, d, 'plaster', PL, 0, 0.4, 0, 0.05, 1.4));
@@ -305,6 +254,61 @@
   }
   BLD.restaurant = (p) => (p.id === 'pub' ? chineseHall(p) : sushiShop(p));
 
+  // ---------------------------------------------------------
+  // 일본 정원 (참고: 검은 기와 담장 · 흰 회벽 · 돌 기단 · 연못 & 아치 나무다리 · 석등 · 분재 선반 · 소나무)
+  // ---------------------------------------------------------
+  function kawaraWall(len, h = 1.5) {
+    const g = new THREE.Group();
+    g.add(tbox(len, 0.45, 0.42, 'ashlar', 0x8a8682, 0, 0, 0, 0.03, 0.8));
+    g.add(tbox(len, h - 0.45, 0.34, 'plaster', 0xf2ece0, 0, 0.45, 0, 0.03, 1.4));
+    const cap = new THREE.Group(); cap.position.y = h; g.add(cap);
+    for (const s of [-1, 1]) { const pv = new THREE.Group(); pv.rotation.x = s * 0.5; cap.add(pv); pv.add(tbox(len + 0.1, 0.07, 0.42, 'jptile', 0x34373c, 0, 0, s * 0.18, 0.02, 0.6)); }
+    cap.add(M(box(len + 0.12, 0.12, 0.14, 0.03), 0x26282c, 0, 0.14, 0));
+    return g;
+  }
+  function archBridge(len = 3.4, wd = 1.3, rise = 0.55) {
+    const g = new THREE.Group(); const WD = tm('plank', 0xc8823a), n = 12;
+    for (let i = 0; i < n; i++) { const t = (i + 0.5) / n, x = -len / 2 + t * len, y = Math.sin(t * PI) * rise + 0.3, a = Math.cos(t * PI) * rise * PI / len; const pl = M(box(len / n + 0.02, 0.08, wd, 0.01), WD, x, y, 0); pl.rotation.z = a; g.add(pl); }
+    for (const z of [-wd / 2, wd / 2]) {
+      const pts = []; for (let t = 0; t <= 1.0001; t += 0.1) pts.push(new THREE.Vector3(-len / 2 + t * len, Math.sin(t * PI) * rise + 1.0, z));
+      g.add(M(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 12, 0.05, 6), WD));
+      for (let i = 0; i <= 4; i++) { const t = i / 4; g.add(M(cyl(0.06, 0.07, 0.75, 8), WD, -len / 2 + t * len, Math.sin(t * PI) * rise + 0.65, z)); g.add(M(sphere(0.08, 8, 6), 0x2a2a2a, -len / 2 + t * len, Math.sin(t * PI) * rise + 1.06, z)); }
+    }
+    return g;
+  }
+  function bonsaiPine(s = 1) {
+    const g = new THREE.Group(); const bark = tm('bark', 0x5a4a3a), lf = tm('leaf', 0x2f6a3a);
+    const t1 = M(cyl(0.12 * s, 0.26 * s, 1.8 * s, 8), bark, 0.2 * s, 0.9 * s, 0); t1.rotation.z = -0.35; g.add(t1);
+    const t2 = M(cyl(0.08 * s, 0.13 * s, 1.4 * s, 8), bark, 0.75 * s, 2.0 * s, 0); t2.rotation.z = 0.6; g.add(t2);
+    for (const [x, y, z, r] of [[1.3, 2.4, 0.2, 0.9], [0.1, 2.9, -0.2, 0.8], [-0.6, 2.2, 0.4, 0.7], [1.0, 3.2, -0.3, 0.6], [-0.2, 1.7, -0.5, 0.55]]) { const p = M(sphere(1, 12, 8), lf, x * s, y * s, z * s); p.scale.set(r * s, r * 0.38 * s, r * 0.85 * s); g.add(p); }
+    return g;
+  }
+  function bonsaiShelf() {
+    const g = new THREE.Group(); g.add(tbox(2.2, 0.08, 0.55, 'plank', 0xb87a48, 0, 0.5, 0, 0.01, 0.5)); for (const x of [-1, 1]) g.add(M(box(0.08, 0.5, 0.5, 0.01), 0x8a5a34, x, 0.25, 0));
+    for (let i = 0; i < 4; i++) { const x = -0.8 + i * 0.53; g.add(M(box(0.34, 0.12, 0.24, 0.02), [0xf2ece0, 0x8a3a2a, 0x3a5a7a, 0xf2ece0][i], x, 0.64, 0)); g.add(M(cyl(0.02, 0.03, 0.22, 5), 0x5a4a3a, x, 0.8, 0)); const c = M(sphere(0.15, 8, 6), tm('leaf', 0x3a7a3a), x + 0.05, 0.92, 0); c.scale.y = 0.5; g.add(c); g.add(M(sphere(0.1, 8, 6), tm('leaf', 0x4a8a44), x - 0.08, 0.86, 0.02)); }
+    return g;
+  }
+  function jpGarden(g, w, d) {
+    const X = w / 2 + 1.4, ZB = -d / 2 - 0.6, ZF = d / 2 + 5.5;
+    for (const sx of [-1, 1]) { const wl = kawaraWall(ZF - ZB); wl.rotation.y = PI / 2; wl.position.set(sx * X, 0.02, (ZF + ZB) / 2); g.add(wl); }
+    const back = kawaraWall(2 * X); back.position.set(0, 0.02, ZB); g.add(back);
+    for (const sx of [-1, 1]) { const len = X - 1.5, fw = kawaraWall(len); fw.position.set(sx * (1.5 + len / 2), 0.02, ZF); g.add(fw); const gp = M(box(0.3, 2.2, 0.3, 0.03), 0x2a1c14, sx * 1.5, 1.1, ZF); g.add(gp); }
+    g.add(M(box(3.4, 0.3, 0.4, 0.03), 0x2a1c14, 0, 2.2, ZF)); const gr = pent(3.8, 0.6, 0x34373c, 'jptile', 0.3); gr.position.set(0, 2.42, ZF - 0.3); g.add(gr);
+    // 연못 + 아치 다리 (왼쪽)
+    const pd = pond(1.7); pd.position.set(-3.6, 0.0, d / 2 + 2.7); pd.scale.set(1.25, 1, 0.9); g.add(pd);
+    at(g, archBridge(3.6, 1.1, 0.5), -3.6, 0.0, d / 2 + 2.7);
+    // 돌바닥 · 징검돌 (문 → 대문)
+    for (let i = 0; i < 9; i++) { const st = M(cyl(0.34, 0.38, 0.08, 7), tm('stone', 0x8a8682), (i % 2 ? 0.3 : -0.3), 0.06, d / 2 + 1.0 + i * 0.52); st.rotation.y = i; g.add(st); }
+    // 석등 · 분재 선반 · 소나무 · 흰 꽃 덤불 · 벤치
+    at(g, stoneLantern(), -X + 0.8, 0.06, d / 2 + 4.6); at(g, stoneLantern(), X - 0.8, 0.06, -d / 2 + 0.6);
+    at(g, bonsaiShelf(), 3.0, 0.06, d / 2 + 4.7);
+    at(g, bonsaiPine(1.05), X - 1.6, 0.06, d / 2 + 2.6);
+    if (FM.Flora) for (const [x, z] of [[-1.6, d / 2 + 4.5], [-5.6, d / 2 + 1.2], [1.6, d / 2 + 1.4]]) FM.Flora.bush({ add: o => { g.add(o); return o; } }, ['daisy', 'cosmos'], [0xffffff, 0xf4f0ff], x, z, 0.42, 9, 0.4, x);
+    const bn = new THREE.Group(); bn.add(tbox(1.8, 0.08, 0.5, 'plank', 0xb87a48, 0, 0.45, 0, 0.01, 0.5)); for (const x of [-0.75, 0.75]) bn.add(M(box(0.08, 0.45, 0.45, 0.01), 0x8a5a34, x, 0.22, 0)); at(g, bn, X - 0.6, 0.06, d / 2 + 0.8, -PI / 2);
+    // 정원 바닥 이끼 + 판석
+    const moss = M(geo('jpMoss' + w, () => new THREE.PlaneGeometry(2 * X - 0.4, ZF - d / 2 - 0.3)), 0x6a8a4a, 0, 0.05, (ZF + d / 2) / 2); moss.rotation.x = -PI / 2; g.add(moss);
+  }
+
   // =========================================================
   // 🍵 달빛 다실
   // =========================================================
@@ -332,7 +336,7 @@
     for (const s of [-1, 1]) at(g, lantern(0xfff0d0, 0.95, '月'), s * 1.1, 3.25, (d - 0.6) / 2 + 0.9);
     at(g, stoneLantern(), -w / 2 - 0.4, 0.06, d / 2 + 1.0); at(g, stoneLantern(), w / 2 + 0.6, 0.06, d / 2 + 2.2);
     for (let i = 0; i < 5; i++) { const st = M(cyl(0.32, 0.36, 0.08, 10), tm('stone', 0xb8b0a4), (i % 2 ? 0.25 : -0.25), 0.06, d / 2 + 1.0 + i * 0.6); st.scale.z = 0.8; g.add(st); }
-    for (const s of [-1, 1]) { const fen = new THREE.Group(); for (let i = 0; i < 14; i++) fen.add(M(cyl(0.045, 0.045, 1.4, 6), 0x8a9a4a, 0, 0.7, -1.4 + i * 0.22)); for (const y of [0.4, 1.05]) fen.add(M(box(0.06, 0.06, 3.1, 0.01), 0x5a3a28, 0.06, y, 0)); at(g, fen, s * (w / 2 + 0.6), 0.06, -1.0); }
+    jpGarden(g, w, d);
     at(g, blossomTree(0xd84a2a, 0x4a3022, 0.95), -w / 2 - 1.8, 0.06, -1.6);
     for (let i = 0; i < 6; i++) { const m2 = M(sphere(0.3, 8, 6), tm('leaf', 0x5a8a3a), -w / 2 + 0.6 + i * 0.5, 0.18, d / 2 + 0.3); m2.scale.y = 0.4; g.add(m2); }
     return g;
@@ -375,105 +379,79 @@
   };
 
   // =========================================================
-  // 🛍️ 쇼핑몰 — 도시 모퉁이 빌딩
+  // 📚 도서관 & 북카페 — 돌 아치 회랑 테라스 건물 (참고: 돌 아치 1층 · 테라스 난간 · 파란 슬레이트 지붕 + 주황 기와 박공 · 발코니 꽃상자 · 담쟁이)
   // =========================================================
-  BLD.mall = (p) => {
-    const g = new THREE.Group(); const { w, d } = p.bld;
-    const WH = 0xf6f4ee, TEAL = 0x3aa8a0, DK = 0x2a2a2e, floors = 3, fh = 3.3, gh = 3.8;
-    g.add(K.base(w, d, 0.4, 0xc8c4bc, 'stone'));
-    // 보도 + 노란 연석
-    g.add(tbox(w + 2.4, 0.08, 2.6, 'tile', 0xd8d4cc, 0, 0.0, d / 2 + 1.5, 0.01, 1.2));
-    g.add(M(box(w + 2.4, 0.2, 0.25, 0.02), 0xf2c83a, 0, 0.1, d / 2 + 2.8));
-    // 1층: 어두운 상점 정면 + 쇼윈도 (왼쪽 마켓 · 오른쪽 부티크)
-    g.add(tbox(w, gh, d, 'panel', DK, 0, 0.36, 0, 0.04, 1.2));
-    for (const s of [-1, 1]) { g.add(M(box(w / 2 - 2.2, 2.4, 0.04, 0.01), s < 0 ? martWin() : boutiqueWin(), s * (w / 4 + 0.5), 1.75, d / 2 + 0.04)); for (let i = 0; i <= 3; i++) g.add(M(box(0.08, 2.5, 0.08, 0.01), 0x6a6a6e, s * (1.6 + i * (w / 2 - 2.2) / 3), 1.75, d / 2 + 0.08)); }
-    for (const [s, c1, c2, t, bg] of [[-1, 0x2e7a52, 0xfff8ec, '🥬 FRESH MARKET', '#2e7a52'], [1, 0xff8fb1, 0xffffff, '🌹 ROSE BOUTIQUE', '#d86a8a']]) { const aw = K.awning(w / 2 - 1.8, 1.4, c1, c2); aw.position.set(s * (w / 4 + 0.5), 3.35, d / 2 + 0.06); g.add(aw); const sg = PM.sign(t, w / 2 - 2.6, 0.45, bg, '#ffffff'); sg.position.set(s * (w / 4 + 0.5), 3.75, d / 2 + 0.06); g.add(sg); }
-    // 위층: 흰 층 띠 + 청록 띠창
-    const tealGl = cm('mallTeal', () => { const m = new THREE.MeshPhongMaterial({ color: TEAL, shininess: 110, specular: 0xcfffff, emissive: 0x000000 }); m.userData.nr = 0.5; m.userData.ng = 0.7; m.userData.nb = 0.6; nightMats.push(m); return m; });
-    for (let f = 0; f < floors; f++) {
-      const y = 0.36 + gh + f * fh;
-      g.add(tbox(w, fh, d, 'panel', WH, 0, y, 0, 0.04, 1.6));
-      g.add(M(box(w + 0.06, 1.4, d + 0.06, 0.02), tealGl, 0, y + 1.75, 0));
-      for (let i = 0; i <= 12; i++) { const x = -w / 2 + i * w / 12; g.add(M(box(0.1, 1.42, 0.1, 0.01), WH, x, y + 1.75, d / 2 + 0.04)); }
-      for (let i = 0; i <= 8; i++) { const z = -d / 2 + i * d / 8; for (const s of [-1, 1]) g.add(M(box(0.1, 1.42, 0.1, 0.01), WH, s * (w / 2 + 0.04), y + 1.75, z)); }
-      g.add(M(box(w + 0.3, 0.18, d + 0.3, 0.03), WH, 0, y + fh - 0.02, 0));
-    }
-    // 둥근 모서리 탑 (앞 오른쪽)
-    const top = 0.36 + gh + floors * fh;
-    const tw = new THREE.Group(); tw.position.set(w / 2 - 0.4, 0, d / 2 - 0.4); g.add(tw);
-    tw.add(M(geo('mallTw', () => AC.scaleUV(new THREE.CylinderGeometry(2.0, 2.0, top + 1.2, 28), 6, 6)), tm('panel', WH), 0, (top + 1.2) / 2, 0));
-    for (let f = 0; f < floors; f++) tw.add(M(geo('mallTwG', () => new THREE.CylinderGeometry(2.03, 2.03, 1.4, 28)), tealGl, 0, 0.36 + gh + f * fh + 1.75, 0));
-    tw.add(M(geo('mallTwB', () => new THREE.CylinderGeometry(2.03, 2.03, gh - 0.4, 28)), DK, 0, 0.36 + (gh - 0.4) / 2, 0));
-    tw.add(M(geo('mallTwC', () => new THREE.CylinderGeometry(2.2, 2.2, 0.3, 28)), WH, 0, top + 1.3, 0));
-    // 옥상: 난간 + 광고판 2개 + 물탱크
-    g.add(M(box(w + 0.2, 0.7, 0.2, 0.03), WH, 0, top + 0.35, d / 2)); g.add(M(box(w + 0.2, 0.7, 0.2, 0.03), WH, 0, top + 0.35, -d / 2));
-    for (const s of [-1, 1]) g.add(M(box(0.2, 0.7, d, 0.03), WH, s * w / 2, top + 0.35, 0));
-    for (const [x, t, bg, fg] of [[-w / 4, 'PLATINUM  SALE  50%', '#ff4a7a', '#ffffff'], [w / 6, 'FRESH MARKET 🍓', '#2e7a52', '#fff4c0']]) { const bb = new THREE.Group(); for (const s of [-1, 1]) bb.add(M(box(0.12, 2.6, 0.12, 0.02), 0x5a5a5e, s * 2.2, 1.3, 0)); bb.add(M(box(4.8, 0.1, 0.1, 0.02), 0x5a5a5e, 0, 0.9, 0)); const bs = PM.sign(t, 5.0, 1.5, bg, fg); bs.position.set(0, 2.4, 0.08); bb.add(bs); bb.add(M(box(5.1, 1.6, 0.1, 0.02), 0xf4f4f0, 0, 2.4, 0)); at(g, bb, x, top, -d / 2 + 2.0); }
-    const tk = new THREE.Group(); tk.add(M(cyl(1.0, 1.0, 1.6, 16), 0x9aa0a8, 0, 2.2, 0)); for (let i = 0; i < 4; i++) tk.add(M(box(0.1, 1.4, 0.1, 0.01), 0x6a6e72, Math.cos(i * PI / 2) * 0.8, 0.7, Math.sin(i * PI / 2) * 0.8)); at(g, tk, w / 2 - 3, top, -d / 2 + 2.2);
-    // 정문 (가운데 유리문 + 캐노피)
-    const dr = K.door(2.4, 2.6, 0x3a3a3e, { frame: 0x9aa0a8, lamp: false, matColor: 0x3aa8a0 }); dr.position.set(0, 0.36, d / 2 + 0.06); g.add(dr);
-    g.add(M(box(3.6, 0.16, 1.6, 0.03), 0xf6f4ee, 0, 3.0, d / 2 + 0.8));
-    // 화분 · 가로수 · 벤치
-    for (const x of [-w / 2 + 0.8, w / 2 - 3.2]) { const pl = K.planter(0x9a9aa0, 0xff8fb1); pl.position.set(x, 0.08, d / 2 + 1.0); g.add(pl); }
+  const bookWin = () => shopMat('bookWin', (c, w, h) => {
+    const gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#3a2418'); gr.addColorStop(1, '#8a5a34'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
+    for (let r = 0; r < 4; r++) { c.fillStyle = '#2a1810'; c.fillRect(0, 20 + r * 26, w, 3); for (let i = 0; i < 40; i++) { c.fillStyle = ['#c84a3a', '#3a6aa8', '#e8c060', '#4a8a5a', '#f4ead8', '#8a4a8a'][(i + r) % 6]; c.fillRect(2 + i * 6.3, 6 + r * 26, 5, 14 - (i % 3) * 2); } }
+    c.fillStyle = 'rgba(255,220,150,0.45)'; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(40 + i * 88, 10, 7, 0, PI * 2); c.fill(); }
+  }, [1, 0.72, 0.4]);
+  function stoneArch(wd, ht, stone) {
+    const g = new THREE.Group(); const r = wd / 2;
+    g.add(M(box(wd, ht - r, 0.05, 0.01), bookWin(), 0, (ht - r) / 2, 0.02));
+    const top = M(geo('arTop' + wd, () => new THREE.CircleGeometry(r, 20, 0, PI)), bookWin(), 0, ht - r, 0.02); g.add(top);
+    const ring = M(geo('arRing' + wd, () => new THREE.TorusGeometry(r + 0.12, 0.16, 8, 20, PI)), tm('ashlar', stone), 0, ht - r, 0.12); g.add(ring);
+    for (const s of [-1, 1]) g.add(tbox(0.3, ht - r, 0.3, 'ashlar', stone, s * (r + 0.12), 0, 0.12, 0.03, 0.8));
+    return g;
+  }
+  BLD.library = (p) => {
+    const g = new THREE.Group(); const { w, d } = p.bld; const STONE = 0xb8b4ac, CRE = 0xf4ece0, BLUE = 0x3a5a9a, ORG = 0xd8743a, WOODF = 0x6a4a30;
+    const gh = 3.4, tz = 2.6; // 1층 높이 · 테라스 깊이
+    g.add(K.base(w, d, 0.45, 0x9a968e, 'ashlar'));
+    g.add(tbox(w, gh, d, 'ashlar', STONE, 0, 0.4, 0, 0.04, 1.1));
+    // 1층 아치 회랑 5칸 (가운데가 입구)
+    for (let i = 0; i < 5; i++) { const x = -w / 2 + 1.6 + i * (w - 3.2) / 4; const a = stoneArch(2.2, 2.8, 0xa8a49c); a.position.set(x, 0.42, d / 2 + 0.02); g.add(a); if (i !== 2) at(g, K.vines(2.6, 0.9, 0xffffff), x + 1.35, 0.4, d / 2 + 0.2); }
+    const dr = K.door(1.4, 2.3, WOODF, { frame: 0xa8a49c, arch: true, lamp: false, matColor: 0x3a5a9a }); dr.position.set(0, 0.42, d / 2 + 0.08); g.add(dr);
+    for (let i = 0; i < 3; i++) g.add(tbox(3.2 - i * 0.4, 0.15, 0.5, 'ashlar', 0xc8c4bc, 0, 0.0 + i * 0.14, d / 2 + 1.45 - i * 0.42, 0.03, 1));
+    // 테라스 (1층 지붕 위) — 흰 난간 · 꽃상자 · 작은 카페 테이블 · 줄무늬 차양
+    g.add(tbox(w + 0.2, 0.16, tz, 'terrazzo', 0xe8e0d4, 0, gh + 0.4, d / 2 - tz / 2, 0.02, 1.4));
+    const rail = new THREE.Group(); rail.position.set(0, gh + 0.56, d / 2 + 0.05); g.add(rail);
+    rail.add(M(box(w + 0.2, 0.1, 0.16, 0.02), 0xfbf8f2, 0, 0.9, 0)); for (let i = 0; i <= 40; i++) rail.add(M(geo('balus', () => new THREE.CylinderGeometry(0.05, 0.07, 0.8, 8)), 0xfbf8f2, -w / 2 + i * w / 40, 0.42, 0));
+    for (let i = 0; i < 5; i++) { const bx = -w / 2 + 1.6 + i * (w - 3.2) / 4; rail.add(tbox(1.3, 0.24, 0.3, 'plank', 0x9a6a44, bx, 1.0, 0.1, 0.02, 0.5)); if (FM.Flora) FM.Flora.bush({ add: o => { rail.add(o); return o; } }, ['daisy', 'rose'], [0xffffff, 0xfff4f8, 0xff6f86], bx, 0.1, 0.36, 7, 2.6, i); }
+    for (const x of [-3.4, 3.2]) { const tb = new THREE.Group(); tb.add(M(cyl(0.38, 0.38, 0.04, 16), 0xffffff, 0, 0.72, 0)); tb.add(M(cyl(0.04, 0.05, 0.7, 6), 0xd8d8d8, 0, 0.36, 0)); for (const s of [-1, 1]) { const ch = new THREE.Group(); ch.add(M(box(0.38, 0.04, 0.38, 0.01), 0xffffff, 0, 0.45, 0)); ch.add(M(box(0.38, 0.4, 0.04, 0.01), 0xffffff, 0, 0.65, -0.18)); for (const xx of [-0.16, 0.16]) ch.add(M(box(0.03, 0.45, 0.03, 0.005), 0xd8d8d8, xx, 0.22, 0)); ch.position.set(s * 0.62, 0, 0); ch.rotation.y = s * -PI / 2; tb.add(ch); } at(g, tb, x, gh + 0.56, d / 2 - 1.2); }
+    // 위층 왼쪽: 크림 회벽 2층 + 파란 슬레이트 모임지붕 + 도머
+    const L = new THREE.Group(); L.position.set(-w / 2 + 4.6, gh + 0.4, -tz / 2); g.add(L);
+    const lw = 9.2, ld = d - tz, lh = 5.4;
+    L.add(tbox(lw, lh, ld, 'stucco', CRE, 0, 0, 0, 0.04, 1.4));
+    for (const [x, z] of [[-lw / 2, -ld / 2], [lw / 2, -ld / 2], [-lw / 2, ld / 2], [lw / 2, ld / 2]]) L.add(tbox(0.4, lh, 0.4, 'ashlar', STONE, x, 0, z, 0.03, 1));
+    for (const y of [1.6, 4.1]) for (let i = 0; i < 4; i++) at(L, K.window(1.0, 1.6, { box: y < 3, boxColor: 0x8a5a34, frame: 0xfbf8f2, curtain: '#fff0d0', seed: i }), -lw / 2 + 1.3 + i * (lw - 2.6) / 3, y, ld / 2 + 0.02);
+    const lr = K.hip(lw + 0.8, ld + 0.8, 3.0, BLUE, 'rooftile'); lr.position.y = lh; L.add(lr);
+    for (const x of [-2.4, 0, 2.4]) { const dm = K.dormer(0xfbf8f2, BLUE, 'stucco'); dm.position.set(x, lh + 0.4, ld / 2 - 0.9); dm.scale.setScalar(0.8); L.add(dm); }
+    at(L, K.balcony(3.2, 0.7, 0xfbf8f2, { flowers: true, floorColor: 0xd8d0c4 }), -lw / 2 + 2.0, 2.65, ld / 2 + 0.02);
+    // 위층 오른쪽: 하프팀버 박공 + 주황 기와 + 원목 발코니
+    const R = new THREE.Group(); R.position.set(w / 2 - 3.4, gh + 0.4, -tz / 2 + 0.3); g.add(R);
+    const rw = 6.8, rd = d - tz + 0.6, rh = 6.0;
+    R.add(tbox(rw, rh, rd, 'timber', 0xf8f2e6, 0, 0, 0, 0.04, 2.4));
+    const rr = frontGable(rw + 0.4, rd, 3.2, ORG, { kind: 'rooftile', wallKind: 'timber', wallColor: 0xf8f2e6, over: 0.5 }); rr.position.y = rh; R.add(rr);
+    const bw = new THREE.Group(); bw.position.set(0, 2.3, rd / 2 + 0.02); R.add(bw);
+    bw.add(M(box(3.6, 2.4, 0.06, 0.01), shojiMat(), 0, 1.3, 0.02)); for (let i = 0; i <= 4; i++) bw.add(M(box(0.1, 2.5, 0.1, 0.01), WOODF, -1.8 + i * 0.9, 1.3, 0.06)); for (const y of [0.1, 1.3, 2.5]) bw.add(M(box(3.7, 0.1, 0.1, 0.01), WOODF, 0, y, 0.06));
+    at(R, K.balcony(4.4, 0.8, WOODF, { flowers: false, floorColor: 0x8a5a34 }), 0, 2.2, rd / 2);
+    const fb = tbox(4.2, 0.3, 0.4, 'plank', 0x8a5a34, 0, 3.2, rd / 2 + 0.85, 0.02, 0.5); R.add(fb); if (FM.Flora) for (let i = 0; i < 4; i++) FM.Flora.bush({ add: o => { R.add(o); return o; } }, ['daisy'], [0xffffff, 0xfff8e8], -1.5 + i * 1.0, rd / 2 + 0.85, 0.35, 7, 1.0, i + 2);
+    at(R, K.vines(5.5, 1.6, 0xffffff), rw / 2 - 0.3, 0, rd / 2 + 0.04); at(R, K.vines(4.5, 1.2, 0xffffff), -rw / 2 + 0.3, 0, rd / 2 + 0.04);
+    // 테라스 위 줄무늬 차양 (오른쪽 집 아래)
+    const aw = K.awning(rw - 0.4, 1.8, 0xe8803a, 0xfff4e4); aw.position.set(w / 2 - 3.4, gh + 2.9, d / 2 - tz + 0.4); g.add(aw);
+    // 간판 · 가로등 · 앞 산책로 난간 · 붉은 꽃 상자
+    const sg = PM.sign('📚 시립 도서관 & 힐링 북카페', 5.6, 0.62, '#3a5a9a', '#fff8e8'); sg.position.set(0, gh + 0.05, d / 2 + 0.22); g.add(sg);
+    for (const x of [-w / 2 + 0.6, -3.0, 3.0, w / 2 - 0.6]) { const lp = new THREE.Group(); lp.add(M(cyl(0.06, 0.09, 2.8, 8), 0x2a2a2e, 0, 1.4, 0)); lp.add(M(box(0.34, 0.42, 0.34, 0.03), glass(0xfff4d8), 0, 3.0, 0)); const b = M(sphere(0.1, 8, 6), glow(0xffd890), 0, 3.0, 0); b.userData.noBake = true; b.userData.lampBulb = true; lp.add(b); lp.add(M(geo('lbCap', () => new THREE.ConeGeometry(0.3, 0.2, 4)), 0x2a2a2e, 0, 3.3, 0).rotateY(PI / 4)); at(g, lp, x, 0.06, d / 2 + 2.6); }
+    for (const x of [-w / 2 + 2.2, w / 2 - 2.2]) { const cr = new THREE.Group(); cr.add(tbox(1.2, 0.45, 0.7, 'plank', 0x9a6a44, 0, 0, 0, 0.02, 0.5)); if (FM.Flora) FM.Flora.bush({ add: o => { cr.add(o); return o; } }, ['tulip', 'rose'], [0xff4d5e, 0xff6f86, 0xffffff], 0, 0, 0.45, 9, 0.9, x); at(g, cr, x, 0.06, d / 2 + 2.0); }
     return g;
   };
 
-  // 도시 블록 (흰 층 띠 + 색 띠창 + 둥근 모서리 탑) — 오피스 · 병원
-  function cityBlock(g, w, d, o) {
-    const WH = o.white || 0xf6f4ee, BAND = o.band, gh = o.gh || 3.8, fh = o.fh || 3.3, floors = o.floors;
-    const bandM = cm('cbBand' + BAND, () => { const m = new THREE.MeshPhongMaterial({ color: BAND, shininess: 110, specular: 0xcfffff, emissive: 0x000000 }); m.userData.nr = 0.55; m.userData.ng = 0.62; m.userData.nb = 0.5; nightMats.push(m); return m; });
-    g.add(K.base(w, d, 0.4, 0xc8c4bc, 'stone'));
-    g.add(tbox(w, gh, d, 'panel', o.ground || 0x2a2a2e, 0, 0.36, 0, 0.04, 1.2));
-    g.add(M(box(w - 3, 2.5, 0.04, 0.01), o.groundWin || martWin(), 0, 1.75, d / 2 + 0.04));
-    for (let i = 0; i <= 6; i++) g.add(M(box(0.08, 2.6, 0.08, 0.01), 0x8a8e94, -(w - 3) / 2 + i * (w - 3) / 6, 1.75, d / 2 + 0.08));
-    for (let f = 0; f < floors; f++) {
-      const y = 0.36 + gh + f * fh;
-      g.add(tbox(w, fh, d, 'panel', WH, 0, y, 0, 0.04, 1.6));
-      g.add(M(box(w + 0.06, 1.35, d + 0.06, 0.02), bandM, 0, y + 1.7, 0));
-      for (let i = 0; i <= Math.round(w / 1.4); i++) g.add(M(box(0.1, 1.37, 0.1, 0.01), WH, -w / 2 + i * w / Math.round(w / 1.4), y + 1.7, d / 2 + 0.04));
-      g.add(M(box(w + 0.3, 0.16, d + 0.3, 0.03), WH, 0, y + fh - 0.02, 0));
-    }
-    const top = 0.36 + gh + floors * fh;
-    for (const s of o.corners || [1]) {
-      const tw = new THREE.Group(); tw.position.set(s * (w / 2 - 0.4), 0, d / 2 - 0.4); g.add(tw);
-      tw.add(M(geo('cbTw' + top, () => AC.scaleUV(new THREE.CylinderGeometry(1.9, 1.9, top + 1.0, 28), 6, 6)), tm('panel', WH), 0, (top + 1.0) / 2, 0));
-      for (let f = 0; f < floors; f++) tw.add(M(geo('cbTwG', () => new THREE.CylinderGeometry(1.93, 1.93, 1.35, 28)), bandM, 0, 0.36 + gh + f * fh + 1.7, 0));
-      tw.add(M(geo('cbTwB', () => new THREE.CylinderGeometry(1.93, 1.93, gh - 0.4, 28)), o.ground || 0x2a2a2e, 0, 0.36 + (gh - 0.4) / 2, 0));
-      tw.add(M(geo('cbTwC', () => new THREE.CylinderGeometry(2.1, 2.1, 0.3, 28)), WH, 0, top + 1.1, 0));
-    }
-    g.add(M(box(w + 0.2, 0.7, 0.2, 0.03), WH, 0, top + 0.35, d / 2)); g.add(M(box(w + 0.2, 0.7, 0.2, 0.03), WH, 0, top + 0.35, -d / 2));
-    for (const s of [-1, 1]) g.add(M(box(0.2, 0.7, d, 0.03), WH, s * w / 2, top + 0.35, 0));
-    g.add(tbox(w + 2.4, 0.08, 2.6, 'tile', 0xd8d4cc, 0, 0.0, d / 2 + 1.5, 0.01, 1.2));
-    g.add(M(box(w + 2.4, 0.2, 0.25, 0.02), 0xf2c83a, 0, 0.1, d / 2 + 2.8));
-    return top;
-  }
-  function billboard(t, bg, fg, wd = 5) { const bb = new THREE.Group(); for (const s of [-1, 1]) bb.add(M(box(0.12, 2.6, 0.12, 0.02), 0x5a5a5e, s * (wd / 2 - 0.3), 1.3, 0)); bb.add(M(box(wd - 0.2, 0.1, 0.1, 0.02), 0x5a5a5e, 0, 0.9, 0)); bb.add(M(box(wd + 0.1, 1.6, 0.1, 0.02), 0xf4f4f0, 0, 2.4, 0)); const bs = PM.sign(t, wd, 1.5, bg, fg); bs.position.set(0, 2.4, 0.08); bb.add(bs); return bb; }
-  BLD.office = (p) => {
-    const g = new THREE.Group(); const { w, d, h } = p.bld;
-    const floors = Math.max(4, Math.floor((h - 4) / 3.3));
-    const top = cityBlock(g, w, d, { band: 0x4a9ad8, floors, corners: [1] });
-    at(g, billboard('MEGA OFFICE  ·  City Coin', '#2f4b6e', '#ffffff', 6), -w / 4, top, -d / 2 + 2.0);
-    const ant = new THREE.Group(); ant.add(M(cyl(0.08, 0.1, 5, 8), 0xdfe6f0, 0, 2.5, 0)); ant.add(M(sphere(0.2, 10, 8), glow(0xff3a3a), 0, 5.1, 0)); at(g, ant, w / 4, top, -1);
-    // 옥상 테라스 탕비실 (화분 · 파라솔)
-    for (const [x, z] of [[w / 4 - 2, 2], [w / 4 + 1.5, 2.5]]) { const pl = K.planter(0xd8d0c4, 0xffd84a); pl.position.set(x, top, z); g.add(pl); }
-    const can = new THREE.Group(); can.add(M(box(6, 0.25, 2.4, 0.06), 0x2f4b6e, 0, 3.4, 1)); for (const x of [-2.7, 2.7]) can.add(M(cyl(0.12, 0.12, 3.2, 10), 0xdfe6f0, x, 1.7, 2)); at(g, can, 0, 0, d / 2 + 0.3);
-    const dr = K.door(2.4, 2.6, 0x3a3a3e, { frame: 0x9aa0a8, lamp: false, matColor: 0x2f4b6e }); dr.position.set(0, 0.36, d / 2 + 0.06); g.add(dr);
-    const sg = PM.sign('🏢 메가 오피스 타워', 5.5, 0.7, '#2f4b6e', '#ffffff'); sg.position.set(0, 3.8, d / 2 + 0.08); g.add(sg);
-    for (const x of [-w / 2 + 1.0, w / 2 - 3.0]) { const pl = K.planter(0x9a9aa0, 0xffd84a); pl.position.set(x, 0.08, d / 2 + 1.0); g.add(pl); }
-    return g;
-  };
-  BLD.hospital = (p) => {
-    const g = new THREE.Group(); const { w, d, h } = p.bld;
-    const floors = Math.max(3, Math.floor((h - 4) / 3.3));
-    const top = cityBlock(g, w, d, { band: 0x6ac8b0, floors, corners: [-1, 1], ground: 0xe8f4f0, groundWin: martWin() });
-    const cross = new THREE.Group(); cross.add(M(box(0.9, 2.6, 0.2, 0.05), glow(0xff3a3a))); cross.add(M(box(2.6, 0.9, 0.2, 0.05), glow(0xff3a3a))); cross.add(M(box(3.0, 3.0, 0.12, 0.05), 0xffffff, 0, 0, -0.1)); at(g, cross, 0, top - 2.0, d / 2 + 0.2);
-    g.add(M(cyl(4.2, 4.2, 0.2, 32), 0x55595f, 0, top + 0.1, -1)); const hp = PM.sign('H', 2.6, 2.6, '#55595f', '#ffffff'); hp.rotation.x = -PI / 2; hp.position.set(0, top + 0.22, -1); g.add(hp);
-    const can = new THREE.Group(); can.add(M(geo('hospCan3', () => new THREE.CylinderGeometry(3.2, 3.2, 0.3, 28, 1, false, -PI / 2, PI)), 0x8fe3c0, 0, 3.3, 0)); for (const x of [-2.7, 2.7]) can.add(M(cyl(0.12, 0.12, 3.1, 10), 0xffffff, x, 1.6, 2)); at(g, can, 0, 0, d / 2 + 0.3);
-    const dr = K.door(2.6, 2.6, 0x8fe3c0, { frame: 0xffffff, lamp: false, matColor: 0x6ac8b0 }); dr.position.set(0, 0.36, d / 2 + 0.06); g.add(dr);
-    const sg = PM.sign('🏥 메디컬 센터', 4.4, 0.6, '#ffffff', '#ff3a3a'); sg.position.set(-w / 4 - 0.6, 3.75, d / 2 + 0.08); g.add(sg);
-    const ph = PM.sign('✚ 24시 약국', 3.0, 0.6, '#2e9a5a', '#ffffff'); ph.position.set(w / 4 + 0.6, 3.75, d / 2 + 0.08); g.add(ph);
-    // 구급차
-    const amb = new THREE.Group(); amb.add(M(box(3.0, 1.5, 1.5, 0.15), 0xffffff, 0, 1.1, 0)); amb.add(M(box(0.9, 1.0, 1.48, 0.12), 0xffffff, 1.8, 0.85, 0)); amb.add(M(box(3.02, 0.25, 1.52, 0.02), 0xff3a3a, 0, 1.1, 0)); amb.add(M(box(0.3, 0.12, 0.3, 0.02), glow(0x3a8aff), 0.4, 1.9, 0)); for (const x of [-0.9, 1.5]) for (const z of [-0.7, 0.7]) { const wl = M(cyl(0.32, 0.32, 0.2, 12), 0x2a2a2a, x, 0.32, z); wl.rotation.x = PI / 2; amb.add(wl); } at(g, amb, w / 2 + 2.6, 0.06, d / 2 - 1.5, -PI / 2);
+  // =========================================================
+  // 🎮 오락실 앞 구멍가게 (참고: 쇼와 시대 동네 과자 가게 — 함석 처마 · 과자 진열장 · 레트로 오락기 · 빨간 의자 · 공중전화)
+  // =========================================================
+  const prevArcade = BLD.arcade;
+  BLD.arcade = (p) => {
+    const g = prevArcade(p); const { w, d } = p.bld;
+    const st = new THREE.Group(); st.position.set(w / 2 - 3.2, 0.06, d / 2 + 1.5); g.add(st);
+    st.add(tbox(4.4, 2.4, 1.2, 'yakisugi', 0xb89a7a, 0, 0, -0.3, 0.03, 1));
+    const pr = pent(5.0, 1.5, 0x6a5a4a, 'corrug', 0.32); pr.position.set(0, 2.5, 0.25); st.add(pr);
+    for (const y of [0.55, 1.05, 1.55]) { st.add(M(box(4.0, 0.05, 0.5, 0.01), 0x6a4a30, 0, y, 0.35)); for (let i = 0; i < 9; i++) { const x = -1.8 + i * 0.45; if (y > 1.4) { st.add(M(cyl(0.11, 0.11, 0.3, 10), glass(0xe8f8ff), x, y + 0.17, 0.35)); st.add(M(sphere(0.08, 6, 5), [0xff6f86, 0xffd84a, 0x8ee07a, 0x4fc1e9][i % 4], x, y + 0.12, 0.35)); st.add(M(cyl(0.12, 0.12, 0.05, 10), 0xd8282a, x, y + 0.34, 0.35)); } else st.add(M(box(0.34, 0.3, 0.3, 0.02), [0xff8a3a, 0x3a9aff, 0xffd84a, 0xff6f9a, 0x5ad06a][(i + Math.round(y * 3)) % 5], x, y + 0.16, 0.35)); } }
+    const sg = PM.sign('駄菓子 · 추억의 구멍가게', 3.2, 0.42, '#f4ead8', '#8a2a1a'); sg.position.set(0, 2.25, 0.62); st.add(sg);
+    for (let i = 0; i < 2; i++) { const cab = new THREE.Group(); cab.add(M(box(0.75, 1.55, 0.7, 0.04), i ? 0xf4f4f0 : 0xe84a4a, 0, 0.78, 0)); const sc = M(box(0.6, 0.45, 0.04, 0.01), glow(i ? 0x6ad8ff : 0xffd84a), 0, 1.15, 0.33); sc.rotation.x = -0.2; cab.add(sc); cab.add(M(box(0.7, 0.1, 0.35, 0.02), 0x2a2a2a, 0, 0.85, 0.3)); cab.add(M(sphere(0.05, 6, 5), 0xff3a3a, -0.15, 0.93, 0.35)); at(st, cab, -2.9 - i * 0.85, 0, 0.1); }
+    const stool = new THREE.Group(); stool.add(M(cyl(0.2, 0.2, 0.06, 12), 0xd8282a, 0, 0.45, 0)); stool.add(M(cyl(0.03, 0.03, 0.45, 6), 0x9aa0a8, 0, 0.22, 0)); at(st, stool, -2.4, 0, 1.2);
+    const ball = M(sphere(0.18, 12, 8), 0xffffff, -1.7, 0.18, 1.4); st.add(ball);
+    const ph = new THREE.Group(); ph.add(M(box(0.5, 0.8, 0.45, 0.04), 0x3a2a20, 0, 0.4, 0)); ph.add(M(box(0.4, 0.45, 0.35, 0.06), 0xd8282a, 0, 1.05, 0)); at(st, ph, 2.6, 0, 0.3);
     return g;
   };
 
