@@ -57,7 +57,8 @@
   place('cliff', { name: '노을 정원 & 맹세의 가제보', district: 'NORTH', x: -74, z: -92, r: 12, tags: ['hill', 'stars', 'confess', 'breakup', 'quiet', 'garden', 'romance'],
     spots: [[-79.9, -89.6, ['bench', 'hill', 'sunset'], { seat: true, face: -Math.PI / 2 }], [-79.9, -94.4, ['bench', 'hill', 'sunset'], { seat: true, face: -Math.PI / 2 }],
       [-73.25, -91.55, ['bench', 'gazebo'], { seat: true, face: -Math.PI / 2 }], [-73.25, -92.45, ['bench', 'gazebo'], { seat: true, face: -Math.PI / 2 }],
-      [-69.5, -87.2, ['hill', 'flowers']], [-78.5, -96.8, ['hill', 'flowers']], [-68.2, -85.6, ['fountain', 'flowers']], [-80.8, -92, ['hill', 'sunset']], [-74, -99.9, ['bridge', 'hill']]],
+      [-69.5, -87.2, ['hill', 'flowers']], [-78.5, -96.8, ['hill', 'flowers']], [-68.2, -85.6, ['fountain', 'flowers']], [-80.8, -92, ['hill', 'sunset']], [-74, -99.9, ['bridge', 'hill']],
+      ...[[-70.0, -89.1, 180], [-64.2, -89.1, 180], [-70.0, -94.9, 0], [-64.2, -94.9, 0], [-76.6, -86.4, 90], [-71.4, -86.4, -90], [-76.6, -96.9, 90], [-71.4, -96.9, -90]].map(([x, z, r]) => [x, z, ['bench', 'park'], { seat: true, face: r * Math.PI / 180 }])],
     desc: '해 질 녘(18:00~19:00)에만 주변이 짙은 주황색과 보라색 그라데이션으로 물드는 곳' });
   place('cliff_lawn', { name: '절벽 아래 잔디밭', district: 'NORTH', x: -98, z: -92, tags: ['lawn'], spots: [[-98, -92, ['lawn']]] });
   place('cathedral', { name: '축복의 마블 대성당 & 비밀 서약 정원', district: 'NORTH', x: 12, z: -90,

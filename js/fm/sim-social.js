@@ -379,9 +379,11 @@
   function addJealousy(w, rival, n, why) {
     const j = jealousyOf(w); if (!j) return;
     j.rival = j.rival_id = rival;
+    if (!Number.isFinite(n)) return;
+    if (!Number.isFinite(j.meter)) j.meter = 0;
     const before = j.meter;
     j.meter = j.jealousy_meter = clamp(j.meter + n, 0, 100);
-    const st = D.JEALOUS_STAGES.find(s => j.meter >= s.min && j.meter <= s.max).id;
+    const st = (D.JEALOUS_STAGES.find(s => j.meter >= s.min && j.meter <= s.max) || D.JEALOUS_STAGES[0]).id;
     if (st !== j.stage) {
       j.stage = j.rivalry_stage = st;
       if (st === 'OPEN_CONFLICT' || st === 'BREAKUP_THREAT') {

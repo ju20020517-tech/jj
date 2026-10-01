@@ -10,11 +10,13 @@
 (() => {
   'use strict';
   const FM = window.FM, RK = FM.RoomKit, Sim = FM.Sim;
-  const { K, T, def, ctex, glow, glass, mesh, geo } = RK._h;
+  const { K, T, P, def, ctex, glow, glass, mesh, geo } = RK._h;
   const { halo } = RK._h5;
   const PI = Math.PI;
   const X0 = -82, X1 = -62, Z0 = -104, Z1 = -80, CX = -74, CZ = -92;
   FM.SUNSET_RECT = [X0, X1, Z0, Z1];
+  const BENCHES = [[-70.0, -89.1, 180], [-64.2, -89.1, 180], [-70.0, -94.9, 0], [-64.2, -94.9, 0], [-76.6, -86.4, 90], [-71.4, -86.4, -90], [-76.6, -96.9, 90], [-71.4, -96.9, -90]];
+  FM.SUNSET_BENCHES = BENCHES;
   // 정원 안의 원래 나무 · 나무 스폿 치우기
   const inR = (x, z) => x > X0 - 0.5 && x < X1 + 0.5 && z > Z0 - 0.5 && z < Z1 + 0.5;
   if (FM.DECOR) for (const k of ['trees', 'flowers', 'lamps']) { const a = FM.DECOR[k]; if (a) for (let i = a.length - 1; i >= 0; i--) if (inR(a[i].x, a[i].z)) a.splice(i, 1); }
@@ -22,7 +24,7 @@
   const STONE = 0xd8d2c4, STONE2 = 0xbcb4a4, IRON = 0x1e2024, LEAF = 0x2f5a2a, LEAF2 = 0x3c6e32;
   const SLATE = new THREE.MeshLambertMaterial({ map: ctex('k19slate', 128, 128, (c, w, h) => { c.fillStyle = '#5a6e86'; c.fillRect(0, 0, w, h); for (let y = 0; y < h; y += 10) for (let x = -((y / 10) % 2) * 8; x < w; x += 16) { c.fillStyle = `rgb(${70 + ((x + y) % 5) * 6},${90 + ((x * 3 + y) % 5) * 6},${115 + ((x + y * 3) % 5) * 7})`; c.beginPath(); c.moveTo(x, y); c.lineTo(x + 15, y); c.lineTo(x + 15, y + 8); c.quadraticCurveTo(x + 7.5, y + 12, x, y + 8); c.fill(); } for (let x = 0; x < w; x += 32) { c.fillStyle = 'rgba(200,210,220,0.35)'; c.fillRect(x, 0, 3, h); } }) });
   const flowerMat = (key, base, dot) => new THREE.MeshLambertMaterial({ map: ctex(key, 64, 64, (c, w, h) => { c.fillStyle = base; c.fillRect(0, 0, w, h); for (let i = 0; i < 60; i++) { const x = (i * 23) % w, y = (i * 41) % h; c.fillStyle = i % 3 ? dot : '#ffffff'; c.beginPath(); for (let j = 0; j < 4; j++) { const a = j / 4 * PI * 2; c.moveTo(x, y); c.arc(x + Math.cos(a) * 2.2, y + Math.sin(a) * 2.2, 2, 0, 7); } c.fill(); } }) });
-  const HYD = flowerMat('k19hyd', '#4a5ad8', '#7a8cf0'), HYD2 = flowerMat('k19hyd2', '#6a58c8', '#9a8ae8'), HYC = flowerMat('k19hyc', '#3a4ac0', '#6a80e8');
+  const HYD = flowerMat('k19hydY', '#f0b818', '#ffe050'), HYD2 = flowerMat('k19hyd2Y', '#f89a20', '#ffd040'), HYC = flowerMat('k19hycY', '#f8d020', '#fff27a');
   const gold = new THREE.MeshPhongMaterial({ color: 0xd4a848, shininess: 70, specular: 0xfff0b0 });
 
   // ---------------------------------------------------------
@@ -51,15 +53,15 @@
     k.c(0.008, 0.008, 0.6, IRON, 0, top - 0.1, 0); const lb = k.b(0.2, 0.26, 0.2, glow(0xffe0a0), 0, top - 0.5, 0, 0.02); lb.userData.nightGlow = true; k.cone(0.16, 0.12, IRON, 0, top - 0.32, 0, 4).rotation.y = PI / 4;
     const hl = halo(k, 1.3, 0xffd090, 0, top - 0.5, 0, 0.7); hl.userData.nightOnly = true;
     // 기둥을 감은 흰 장미 넝쿨
-    for (let i = 0; i < 8; i += 2) { const a = i / 8 * PI * 2 + PI / 8, x = Math.sin(a) * R, z = Math.cos(a) * R; for (let j = 0; j < 7; j++) { const t = j * 0.9; k.s(0.07, j % 3 ? LEAF2 : 0xfbf4f0, x + Math.cos(t) * 0.13, 0.5 + j * 0.3, z + Math.sin(t) * 0.13); } }
+    for (let i = 0; i < 8; i += 2) { const a = i / 8 * PI * 2 + PI / 8, x = Math.sin(a) * R, z = Math.cos(a) * R; for (let j = 0; j < 7; j++) { const t = j * 0.9; k.s(0.07, j % 3 ? LEAF2 : 0xffd84a, x + Math.cos(t) * 0.13, 0.5 + j * 0.3, z + Math.sin(t) * 0.13); } }
   }, { tags: ['outdoor', 'garden', 'romance'] });
-  def('k19_hydrangea', '푸른 수국 덤불', 'misc', 600, 1.0, 1.0, g => {
+  def('k19_hydrangea', '노란 꽃 덤불 (메리골드 · 노란 장미)', 'misc', 600, 1.0, 1.0, g => {
     const k = K(g); k.s(0.42, LEAF, 0, 0.3, 0, 1.2, 0.75, 1.1); k.s(0.3, LEAF2, 0.2, 0.36, -0.15, 1, 0.7, 1);
     const pts = [[0, 0.62, 0], [0.26, 0.54, 0.12], [-0.24, 0.52, 0.16], [0.14, 0.5, -0.26], [-0.2, 0.55, -0.2], [0.34, 0.42, -0.08], [-0.34, 0.42, 0.02]];
     pts.forEach(([x, y, z], i) => k.s(0.15 + (i % 3) * 0.02, i % 4 === 3 ? HYD2 : HYD, x, y, z, 1, 0.85, 1));
     for (let i = 0; i < 6; i++) { const a = i * 1.05; const l = k.s(0.1, LEAF2, Math.cos(a) * 0.4, 0.22, Math.sin(a) * 0.4, 1.3, 0.35, 0.8); l.rotation.y = -a; }
   }, { tags: ['outdoor', 'flower', 'garden'] });
-  def('k19_hyacinth', '푸른 히아신스 & 은방울꽃', 'misc', 300, 0.7, 0.7, g => {
+  def('k19_hyacinth', '수선화 & 은방울꽃', 'misc', 300, 0.7, 0.7, g => {
     const k = K(g);
     for (let i = 0; i < 5; i++) { const a = i * 1.26, x = Math.cos(a) * 0.18, z = Math.sin(a) * 0.18, h = 0.36 + (i % 3) * 0.06; k.c(0.012, 0.015, h * 0.6, LEAF2, x, h * 0.3, z, 6); k.c(0.05, 0.065, h * 0.55, HYC, x, h * 0.62, z, 8); k.s(0.05, HYC, x, h * 0.9, z); for (let j = 0; j < 2; j++) { const lf = k.b(0.03, 0.26, 0.012, LEAF, x + (j ? 0.03 : -0.03), 0.13, z); lf.rotation.z = j ? -0.3 : 0.3; } }
     for (let i = 0; i < 2; i++) { const x = 0.22 * (i ? 1 : -1), z = 0.2; const st = k.c(0.006, 0.006, 0.3, LEAF2, x, 0.15, z, 5); st.rotation.x = 0.3; for (let j = 0; j < 4; j++) k.s(0.022, 0xfbfbf8, x + 0.02, 0.18 + j * 0.03, z + 0.06 + j * 0.015, 1, 1.2, 1); k.b(0.06, 0.28, 0.01, LEAF, x - 0.04, 0.14, z - 0.04).rotation.z = 0.2; }
@@ -105,8 +107,8 @@
   def('k19_heart_arch', '하트 장미 아치 (노을 포토 스폿)', 'misc', 3000, 2.4, 0.6, g => {
     const k = K(g), pts = [];
     for (let i = 0; i <= 40; i++) { const t = i / 40 * PI * 2; const x = 16 * Math.pow(Math.sin(t), 3), y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t); pts.push([x * 0.062, y * 0.062 + 1.55]); }
-    for (let i = 0; i < pts.length - 1; i++) { const [x0, y0] = pts[i], [x1, y1] = pts[i + 1]; const len = Math.hypot(x1 - x0, y1 - y0); const b = k.b(0.04, len + 0.01, 0.04, 0xfbfaf6, (x0 + x1) / 2, (y0 + y1) / 2, 0); b.rotation.z = Math.atan2(x0 - x1, y1 - y0); if (i % 2 === 0) { k.s(0.07, i % 4 ? 0xff8ab0 : 0xfbf0f4, x0, y0, 0.04); k.s(0.05, LEAF2, x0 + 0.05, y0 - 0.04, 0.02); } }
-    for (const s of [-1, 1]) { k.b(0.06, 0.62, 0.06, 0xfbfaf6, s * 0.3, 0.31, 0); k.b(0.3, 0.1, 0.3, STONE, s * 0.3, 0.05, 0, 0.02); for (let i = 0; i < 4; i++) k.s(0.08, 0xff8ab0, s * 0.3 + (i % 2 - 0.5) * 0.12, 0.12 + i * 0.12, 0.05); }
+    for (let i = 0; i < pts.length - 1; i++) { const [x0, y0] = pts[i], [x1, y1] = pts[i + 1]; const len = Math.hypot(x1 - x0, y1 - y0); const b = k.b(0.04, len + 0.01, 0.04, 0xfbfaf6, (x0 + x1) / 2, (y0 + y1) / 2, 0); b.rotation.z = Math.atan2(x0 - x1, y1 - y0); if (i % 2 === 0) { k.s(0.07, i % 4 ? 0xffd040 : 0xfbf6e0, x0, y0, 0.04); k.s(0.05, LEAF2, x0 + 0.05, y0 - 0.04, 0.02); } }
+    for (const s of [-1, 1]) { k.b(0.06, 0.62, 0.06, 0xfbfaf6, s * 0.3, 0.31, 0); k.b(0.3, 0.1, 0.3, STONE, s * 0.3, 0.05, 0, 0.02); for (let i = 0; i < 4; i++) k.s(0.08, 0xffd040, s * 0.3 + (i % 2 - 0.5) * 0.12, 0.12 + i * 0.12, 0.05); }
   }, { tags: ['outdoor', 'romance', 'flower'] });
   def('k19_bridge', '아치 돌다리 (실개천)', 'misc', 3500, 2.4, 3.4, g => {
     const k = K(g), n = 10;
@@ -114,13 +116,42 @@
     for (const s of [-1, 1]) for (const z of [-1.7, 1.7]) { k.b(0.26, 0.7, 0.26, STONE, s * 1.0, 0.35, z, 0.02); k.s(0.1, STONE, s * 1.0, 0.76, z); }
     for (const s of [-1, 1]) { const a = k.t(0.62, 0.12, STONE2, s * 0.9, 0.0, 0, PI); a.rotation.y = PI / 2; a.scale.set(1, 0.6, 1); }
   }, { tags: ['outdoor', 'bridge'] });
-  def('k19_rosebush', '분홍 장미 덤불', 'misc', 500, 0.9, 0.9, g => { const k = K(g); k.s(0.38, LEAF, 0, 0.3, 0, 1.2, 0.8, 1.1); for (let i = 0; i < 9; i++) { const a = i * 0.7, r = 0.2 + (i % 3) * 0.08; k.s(0.07, i % 3 ? 0xff9ab8 : 0xfbf0f4, Math.cos(a) * r, 0.45 + (i % 2) * 0.12, Math.sin(a) * r); } }, { tags: ['outdoor', 'flower'] });
+  def('k19_rosebush', '노란 장미 덤불', 'misc', 500, 0.9, 0.9, g => { const k = K(g); k.s(0.38, LEAF, 0, 0.3, 0, 1.2, 0.8, 1.1); for (let i = 0; i < 9; i++) { const a = i * 0.7, r = 0.2 + (i % 3) * 0.08; k.s(0.07, i % 3 ? 0xffd040 : 0xfff6d8, Math.cos(a) * r, 0.45 + (i % 2) * 0.12, Math.sin(a) * r); } }, { tags: ['outdoor', 'flower'] });
 
+  const BIRCH = new THREE.MeshLambertMaterial({ map: ctex('k19birch', 32, 128, (c, w, h) => { c.fillStyle = '#f4f2ec'; c.fillRect(0, 0, w, h); c.fillStyle = '#2a2a2a'; for (let i = 0; i < 18; i++) c.fillRect((i * 13) % w, (i * 29) % h, 6 + (i % 3) * 3, 2); }) });
+  const YFL = [0xffd030, 0xffe060, 0xfff2a0, 0xf8b820];
+  def('k19_pergola', '노란 꽃 퍼걸러 (꽃 터널 · 구슬 등불)', 'misc', 4000, 2.8, 2.8, g => {
+    const k = K(g), H = 2.7, WD = 0xf0ece4;
+    for (const [x, z] of [[-1.2, -1.25], [1.2, -1.25], [-1.2, 1.25], [1.2, 1.25]]) { k.b(0.18, H, 0.18, WD, x, H / 2, z, 0.02); k.b(0.26, 0.12, 0.26, 0xd8d2c4, x, 0.06, z, 0.02); for (let i = 0; i < 6; i++) k.s(0.07, i % 2 ? LEAF2 : YFL[i % 4], x + Math.cos(i * 1.7) * 0.12, 0.5 + i * 0.35, z + Math.sin(i * 1.7) * 0.12); }
+    for (const z of [-1.25, 1.25]) k.b(2.9, 0.14, 0.16, WD, 0, H, z, 0.02); for (let i = 0; i < 6; i++) k.b(0.1, 0.1, 3.0, WD, -1.25 + i * 0.5, H + 0.12, 0, 0.02);
+    for (let i = 0; i < 46; i++) { const x = -1.35 + ((i * 0.618) % 1) * 2.7, z = -1.4 + ((i * 0.414) % 1) * 2.8; k.s(0.16 + (i % 3) * 0.04, i % 4 === 0 ? LEAF : HYD, x, H + 0.2 + (i % 3) * 0.06, z, 1.2, 0.55, 1.2); }
+    for (let i = 0; i < 18; i++) { const x = -1.3 + ((i * 0.618) % 1) * 2.6, z = (i % 2 ? -1 : 1) * (1.0 + ((i * 0.37) % 1) * 0.35), len = 0.4 + (i % 4) * 0.18; for (let j = 0; j < 5; j++) k.s(0.05 - j * 0.006, YFL[(i + j) % 4], x, H - 0.05 - j * len / 5, z, 1, 1.2, 1); }
+    for (const [x, z] of [[-0.6, -0.6], [0.6, 0.6], [-0.6, 0.6], [0.6, -0.6]]) { k.c(0.004, 0.004, 0.4, 0x8a8a8a, x, H - 0.2, z); const gl = k.s(0.09, glow(0xfff0d0), x, H - 0.45, z); gl.userData.nightGlow = true; const h = halo(k, 0.45, 0xffe0a0, x, H - 0.45, z, 0.7); h.userData.nightOnly = true; }
+  }, { tags: ['outdoor', 'garden', 'flower'] });
+  def('k19_festoon', '자작나무 기둥 꼬마전구 줄', 'misc', 800, 3.2, 0.3, g => {
+    const k = K(g), H = 2.5; for (const x of [-1.5, 1.5]) { k.c(0.06, 0.07, H, BIRCH, x, H / 2, 0, 10); k.c(0.12, 0.12, 0.1, 0xd8d2c4, x, 0.05, 0); }
+    for (let i = 0; i <= 12; i++) { const t = i / 12, x = -1.5 + t * 3, y = H - 0.05 - Math.sin(t * PI) * 0.35; if (i < 12) { const nx = -1.5 + (i + 1) / 12 * 3, ny = H - 0.05 - Math.sin((i + 1) / 12 * PI) * 0.35; const w = k.b(Math.hypot(nx - x, ny - y), 0.008, 0.008, 0x2a2a2a, (x + nx) / 2, (y + ny) / 2, 0); w.rotation.z = Math.atan2(ny - y, nx - x); } if (i > 0 && i < 12) { const b = k.s(0.05, glow(0xfff2c8), x, y - 0.08, 0); b.userData.nightGlow = true; const h = halo(k, 0.25, 0xffd890, x, y - 0.08, 0, 0.8); h.userData.nightOnly = true; } }
+  }, { tags: ['outdoor', 'lamp'] });
+  def('k19_planter', '흰 화분 상자 (작은 나무 · 아이비)', 'misc', 1200, 1.8, 0.9, g => {
+    const k = K(g); k.b(1.7, 0.6, 0.8, 0xf4f2ec, 0, 0.3, 0, 0.03); k.b(1.76, 0.06, 0.86, 0xe8e4dc, 0, 0.62, 0, 0.02); k.b(1.6, 0.04, 0.7, 0x4a3a2a, 0, 0.6, 0);
+    k.c(0.04, 0.06, 1.6, 0x8a7a5a, -0.3, 1.4, 0, 8); for (const [x, y, z, r] of [[-0.3, 2.3, 0, 0.42], [-0.05, 2.0, 0.1, 0.32], [-0.55, 2.05, -0.1, 0.3], [-0.3, 2.6, 0.05, 0.28]]) k.s(r, LEAF2, x, y, z, 1, 1.1, 1);
+    for (let i = 0; i < 14; i++) { const x = -0.8 + (i % 7) * 0.26, z = i < 7 ? 0.36 : -0.36; for (let j = 0; j < 3; j++) k.s(0.07, j % 2 ? LEAF : 0x5a8a3a, x, 0.62 - j * 0.14, z + (z > 0 ? 0.06 : -0.06), 1.2, 0.8, 0.6); }
+    for (let i = 0; i < 6; i++) k.s(0.07, YFL[i % 4], 0.35 + (i % 3) * 0.18, 0.7, -0.15 + ((i / 3) | 0) * 0.3);
+  }, { tags: ['outdoor', 'plant', 'garden'] });
+  def('k19_topiary', '원뿔 토피어리 (돌 화분)', 'misc', 700, 0.7, 0.7, g => { const k = K(g); k.c(0.24, 0.2, 0.36, STONE, 0, 0.18, 0, 12); for (let i = 0; i < 4; i++) k.cone(0.34 - i * 0.07, 0.6, LEAF, 0, 0.62 + i * 0.32, 0, 12); k.s(0.05, 0xffd040, 0, 1.75, 0); }, { tags: ['outdoor', 'plant'] });
+  def('k19_topiary_spiral', '나선 토피어리 (돌 화분)', 'misc', 800, 0.7, 0.7, g => { const k = K(g); k.c(0.24, 0.2, 0.36, STONE, 0, 0.18, 0, 12); for (let i = 0; i < 20; i++) { const t = i / 20, a = t * PI * 6, r = 0.3 * (1 - t) + 0.06; k.s(0.13 * (1 - t * 0.6), LEAF2, Math.cos(a) * r * 0.5, 0.45 + t * 1.4, Math.sin(a) * r * 0.5); } }, { tags: ['outdoor', 'plant'] });
+  def('k19_park_bench', '원목 공원 벤치 (주철 다리 · 노란 꽃 쿠션)', 'misc', 1100, 1.8, 0.7, g => {
+    const k = K(g), W = T.woodgrain(0xb07a48); for (let i = 0; i < 4; i++) k.b(1.6, 0.04, 0.1, W, 0, 0.45, -0.15 + i * 0.11, 0.01); for (let i = 0; i < 3; i++) { const b = k.b(1.6, 0.1, 0.03, W, 0, 0.62 + i * 0.13, -0.25, 0.01); b.rotation.x = -0.15; }
+    for (const x of [-0.72, 0.72]) { k.b(0.05, 0.45, 0.5, IRON, x, 0.22, 0, 0.01); k.b(0.05, 0.5, 0.05, IRON, x, 0.7, -0.25); k.t(0.12, 0.02, IRON, x, 0.58, 0.05, PI).rotation.y = PI / 2; }
+    k.b(0.36, 0.1, 0.36, lam(0xffd860), -0.4, 0.52, 0.0, 0.04); P.mug && P.mug(k, 0.45, 0.47, 0.05, 0xf8e070);
+  }, { tags: ['outdoor', 'chair', 'garden'] });
+  const lam = (c) => new THREE.MeshLambertMaterial({ color: c });
+  const roseTile = () => { const t = ctex('k19rosetile', 128, 128, (c, w, h) => { for (let j = 0; j < 2; j++) for (let i = 0; i < 2; i++) { const x = i * 64, y = j * 64; c.fillStyle = (i + j) % 2 ? '#fbf2dc' : '#f8ead0'; c.fillRect(x, y, 64, 64); c.strokeStyle = 'rgba(200,170,110,0.6)'; c.lineWidth = 2; c.strokeRect(x + 1, y + 1, 62, 62); c.strokeStyle = 'rgba(230,170,40,0.7)'; c.lineWidth = 2.5; for (let r = 6; r < 24; r += 5) { c.beginPath(); c.arc(x + 32, y + 32, r, r * 0.3, r * 0.3 + 5); c.stroke(); } c.fillStyle = 'rgba(120,150,70,0.6)'; c.beginPath(); c.ellipse(x + 50, y + 50, 8, 3, -0.6, 0, 7); c.fill(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
   // ---------------------------------------------------------
   // 정원 조립 (world3d 가 부름)
   // ---------------------------------------------------------
-  const cobble = () => { const t = ctex('k19cobble', 128, 128, (c, w, h) => { c.fillStyle = '#8a8e96'; c.fillRect(0, 0, w, h); for (let i = 0; i < 70; i++) { const x = (i * 37) % w, y = (i * 53 + (i % 3) * 11) % h, r = 7 + (i % 4) * 2; c.fillStyle = `rgb(${150 + (i % 5) * 10},${156 + (i % 7) * 8},${168 + (i % 3) * 8})`; c.beginPath(); c.ellipse(x, y, r, r * 0.8, i, 0, 7); c.fill(); c.strokeStyle = 'rgba(60,64,72,0.5)'; c.stroke(); } c.fillStyle = 'rgba(80,110,220,0.7)'; for (let i = 0; i < 10; i++) { c.beginPath(); c.arc((i * 71) % w, (i * 29) % h, 2.5, 0, 7); c.fill(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
-  const bord = () => { const t = ctex('k19bord', 64, 64, (c, w, h) => { c.fillStyle = '#6a6e78'; c.fillRect(0, 0, w, h); c.fillStyle = 'rgba(70,90,210,0.85)'; for (let i = 0; i < 14; i++) { c.beginPath(); c.arc((i * 23) % w, 8 + (i * 17) % (h - 16), 3, 0, 7); c.fill(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+  const cobble = () => { const t = ctex('k19cobble', 128, 128, (c, w, h) => { c.fillStyle = '#8a8e96'; c.fillRect(0, 0, w, h); for (let i = 0; i < 70; i++) { const x = (i * 37) % w, y = (i * 53 + (i % 3) * 11) % h, r = 7 + (i % 4) * 2; c.fillStyle = `rgb(${150 + (i % 5) * 10},${156 + (i % 7) * 8},${168 + (i % 3) * 8})`; c.beginPath(); c.ellipse(x, y, r, r * 0.8, i, 0, 7); c.fill(); c.strokeStyle = 'rgba(60,64,72,0.5)'; c.stroke(); } c.fillStyle = 'rgba(250,200,40,0.8)'; for (let i = 0; i < 10; i++) { c.beginPath(); c.arc((i * 71) % w, (i * 29) % h, 2.5, 0, 7); c.fill(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
+  const bord = () => { const t = ctex('k19bord', 64, 64, (c, w, h) => { c.fillStyle = '#6a6e78'; c.fillRect(0, 0, w, h); c.fillStyle = 'rgba(250,200,40,0.9)'; for (let i = 0; i < 14; i++) { c.beginPath(); c.arc((i * 23) % w, 8 + (i * 17) % (h - 16), 3, 0, 7); c.fill(); } }); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
   function conformRect(Tt, x0, x1, z0, z1, off, m) {
     const W = x1 - x0, D = z1 - z0, g2 = new THREE.PlaneGeometry(W, D, Math.max(1, Math.ceil(W)), Math.max(1, Math.ceil(D))); g2.rotateX(-PI / 2);
     const p = g2.attributes.position, cx = (x0 + x1) / 2, cz = (z0 + z1) / 2; for (let i = 0; i < p.count; i++) { const x = p.getX(i) + cx, z = p.getZ(i) + cz; p.setXYZ(i, x, Tt.height(x, z) + off, z); } g2.computeVertexNormals();
@@ -138,23 +169,29 @@
     add('k19_heart_arch', -80.8, CZ, 90); add('k19_lovelock', -81.4, CZ - 3.3, 90); add('k19_lovelock', -81.4, CZ + 3.3, 90);
     add('k19_bench', -79.9, -89.6, -90); add('k19_bench', -79.9, -94.4, -90); add('k19_rosebush', -80.9, -87.4); add('k19_rosebush', -80.9, -96.6);
     // 산책로 가로등 · 바닥 랜턴
-    for (const x of [-69.2, -64.4]) { add('k19_lamp', x, CZ - 1.45); add('k19_lamp', x + 0.6, CZ + 1.45); }
-    add('k19_lamp', -80.9, -88.4); add('k19_lamp', -80.9, -95.6);
-    for (const z of [-84.2, -101.8]) { add('k19_lamp', CX - 1.45, z); add('k19_lamp', CX + 1.45, z + 0.6); }
+    add('k19_lamp', -80.9, -88.4); add('k19_lamp', -80.9, -95.6); add('k19_lamp', -79.8, -98.6); add('k19_lamp', -64.8, -98.6); add('k19_lamp', -79.8, -85.2); add('k19_lamp', -62.8, -85.2);
     for (let i = 0; i < 8; i++) { const a = i / 8 * PI * 2 + PI / 8; add('k19_glantern', CX + Math.sin(a) * 3.7, CZ + Math.cos(a) * 3.7); }
-    // 돌 항아리 줄 (사진처럼 앞줄) + 사이사이 수국
+    // 🌼 노란 꽃 퍼걸러 (사진처럼 길 위를 덮는 꽃 터널) · 자작나무 꼬마전구 줄
+    add('k19_pergola', -66.8, CZ, 0); add('k19_pergola', CX, -83.0, 90); add('k19_pergola', CX, -102.2, 90);
+    for (const [x, z, r] of [[-69.75, CZ - 1.6, 0], [-69.75, CZ + 1.6, 0], [-63.45, CZ - 1.6, 0], [-63.45, CZ + 1.6, 0], [CX - 1.6, -86.4, 90], [CX + 1.6, -86.4, 90], [CX - 1.6, -96.9, 90], [CX + 1.6, -96.9, 90]]) add('k19_festoon', x, z, r);
+    // 장미 타일 광장 양옆 흰 화분 (작은 나무 · 아이비) · 토피어리
+    add('k19_planter', -68.9, -89.3, 0); add('k19_planter', -68.9, -94.7, 0); add('k19_planter', -76.3, -82.2, 90); add('k19_planter', -71.7, -82.2, 90);
+    for (const [x, z, k] of [[-77.2, -88.8, 0], [-70.8, -88.8, 1], [-77.2, -95.2, 1], [-70.8, -95.2, 0], [-62.6, -89.6, 0], [-62.6, -94.4, 0]]) add(k ? 'k19_topiary_spiral' : 'k19_topiary', x, z);
+    // 공원 벤치 (길을 바라봄)
+    for (const [x, z, r] of BENCHES) add('k19_park_bench', x, z, r);
+    // 돌 항아리 줄 (사진처럼 앞줄) + 사이사이 노란 꽃
     for (const x of [-80.2, -77.9, -70.1, -67.8, -65.5, -63.2]) { add('k19_urn', x, -86.6); }
     for (const x of [-79.05, -76.75, -71.25, -68.95, -66.65, -64.35]) add('k19_hydrangea', x, -86.4);
-    // 사분면 화단: 수국 · 히아신스
+    // 사분면 화단: 노란 꽃 덤불 · 수선화 (다른 소품 자리는 비움)
     const beds = [[-79.5, -76.4, -90.5, -87.8], [-71.6, -64, -90.5, -87.8], [-79.5, -76.4, -97.4, -93.6], [-71.6, -64, -97.4, -93.6], [-79.5, -76.4, -103.4, -100.6], [-71.6, -64, -103.4, -100.6], [-79.5, -76.4, -85.4, -81.2], [-71.6, -63, -85.4, -81.2]];
+    const busy = L.filter(o => !/hydrangea|hyacinth|urn/.test(o[0])).map(o => [o[1], o[2], /pergola|park_bench|planter|fountain|tree/.test(o[0]) ? 1.6 : 0.9]);
     let n = 0;
-    for (const [bx0, bx1, bz0, bz1] of beds) for (let x = bx0 + 0.5; x < bx1; x += 1.25) for (let z = bz0 + 0.5; z < bz1; z += 1.2) { n++; const jx = ((n * 0.37) % 1 - 0.5) * 0.4, jz = ((n * 0.61) % 1 - 0.5) * 0.4; if (Math.hypot(x - CX, z - CZ) < 4.2) continue; add(n % 3 === 0 ? 'k19_hyacinth' : 'k19_hydrangea', x + jx, z + jz, (n * 47) % 360); }
+    for (const [bx0, bx1, bz0, bz1] of beds) for (let x = bx0 + 0.5; x < bx1; x += 1.25) for (let z = bz0 + 0.5; z < bz1; z += 1.2) { n++; const jx = ((n * 0.37) % 1 - 0.5) * 0.4, jz = ((n * 0.61) % 1 - 0.5) * 0.4; if (Math.hypot(x - CX, z - CZ) < 4.2 || busy.some(([bx, bz, r]) => Math.hypot(x + jx - bx, z + jz - bz) < r)) continue; add(n % 3 === 0 ? 'k19_hyacinth' : n % 5 === 0 ? 'k19_rosebush' : 'k19_hydrangea', x + jx, z + jz, (n * 47) % 360); }
     // 정원수 · 분수 · 울타리
     for (const [x, z] of [[-80.4, -82.2], [-66.2, -82.4], [-80.5, -102.6], [-63.2, -102.4], [-63.0, -95.6], [-78.2, -98.2]]) add('k19_tree', x, z);
     add('k19_fountain', -68.2, -83.2);
     for (let x = X0 + 2; x < X1 - 1; x += 2.05) { if (Math.abs(x - CX) < 1.8) continue; add('k19_fence', x, Z0 + 0.3, 0); }
     for (let x = X0 + 2; x < X1 - 1; x += 2.05) { if (Math.abs(x - CX) < 1.8) continue; add('k19_fence', x, Z1 - 0.3, 0); }
-    // 실개천 다리
     add('k19_bridge', CX, -99, 0);
   })();
   const WAVE = new THREE.MeshPhongMaterial({ color: 0x5aa8d8, shininess: 120, specular: 0xffffff, transparent: true, opacity: 0.85, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 });
@@ -168,6 +205,7 @@
     root.add(conformRect(Tt, X0 + 0.6, X1, CZ - 1.1, CZ + 1.1, 0.05, cm2(18, 2)));
     root.add(conformRect(Tt, CX - 1.1, CX + 1.1, Z0, -99.8, 0.05, cm2(2, 4))); root.add(conformRect(Tt, CX - 1.1, CX + 1.1, -98.2, Z1, 0.05, cm2(2, 17)));
     root.add(conformDisc(Tt, CX, CZ, 3.5, 0.055, cm2(5, 5)));
+    const rt = roseTile(); rt.repeat.set(2, 2); root.add(conformRect(Tt, -70.6, -67.0, CZ - 1.6, CZ + 1.6, 0.065, new THREE.MeshLambertMaterial({ map: rt, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 })));
     const bm = bord(); bm.repeat.set(10, 1);
     for (const s of [-1, 1]) root.add(conformRect(Tt, X0 + 0.6, X1, CZ + s * 1.1 - 0.14, CZ + s * 1.1 + 0.14, 0.06, new THREE.MeshLambertMaterial(Object.assign({ map: bm }, po))));
     // 실개천
@@ -182,13 +220,13 @@
     for (let i = 0; i < n; i++) { const x = X0 + ((i * 0.618) % 1) * (X1 - X0), z = Z0 + ((i * 0.414 + 0.2) % 1) * (Z1 - Z0), y = Tt.height(x, z) + 0.4 + ((i * 0.732) % 1) * 3; base.push([x, y, z, i * 1.7]); pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z; }
     const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const tex = ctex('k19petal', 32, 32, (c, w, h) => { const gr = c.createRadialGradient(16, 16, 0, 16, 16, 16); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,0.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.fillRect(0, 0, w, h); });
-    const pm = new THREE.PointsMaterial({ map: tex, size: 0.25, color: 0x9aaaff, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending });
+    const pm = new THREE.PointsMaterial({ map: tex, size: 0.25, color: 0xffe070, transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending });
     const pts = new THREE.Points(pg, pm); pts.userData.keep = true; pts.frustumCulled = false;
     pts.onBeforeRender = () => {
       const t = performance.now() / 1000, nt = (FM.W && FM.W.nightness) || 0, a = pg.attributes.position;
       for (let i = 0; i < n; i++) { const b = base[i]; a.array[i * 3] = b[0] + Math.sin(t * 0.4 + b[3]) * 0.8; a.array[i * 3 + 1] = b[1] + Math.sin(t * 0.7 + b[3]) * 0.35; a.array[i * 3 + 2] = b[2] + Math.cos(t * 0.3 + b[3]) * 0.8; }
       a.needsUpdate = true;
-      pm.color.setHex(nt > 0.3 ? 0xfff27a : 0xa8b4ff); pm.size = nt > 0.3 ? 0.3 + Math.sin(t * 3) * 0.06 : 0.2; pm.opacity = nt > 0.3 ? 0.55 + Math.sin(t * 2.2) * 0.3 : 0.55;
+      pm.color.setHex(nt > 0.3 ? 0xfff27a : 0xffe680); pm.size = nt > 0.3 ? 0.3 + Math.sin(t * 3) * 0.06 : 0.2; pm.opacity = nt > 0.3 ? 0.55 + Math.sin(t * 2.2) * 0.3 : 0.55;
       const on = nt > 0.25; for (const o of nightOnly) o.visible = on;
     };
     root.add(pts); scene.add(root);
