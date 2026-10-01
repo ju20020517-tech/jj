@@ -80,15 +80,22 @@
     { id: 'villa3', size: 'small', x: -98, z: -30, doorSide: 1 }, { id: 'villa4', size: 'small', x: -116, z: -30, doorSide: 1 },
     { id: 'villa5', size: 'large', x: -62, z: -3, doorSide: -1 }, { id: 'villa6', size: 'large', x: -82, z: -3, doorSide: -1 },
     { id: 'villa7', size: 'large', x: -102, z: -3, doorSide: -1 }, { id: 'villa8', size: 'large', x: -120, z: -3, doorSide: -1 },
+    // 해변 코티지 마을 (동쪽 바닷가 골목) · 남쪽 해안 주택가 · 서쪽 해변 타운하우스 — 주민 30명 + 아이들이 자라서 독립할 집
+    { id: 'villa9', size: 'small', x: 58, z: 69, doorSide: 1, ext: 'cottage', area: '해변 코티지' }, { id: 'villa10', size: 'small', x: 70, z: 69, doorSide: 1, ext: 'beach', area: '해변 코티지' },
+    { id: 'villa11', size: 'small', x: 82, z: 69, doorSide: 1, ext: 'cottage', area: '해변 코티지' }, { id: 'villa12', size: 'small', x: 64, z: 81, doorSide: -1, ext: 'beach', area: '해변 코티지' },
+    { id: 'villa13', size: 'small', x: 76, z: 81, doorSide: -1, ext: 'cottage', area: '해변 코티지' },
+    { id: 'villa14', size: 'large', x: -79, z: 78, doorSide: -1, ext: 'euro', area: '바닷가 타운하우스' }, { id: 'villa15', size: 'large', x: -65, z: 78, doorSide: -1, ext: 'tudor', area: '바닷가 타운하우스' },
+    { id: 'villa16', size: 'large', x: -26, z: 77, doorSide: -1, ext: 'euro', area: '해안 주택가' }, { id: 'villa17', size: 'small', x: -12, z: 77, doorSide: -1, ext: 'tudor', area: '해안 주택가' },
+    { id: 'villa18', size: 'small', x: 14, z: 77, doorSide: -1, ext: 'beach', area: '해안 주택가' }, { id: 'villa19', size: 'small', x: 24, z: 77, doorSide: -1, ext: 'cottage', area: '해안 주택가' },
   ];
   for (const pl of PLOTS) {
     const dz = pl.size === 'small' ? 4.6 : 5.6;
-    place(pl.id, { name: `커스텀 빌라 ${pl.id.slice(5)}번지`, district: 'WEST', x: pl.x, z: pl.z, plot: pl,
+    place(pl.id, { name: `${pl.area || '커스텀 빌라'} ${pl.id.slice(5)}번지`, district: +pl.id.slice(5) > 8 ? (pl.x > 40 ? 'EAST' : pl.x < -40 ? 'WEST' : 'SOUTH') : 'WEST', x: pl.x, z: pl.z, plot: pl,
       bld: { type: 'villa', w: pl.size === 'small' ? 8 : 11, d: pl.size === 'small' ? 7 : 9, h: 6 }, door: [pl.x, pl.z + pl.doorSide * dz], interior: pl.id + '_in',
       tags: ['home', 'villa'], spots: [[pl.x + 5.5, pl.z + pl.doorSide * 6.5, ['yard', 'flowers']], [pl.x - 5.5, pl.z + pl.doorSide * 6.5, ['yard', 'bench'], { seat: true, face: 0 }]] });
   }
-  place('home_p', { name: '플레이어의 집', district: 'WEST', x: -42, z: -31, bld: { type: 'villa', w: 9, d: 7, h: 6, player: true }, door: [-42, -26.4], interior: 'home_p_in',
-    tags: ['home'], spots: [[-37, -24, ['yard', 'mailbox']], [-47, -24, ['yard', 'bench'], { seat: true, face: 0 }]] });
+  place('home_p', { name: '플레이어의 집', district: 'WEST', x: -46.5, z: -31, bld: { type: 'villa', w: 9, d: 7, h: 6, player: true }, door: [-46.5, -26.4], interior: 'home_p_in',
+    tags: ['home'], spots: [[-41.5, -24, ['yard', 'mailbox']], [-51.5, -24, ['yard', 'bench'], { seat: true, face: 0 }]] });
   place('park', { name: '센트럴 파크 & 비밀의 숲', district: 'WEST', x: -86, z: 22, r: 22, tags: ['park', 'flowers', 'trees', 'bench', 'bugs'],
     spots: [[-80, 20, ['lawn', 'flowers']], [-86, 14, ['lawn']], [-101, 13, ['hammock'], { seat: true, lie: true, face: 0 }], [-106, 17, ['hammock'], { seat: true, lie: true, face: 0 }],
       [-70, 13, ['swing', 'couple'], { seat: true, face: Math.PI }], [-72, 13, ['swing', 'couple'], { seat: true, face: Math.PI }],
@@ -96,8 +103,8 @@
       [-62, 28, ['pets']], [-118, 22, ['forest', 'bugs', 'quiet']], [-112, 28, ['forest', 'trees']],
       [-95, 26, ['boat', 'couple']], [-84, 25, ['lawn', 'stage']], [-92, 10, ['trees', 'bugs']]],
     desc: '단지 한가운데 펼쳐진 거대한 자연 친화적 공원' });
-  place('playground', { name: '마을 놀이터', district: 'WEST', x: -72, z: 42, tags: ['playground', 'kids'],
-    spots: [[-74, 42, ['playground']], [-70, 44, ['playground']], [-68, 40, ['playground']], [-76, 46, ['playground', 'bench'], { seat: true, face: 0 }]] });
+  place('playground', { name: '마을 놀이터', district: 'WEST', x: -74, z: 47.5, tags: ['playground', 'kids'],
+    spots: [[-76, 47.5, ['playground']], [-72, 49.5, ['playground']], [-70, 45.5, ['playground']], [-78, 51.5, ['playground', 'bench'], { seat: true, face: 0 }]] });
   place('school', { name: '섬 어린이 학교', district: 'WEST', x: -54, z: 46, bld: { type: 'school', w: 12, d: 8, h: 6 }, door: [-54, 50.6], interior: 'school_in', tags: ['school', 'kids'] });
   place('library', { name: '시립 도서관 & 힐링 북카페', district: 'WEST', x: -100, z: 52, bld: { type: 'library', w: 16, d: 12, h: 12 }, door: [-100, 58.6], interior: 'library_in', tags: ['books', 'quiet', 'museum'],
     desc: '3층 높이의 중정 통유리 건물 (1층 앤티크 북카페, 2층 정숙 열람실, 3층 거대 서가 벽면, 자연사 전시실)' });
@@ -128,9 +135,19 @@
   place('medical', { name: '메디컬 센터 & 24시 약국', district: 'SOUTH', x: 36, z: 62, bld: { type: 'hospital', w: 18, d: 12, h: 16 }, door: [36, 68.6], interior: 'med_in', tags: ['medical'],
     desc: '주민들의 건강을 책임지는 종합병원' });
   place('beach', { name: '에메랄드 해수욕장 & 워터프론트 데크', district: 'SOUTH', x: -36, z: 90, r: 26, tags: ['beach', 'sea', 'confess', 'breakup'],
-    spots: [[-30, 93, ['sand', 'sea']], [-50, 92, ['sand', 'sea']], [-20, 94, ['sand', 'sea']], [-40, 86, ['sunbed'], { seat: true, lie: true, face: Math.PI }], [-34, 86, ['sunbed'], { seat: true, lie: true, face: Math.PI }],
-      [-26, 86, ['sunbed'], { seat: true, lie: true, face: Math.PI }], [-60, 90, ['sea', 'quiet']], [-45, 89, ['beachball']], [-4, 88, ['deck', 'sea', 'bench'], { seat: true, face: Math.PI }], [4, 88, ['deck', 'sea']]],
-    desc: '하얀 모래사장과 에메랄드빛 바다가 펼쳐진 휴양 스폿' });
+    spots: [[-30, 93, ['sand', 'sea']], [-50, 92.5, ['sand', 'sea']], [-24, 94, ['sand', 'sea']], [-40, 86, ['sunbed'], { seat: true, lie: true, face: Math.PI }], [-34, 86, ['sunbed'], { seat: true, lie: true, face: Math.PI }],
+      [-28, 86, ['sunbed'], { seat: true, lie: true, face: Math.PI }], [-62, 90, ['sea', 'quiet']], [-4, 88, ['deck', 'sea', 'bench'], { seat: true, face: Math.PI }], [4, 88, ['deck', 'sea']],
+      // 비치발리볼 코트 (그물 x=-17)
+      [-20.5, 91, ['beachball', 'volley'], { face: Math.PI / 2 }], [-13.5, 91, ['volley'], { face: -Math.PI / 2 }],
+      // 라이프가드 타워 · 모닥불 · 서핑 렌탈 · 카바나
+      [-46, 88.4, ['lifeguard', 'sea']], [-56.6, 91.6, ['campfire', 'bench'], { seat: true, face: Math.PI / 2 }], [-51.4, 91.6, ['campfire', 'bench'], { seat: true, face: -Math.PI / 2 }],
+      [-54, 89.0, ['campfire', 'bench'], { seat: true, face: 0 }], [-66, 87.5, ['surf', 'sea']], [32, 92.2, ['sunbed', 'cabana'], { seat: true, lie: true, face: Math.PI }],
+      [38, 92.2, ['sunbed', 'cabana'], { seat: true, lie: true, face: Math.PI }], [44, 92.2, ['sunbed', 'cabana'], { seat: true, lie: true, face: Math.PI }], [-8, 95, ['sand', 'castle']]],
+    desc: '하얀 모래사장과 에메랄드빛 바다가 펼쳐진 휴양 스폿 — 비치발리볼 코트, 라이프가드 타워, 모닥불, 서핑 렌탈, 카바나' });
+  place('beachbar', { name: '코코넛 비치 바', district: 'SOUTH', x: 22, z: 88, bld: { type: 'beachbar', w: 7, d: 4, h: 4 }, door: [22, 90.6], tags: ['beach', 'sea', 'food', 'cafe'],
+    spots: [[19.6, 91.6, ['beachbar', 'bench'], { seat: true, face: Math.PI }], [21.2, 91.6, ['beachbar', 'bench'], { seat: true, face: Math.PI }], [22.8, 91.6, ['beachbar', 'bench'], { seat: true, face: Math.PI }],
+      [24.4, 91.6, ['beachbar', 'bench'], { seat: true, face: Math.PI }], [16.2, 94, ['beachbar', 'bench', 'sea'], { seat: true, face: 0 }], [27.8, 94, ['beachbar', 'bench', 'sea'], { seat: true, face: 0 }]],
+    desc: '야자잎 지붕 아래 코코넛 칵테일과 스무디를 파는 해변 바. 밤엔 전구가 켜진다' });
   place('ferry', { name: '페리 터미널 & 심야 해풍 포장마차', district: 'SOUTH', x: 52, z: 86, bld: { type: 'terminal', w: 12, d: 7, h: 6 }, door: [52, 89.6], tags: ['sea', 'ferry'],
     spots: [[52, 96, ['deck', 'sea']], [55, 102, ['deck', 'sea']], [40, 80, ['pocha', 'bench'], { seat: true, face: 0 }], [42, 80, ['pocha', 'bench'], { seat: true, face: 0 }], [38, 80, ['pocha', 'bench'], { seat: true, face: 0 }], [70, 94, ['lighthouse', 'sea']]],
     desc: '외부 세계(다른 플레이어의 섬)와 연결되는 통로이자, 붉은 천막 아래 밤 깊은 대화를 나누는 곳' });
@@ -138,6 +155,9 @@
   // ---------------------------------------------------------
   // 지하철 (별 모양 노선: 중앙 환승역 ↔ 각 지구 출구)
   // ---------------------------------------------------------
+  // 해변 시설 충돌 (원형)
+  const BEACH_SOLIDS = [{ x: -46, z: 90.6, r: 1.5, id: 'lifeguard' }, { x: -54, z: 91.6, r: 0.9, id: 'bonfire' }, { x: -66, z: 85, r: 2.2, id: 'surfshack' }];
+
   const STATIONS = {
     C: { name: '센트럴 환승역', x: -20, z: 24, district: 'CORE' },
     N: { name: '북쪽 고지대역', x: 30, z: -66, district: 'NORTH' },
@@ -168,6 +188,7 @@
     // 남쪽
     s_n: [0, 48], s_metro: [14, 46], s_off: [-12, 56], s_hall: [-44, 64], s_med: [36, 71], s_mid: [0, 70], s_deck: [0, 84], s_beach: [-30, 84], s_beachw: [-58, 84],
     s_pocha: [40, 78], s_ferry: [52, 92], s_light: [66, 92], s_hallE: [-20, 70], s_fw: [44.5, 92], s_hw: [-56.5, 64],
+    s_bar: [22, 84], s_volley: [-17, 86], s_camp: [-54, 87.5], s_cot0: [47.5, 75.2], s_cot1: [64, 75.2], s_cot2: [80, 75.2], s_hbeach: [-72, 72.5], s_cen: [0, 75],
   };
   const E = [
     // 중앙 십자
@@ -190,11 +211,13 @@
     // 남쪽
     ['c_s', 's_n'], ['s_n', 's_metro'], ['s_n', 's_off'], ['s_n', 's_mid'], ['s_off', 's_hallE'], ['s_hallE', 's_hall'], ['s_hallE', 's_mid'], ['s_mid', 's_med'], ['s_mid', 's_deck'],
     ['s_deck', 's_beach'], ['s_beach', 's_beachw'], ['s_deck', 's_pocha'], ['s_pocha', 's_fw'], ['s_fw', 's_ferry'], ['s_ferry', 's_light'], ['s_metro', 's_mid'], ['s_hall', 's_hw'], ['s_hw', 's_beachw'],
+    ['s_deck', 's_bar'], ['s_bar', 's_pocha'], ['s_deck', 's_volley'], ['s_volley', 's_beach'], ['s_beachw', 's_camp'], ['s_camp', 's_beach'],
+    ['e_md', 's_cot0'], ['s_pocha', 's_cot0'], ['s_cot0', 's_cot1'], ['s_cot1', 's_cot2'], ['w_flea', 's_hbeach'], ['s_hbeach', 's_hw'], ['s_mid', 's_cen'], ['s_cen', 's_deck'],
   ];
 
   // 각 장소가 속한 지하철 구역(가장 가까운 역)
   const HUB = { CORE: 'C', NORTH: 'N', WEST: 'W', EAST: 'E', SOUTH: 'S' };
   for (const p of Object.values(P)) if (!p.hub) p.hub = HUB[p.district];
 
-  FM.MAP = { DISTRICTS, P, PLOTS, STATIONS, N, E, HUB, SIZE: { minX: -140, maxX: 140, minZ: -130, maxZ: 115 } };
+  FM.MAP = { DISTRICTS, P, PLOTS, BEACH_SOLIDS, STATIONS, N, E, HUB, SIZE: { minX: -140, maxX: 140, minZ: -130, maxZ: 115 } };
 })();

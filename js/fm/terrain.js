@@ -54,13 +54,18 @@
   }
 
   // 기본 층 (남→북)
-  function baseHeight(x, z) {
+  // 6m → 2m 경사: 기본 z 40~50, 서쪽(x<-46) 은 z 36~44 (학교·놀이터가 평지에), 동쪽(x>54) 은 z 56~64 (미식 골목이 위 단에)
+  const slope = (z, z0, z1) => z > z1 ? 2 : z > z0 ? lerp(6, 2, smooth((z - z0) / (z1 - z0))) : 6;
+  function baseRaw(x, z) {
     let e;
     if (z > 96) e = 0;
     else if (z > 80) e = lerp(2, 0.2, smooth((z - 80) / 16));
-    else if (z > 50) e = 2;
-    else if (z > 40) e = lerp(6, 2, smooth((z - 40) / 10));
-    else e = 6;
+    else {
+      e = slope(z, 40, 50);
+      const wW = smooth((-x - 38) / 8), wE = smooth((x - 46) / 8);
+      if (wW > 0) e = lerp(e, slope(z, 36, 44), wW);
+      if (wE > 0) e = lerp(e, slope(z, 56, 64), wE);
+    }
     // 협곡 (z -42 ~ -58)
     if (z < -40) {
       const bank = smooth((-40 - z) / 5);            // 남쪽 둑: 완만
@@ -87,6 +92,33 @@
       const low = lerp(4.5, 6, smooth((-z - 58) / 8));
       e = lerp(e, lerp(low, hill, west), north);
     }
+    return e;
+  }
+  // 건물 터 고르기: 건물 바닥 + 둘레를 출입문 높이로 평평하게, 바깥은 완만한 둔덕으로 이어줌
+  const PADS = [];
+  for (const p of Object.values(P)) {
+    if (!p.bld) continue;
+    const d = p.door || [p.x, p.z];
+    const tx = p.x + (d[0] - p.x) * 1.15, tz = p.z + (d[1] - p.z) * 1.15;
+    const y = baseRaw(tx, tz);
+    const m = 1.4, x0 = p.x - p.bld.w / 2 - m, x1 = p.x + p.bld.w / 2 + m, z0 = p.z - p.bld.d / 2 - m, z1 = p.z + p.bld.d / 2 + m;
+    let dmax = 0;
+    for (const [a, b] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1], [p.x, p.z]]) dmax = Math.max(dmax, Math.abs(baseRaw(a, b) - y));
+    if (dmax < 0.05) continue;
+    const sk = clamp(dmax * 2.2, 3, 9);
+    PADS.push({ id: p.id, y, x0, x1, z0, z1, sk });
+  }
+  function baseHeight(x, z) {
+    let e = baseRaw(x, z);
+    // 가장 가까운(영향이 큰) 터 하나만 따름 → 이웃 건물 둔덕이 내 바닥을 덮지 않음
+    let bw = 0, by = 0;
+    for (const q of PADS) {
+      if (x < q.x0 - q.sk || x > q.x1 + q.sk || z < q.z0 - q.sk || z > q.z1 + q.sk) continue;
+      const dx = Math.max(q.x0 - x, 0, x - q.x1), dz = Math.max(q.z0 - z, 0, z - q.z1);
+      const w = 1 - smooth(Math.hypot(dx, dz) / q.sk);
+      if (w > bw) { bw = w; by = q.y; }
+    }
+    if (bw > 0) e = lerp(e, by, bw);
     // 폭포 연못 · 강 · 호수 파임
     const w = inWater(x, z);
     if (w) e = Math.min(e, w.level - 0.9);
@@ -123,6 +155,8 @@
   }
   SOLIDS.push({ circle: true, x: 0, z: 10, r: 3.4, id: 'fountain' });
   const extraSolid = [];
+  // 해변 시설 (원형 충돌)
+  for (const b of FM.MAP.BEACH_SOLIDS || []) extraSolid.push(b);
 
   function blockedByBuilding(x, z, pad = 0.35) {
     for (const s of SOLIDS) {
@@ -165,11 +199,11 @@
   // 지면 종류 (색칠용)
   function surface(x, z) {
     const h = height(x, z);
-    if (h < 0.5 || (z > 81 && x < 30 && x > -100)) return 'sand';
+    if (h < 0.5 || (z > 81 && x < 30 && x > -100) || (z > 84.5 && x < 60 && x > -100)) return 'sand';
     if (z < -58 && x > -84) return 'highgrass';
     return 'grass';
   }
 
   FM.T = { height, groundY, canWalk, inWater, onBridge, onStairs, bridgeY, district, surface, blockedByBuilding, coastVal,
-    WATERS, FOOTBRIDGES, BRIDGE, SOLIDS, extraSolid, clamp, smooth, lerp };
+    WATERS, FOOTBRIDGES, BRIDGE, SOLIDS, extraSolid, PADS, clamp, smooth, lerp };
 })();

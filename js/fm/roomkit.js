@@ -14,7 +14,7 @@
   const { mat, geo, sphere, box, cyl, capsule, mesh, soften } = H;
   const F = FM.FURN;
   const PI = Math.PI;
-  const REV = 5;   // 스타일 방 구성 버전 (올라가면 손대지 않은 방은 새 구성으로 갱신)
+  const REV = 6;   // 스타일 방 구성 버전 (올라가면 손대지 않은 방은 새 구성으로 갱신)
   const css = PM.css;
 
   // ---------------------------------------------------------
@@ -644,7 +644,7 @@
     }
     const wallR = furn.filter(o => F[o.type].wall).map(o => ({ side: Math.abs(o.z + hz) < 0.2 ? 'b' : o.x < 0 ? 'l' : 'r', a: Math.abs(o.z + hz) < 0.2 ? o.x : o.z, hw: F[o.type].w / 2 }));
     let seed = (w * 131 + d * 17 + styleId.length * 7 + (seedIn | 0)) | 0; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
-    const NEUTRAL = ['k_candle_cluster', 'k_crate_stack', 'k_side_table_plant', 'k_floor_vase', 'k_round_stool', 'k_books_floor', 'k_plant_trio'];
+    const NEUTRAL = ['k_candle_cluster', 'k_crate_stack', 'k_side_table_plant', 'k_floor_vase', 'k_round_stool', 'k_plant_trio'];
     const pool = [...S.fill, ...S.fill, ...NEUTRAL];
     const dens = S.density || 1, nFloor = Math.round((Math.round(w * d * 0.2) + 3) * dens), nWall = Math.round((w + 2 * d) / 1.5 * Math.min(1.6, dens));   // density: 촘촘한 스타일
     let fi = Math.floor(rnd() * pool.length);

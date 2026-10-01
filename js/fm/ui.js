@@ -1108,7 +1108,7 @@
     const yard = s.plots.yard[plotId] || [];
     const yardF = Object.values(FM.FURN).filter(f => f.layer === 'yard' || f.id === 'fence');
     const slots = [-4.5, -1.5, 1.5, 4.5];
-    modal(`🏡 ${esc(MAP.P[plotId].name)} — 건축 및 외관 커스텀`, `<h4>외관 테마 (8종)</h4><div class="grid-btn">${Object.entries(FM.PM.VILLA_THEMES).map(([k, t]) => `<button data-ext="${k}" class="${cur === k ? 'on' : ''}">${esc(t.name)}</button>`).join('')}</div>
+    modal(`🏡 ${esc(MAP.P[plotId].name)} — 건축 및 외관 커스텀`, `<h4>외관 테마 (${Object.keys(FM.PM.VILLA_THEMES).length}종)</h4><div class="grid-btn">${Object.entries(FM.PM.VILLA_THEMES).map(([k, t]) => `<button data-ext="${k}" class="${cur === k ? 'on' : ''}">${esc(t.name)}</button>`).join('')}</div>
       <h4>마당 그리드 (4칸)</h4><div class="grid-btn">${slots.map((x, i) => { const y = yard.find(q => q.slot === i); return `<div class="slot"><b>${i + 1}번 칸</b><select data-slot="${i}"><option value="">비어 있음</option>${yardF.map(f => `<option value="${f.id}" ${y && y.type === f.id ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select></div>`; }).join('')}</div>`, b => {
       b.querySelectorAll('[data-ext]').forEach(x => x.onclick = () => { s.plots.ext[plotId] = x.dataset.ext; FM.W.rebuildBuilding(plotId); UI.toast('🏡 외관을 바꿨어요'); UI.yardEditor(plotId); });
       b.querySelectorAll('[data-slot]').forEach(sel => sel.onchange = () => {

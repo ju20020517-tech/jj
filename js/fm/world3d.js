@@ -9,6 +9,8 @@
   const { mat, sphere, box, cyl, mesh } = H;
   const W = (FM.W = {});
 
+  W.seaU = { value: 0 };
+  W.seaY = () => (sea ? sea.position.y : 0.06);
   let scene, sun, hemi, amb, sky, skyMat, sea, seaTex, starPts, milky, rainPts, fogCol;
   const dyn = { waters: [], fires: [], bulbs: [], lampLights: [], jets: [], birds: [], cars: [], windows: {}, board: null, termBoard: null, wedding: null, weddingTrash: [], fireflies: null, sandNames: [], leaves: null, pets: [] };
   // 성당 앞 상설 웨딩 가든 영역 (roomkit12) — 풀 · 꽃 · 가로등을 비움
@@ -151,7 +153,39 @@
   // 바다 & 물
   function makeWater() {
     seaTex = ISLE.TEX.sea().clone(); seaTex.needsUpdate = true; seaTex.wrapS = seaTex.wrapT = THREE.RepeatWrapping; seaTex.repeat.set(60, 60);
-    sea = new THREE.Mesh(new THREE.PlaneGeometry(1800, 1800), new THREE.MeshPhongMaterial({ map: seaTex, color: 0x9fe8f5, transparent: true, opacity: 0.92, shininess: 90, specular: 0x88bbcc }));
+    // 수심 지도 (섬 지형 높이를 텍스처로 구워서 → 얕은 곳은 투명한 옥색, 깊은 곳은 짙은 파랑, 해안선엔 밀려오는 파도 거품)
+    const DB = [-170, -160, 340, 300], DN = 256, dd = new Uint8Array(DN * DN * 4);
+    for (let j = 0; j < DN; j++) for (let i = 0; i < DN; i++) { const x = DB[0] + (i + 0.5) / DN * DB[2], z = DB[1] + (j + 0.5) / DN * DB[3]; const h = T.height(x, z); const k = (j * DN + i) * 4; dd[k] = Math.max(0, Math.min(255, Math.round((h + 4) / 8 * 255))); dd[k + 3] = 255; }
+    const depthTex = new THREE.DataTexture(dd, DN, DN, THREE.RGBAFormat); depthTex.magFilter = depthTex.minFilter = THREE.LinearFilter; depthTex.needsUpdate = true;
+    const seaM = new THREE.MeshPhongMaterial({ map: seaTex, color: 0xffffff, transparent: true, opacity: 0.94, shininess: 110, specular: 0x9fd8ee });
+    seaM.onBeforeCompile = sh => {
+      sh.uniforms.uDepth = { value: depthTex }; sh.uniforms.uSeaT = W.seaU; sh.uniforms.uDB = { value: new THREE.Vector4(...DB) };
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSeaW;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvSeaW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSeaW; uniform sampler2D uDepth; uniform float uSeaT; uniform vec4 uDB;')
+        .replace('#include <map_fragment>', `#include <map_fragment>
+          vec2 duv = (vSeaW.xz - uDB.xy) / uDB.zw;
+          float hh = (duv.x < 0.0 || duv.x > 1.0 || duv.y < 0.0 || duv.y > 1.0) ? -4.0 : texture2D(uDepth, duv).r * 8.0 - 4.0;
+          float dep = clamp(vSeaW.y - hh, 0.0, 4.5);
+          float sh = 1.0 - smoothstep(0.0, 3.4, dep);
+          float lum = dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11));
+          vec3 deepC = vec3(0.07, 0.36, 0.66), midC = vec3(0.13, 0.62, 0.80), shalC = vec3(0.42, 0.90, 0.88);
+          vec3 wc = mix(deepC, midC, smoothstep(0.0, 0.55, sh));
+          wc = mix(wc, shalC, smoothstep(0.5, 0.95, sh));
+          wc *= 0.82 + lum * 0.32;
+          // 해안으로 밀려오는 파도 띠 (수심이 얕아질수록 진하고 촘촘)
+          float ph = dep * 4.2 + uSeaT * 1.25 + sin(vSeaW.x * 0.11 + vSeaW.z * 0.05) * 0.9;
+          float band = smoothstep(0.74, 0.97, 0.5 + 0.5 * sin(ph));
+          float brk = smoothstep(0.35, 0.75, lum + 0.25 * sin(vSeaW.x * 0.9 + uSeaT * 0.7) * cos(vSeaW.z * 0.7));
+          float foam = band * (1.0 - smoothstep(0.3, 2.6, dep)) * (0.35 + 0.65 * brk);
+          float edge = 1.0 - smoothstep(0.0, 0.32 + 0.12 * sin(uSeaT * 0.8 + vSeaW.x * 0.2), dep);
+          foam = max(foam, edge * (0.6 + 0.4 * brk));
+          // 먼바다 흰 물마루 반짝임
+          foam += smoothstep(0.93, 1.0, lum) * smoothstep(1.5, 4.0, dep) * 0.35;
+          diffuseColor.rgb = mix(wc, vec3(1.0), clamp(foam, 0.0, 1.0) * 0.92);
+          diffuseColor.a *= mix(mix(0.97, 0.6, smoothstep(0.55, 1.0, sh)), 1.0, clamp(foam, 0.0, 1.0));`);
+    };
+    seaM.customProgramCacheKey = () => 'acSea2';
+    sea = new THREE.Mesh(new THREE.PlaneGeometry(1800, 1800), seaM);
     sea.rotation.x = -Math.PI / 2; sea.position.y = 0.05; sea.receiveShadow = true;
     scene.add(sea);
     dyn.waters.push(seaTex);
@@ -282,7 +316,7 @@
     const quarter = Math.abs(Math.round(ang / (Math.PI / 2))) % 2 === 1;
     const pp = quarter ? Object.assign({}, p, { bld: Object.assign({}, p.bld, { w: p.bld.d, d: p.bld.w }) }) : p;
     const st = FM.Sim.get();
-    const ext = p.plot || p.id === 'home_p' ? ((st && st.plots.ext && st.plots.ext[p.id]) || (p.id === 'home_p' ? 'chalet' : Object.keys(PM.VILLA_THEMES)[(+p.id.slice(5) || 0) % 8])) : null;
+    const ext = p.plot || p.id === 'home_p' ? ((st && st.plots.ext && st.plots.ext[p.id]) || (p.id === 'home_p' ? 'chalet' : (p.plot && p.plot.ext) || Object.keys(PM.VILLA_THEMES)[(+p.id.slice(5) || 0) % 8])) : null;
     const g = PM.building(pp, ext);
     const y = Math.min(T.height(p.x - p.bld.w / 2, p.z), T.height(p.x + p.bld.w / 2, p.z), T.height(p.x, p.z - p.bld.d / 2), T.height(p.x, p.z + p.bld.d / 2), T.height(p.x, p.z));
     g.position.set(p.x, y - 0.05, p.z);
@@ -290,8 +324,10 @@
     const keep = g.userData;
     PM.bake(g);
     g.userData = keep;
-    // 기초 (경사면 메움)
-    g.add(mesh(box(p.bld.w + 0.6, 3, p.bld.d + 0.6, 0.1), mat(0xd8d0c0), 0, -1.45, 0));
+    // 기초 (경사면 메움) + 접지 그림자
+    const lb = p.plot ? p.bld : pp.bld;
+    g.add(mesh(box(lb.w + 0.6, 3, lb.d + 0.6, 0.1), mat(0xd8d0c0), 0, -1.45, 0));
+    if (PM.aoShadow) { const ao = PM.aoShadow(lb.w, lb.d); ao.position.y = 0.09; g.add(ao); }
     scene.add(g);
     buildings[p.id] = g;
     return g;
@@ -553,13 +589,13 @@
       if (s.tags.includes('swing')) { if (!dyn._sw) { dyn._sw = 1; place(PM.decor('swing'), -71, 12.6); } continue; }
       if (s.tags.includes('sunbed')) { place(PM.decor('sunbed'), s.x, s.z, face); continue; }
       if (s.tags.includes('cafe') && s.seat) { place(PM.decor('chair'), s.x, s.z, face); continue; }
-      if (s.tags.includes('pocha')) continue;
+      if (s.tags.includes('pocha') || s.tags.includes('beachbar')) continue;
       if (inGarden(s.x, s.z)) continue;
       if (s.seat && (s.tags.includes('bench') || s.tags.includes('campfire') || s.tags.includes('garden'))) { const b = PM.decor('bench'); place(b, s.x, s.z, face); continue; }
     }
     for (const [x, z] of [[21.2, 13.5], [28.2, 13.5], [21.2, 17.5], [28.2, 17.5]]) place(PM.decor('cafeTable'), x, z);
     place(PM.decor('boat'), -96, 27.5, 0.4, 5.7);
-    place(PM.decor('playground'), -72, 42);
+    place(PM.decor('playground'), -74, 47.5);
     for (const [x, z, c] of [[48, -78, 0xff8f6a], [58, -76, 0x4fc1e9], [44, -82, 0x8ee07a]]) place(PM.decor('tent', c), x, z);
     place(PM.decor('campfire'), 53, -79).traverse(o => { if (o.userData.fire) dyn.fires.push(o); });
     place(PM.decor('telescope'), 60, -86, 0.5);
@@ -569,7 +605,7 @@
     place(PM.decor('soapbox'), 7, 16);
     place(PM.decor('lighthouse'), 72, 98);
     const fb = PM.decor('ferryBoat'); place(fb, 58, 102, 0, 0.6); dyn.ferry = fb;
-    place(PM.decor('mailbox'), -37, -25);
+    place(PM.decor('mailbox'), -41.5, -25);
     place(PM.decor('goal'), -66, 36);
     // 지하철 출구
     for (const [k, s] of Object.entries(MAP.STATIONS)) if (k !== 'C') place(PM.BLD.exitStation(s.name), s.x, s.z, 0);
@@ -578,7 +614,7 @@
     for (let i = 0; i < 9; i++) { const b = new THREE.Group(); b.add(mesh(sphere(0.16), mat(0x9aa3ad))); b.add(mesh(sphere(0.09), mat(0x7a8390), 0.12, 0.12, 0)); b.position.set(-6 + Math.random() * 4, 6.15, 18 + Math.random() * 3); b.userData.home = b.position.clone(); pg.add(b); dyn.birds.push(b); }
     scene.add(pg);
     // 주요 장소 표지판
-    const labels = [['plaza', 0, 24, '⛲ 중앙 분수대 & 커뮤니티 광장'], ['park', -80, 6, '🌳 센트럴 파크 & 비밀의 숲'], ['beach', -30, 80, '🏖️ 에메랄드 해수욕장'], ['cliff', -60.5, -88.5, '🌅 노을 정원 & 맹세의 가제보'], ['playground', -76, 38, '🛝 마을 놀이터'], ['alley', 69, 40, '🏮 미식 골목'], ['villa', -52, -12, '🏡 커스텀 빌라 & 신혼집 단지']];
+    const labels = [['plaza', 0, 24, '⛲ 중앙 분수대 & 커뮤니티 광장'], ['park', -80, 6, '🌳 센트럴 파크 & 비밀의 숲'], ['beach', -30, 80, '🏖️ 에메랄드 해수욕장'], ['cliff', -60.5, -88.5, '🌅 노을 정원 & 맹세의 가제보'], ['playground', -81, 44.5, '🛝 마을 놀이터'], ['beachbar', 12, 83, '🏐 비치 스포츠 & 코코넛 비치 바'], ['villa9', 50, 64, '🏡 해변 코티지 마을'], ['villa16', -36, 72, '🏡 해안 주택가'], ['alley', 69, 40, '🏮 미식 골목'], ['villa', -52, -12, '🏡 커스텀 빌라 & 신혼집 단지']];
     for (const [, x, z, t] of labels) { const s = PM.sign(t, 4.6, 0.8, '#ffffff', '#3b2b20'); const post = mesh(cyl(0.06, 0.06, 2.2), mat(0x8a5a3b), 0, 1.1, 0); const g = new THREE.Group(); g.add(post); s.position.y = 2.4; g.add(s); place(g, x, z, 0); }
     // 차량 (왕복 4차선)
     for (let i = 0; i < 4; i++) { const car = PM.decor('car', [0xff6f61, 0x4fc1e9, 0xffd84a, 0x8ee07a][i]); car.userData.lane = i % 2 ? 1.8 : -1.8; car.userData.t = Math.random(); car.userData.dir = i % 2 ? 1 : -1; scene.add(car); dyn.cars.push(car); }
@@ -587,6 +623,7 @@
     // 상설 야외 웨딩 가든(roomkit12)이 있으면 아치 · 의자는 가든 것을 쓰고, 결혼식 때는 꽃잎 길과 꽃만 덧깖
     const garden = FM.CeremonyGarden ? FM.CeremonyGarden(scene, T, PM) : null;
     if (FM.SunsetGarden) { try { FM.SunsetGarden(scene, T, PM); } catch (e) { console.error('sunset garden', e); } }
+    if (FM.Beach) { try { FM.Beach(scene, T, PM); } catch (e) { console.error('beach', e); } }
     if (!garden) { const arch = PM.decor('arch'); arch.position.set(12, 0, -70.5); wg.add(arch); }
     const path = new THREE.Mesh(new THREE.PlaneGeometry(garden ? 1.6 : 2.2, garden ? 12.6 : 16), new THREE.MeshLambertMaterial({ color: 0xff8fb1, transparent: !!garden, opacity: garden ? 0.55 : 1, polygonOffset: true, polygonOffsetFactor: -6 })); const wgY = T.height(12, -66), pY0 = T.height(12, -73.1), pY1 = T.height(12, -60.5);
     path.rotation.x = -Math.PI / 2 + (garden ? Math.atan2(pY0 - pY1, 12.6) : 0); path.position.set(12, garden ? (pY0 + pY1) / 2 - wgY + 0.1 : 0.07, garden ? -66.8 : -63); wg.add(path); dyn.aislePath = path;
@@ -725,6 +762,7 @@
     for (const tx of dyn.waters) if (tx) tx.offset.y -= dt * 0.03;
     if (dyn.waterfallTex) dyn.waterfallTex.offset.y += dt * 1.6;
     seaTex.offset.x += dt * 0.004;
+    W.seaU.value = t; sea.position.y = 0.06 + Math.sin(t * 1.25 * 0.5) * 0.07;
     for (const f of dyn.fires) { f.scale.y = 1 + Math.sin(t * 12) * 0.15; f.scale.x = 1 + Math.cos(t * 10) * 0.1; }
     if (dyn.mist) dyn.mist.scale.x = 1.4 + Math.sin(t * 3) * 0.1;
     // 비 / 바람 파티클이 카메라를 따라감
