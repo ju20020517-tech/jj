@@ -12,11 +12,7 @@
   const PI = Math.PI;
   const SAKURA = { x0: -9, x1: 9, z0: 24, z1: 70 };
   const inSak = (x, z) => x > SAKURA.x0 && x < SAKURA.x1 && z > SAKURA.z0 && z < SAKURA.z1;
-  const TREES = []; for (let z = 27; z <= 67; z += 5) for (const s of [-1, 1]) TREES.push([s * 5.8, z + (s > 0 ? 2.5 : 0)]);
-  // 벚꽃 구역 안의 원래 나무는 치움 (가로수로 대체)
-  if (FM.DECOR) { const a = FM.DECOR.trees; for (let i = a.length - 1; i >= 0; i--) if (inSak(a[i].x, a[i].z)) a.splice(i, 1); }
-  if (FM.Sim && FM.Sim.SPOTS) { const S = FM.Sim.SPOTS; for (let i = S.length - 1; i >= 0; i--) if (!S[i].place && S[i].tags.includes('trees') && inSak(S[i].x - 1.4, S[i].z - 1.2)) S.splice(i, 1); }
-
+  const TREES = [];   // 벚꽃 가로수는 제거 (거리 소품만 유지)
   const mc = new Map();
   const lam = (c, o) => { const k = c + JSON.stringify(o || {}); if (!mc.has(k)) mc.set(k, new THREE.MeshLambertMaterial(Object.assign({ color: c }, o || {}))); return mc.get(k); };
   const glow = c => FM.PM.glowMat(c);
@@ -81,12 +77,12 @@
       if (T.blockedByBuilding(x, z, r) || T.inWater(x, z) || T.height(x, z) < 0.6 || inGarden(x, z) || T.onStairs(x, z) || T.onBridge(x, z)) return false;
       if (FM.T.FOOTBRIDGES.some(b => x > b.x0 - 1 && x < b.x1 + 1 && z > b.z0 - 1 && z < b.z1 + 1)) return false;
       for (const s of spots) if (Math.abs(s.x - x) < 1.8 && Math.abs(s.z - z) < 1.8) return false;
+      for (const pl of Object.values(MAP.P)) if (pl.door && Math.hypot(pl.door[0] - x, pl.door[1] - z) < 6.5) return false;
       for (const t of FM.DECOR.trees) if (Math.abs(t.x - x) < 1.6 && Math.abs(t.z - z) < 1.6) return false;
       for (const n of Object.values(MAP.N)) if (Math.abs(n[0] - x) < 3.2 && Math.abs(n[1] - z) < 3.2) return false;
       for (const u of used) if (Math.abs(u[0] - x) < 2.4 && Math.abs(u[1] - z) < 2.4) return false;
       for (const [tx, tz] of TREES) if (Math.abs(tx - x) < 2 && Math.abs(tz - z) < 2) return false;
       if (Math.hypot(x, z - 10) < 15) return false;
-      if (inSak(x, z)) return false;
       if (Math.abs(x) < 6.2 && z > 36 && z < 86) return false;   // 4차선 대로 위
       return true;
     };
@@ -114,7 +110,7 @@
       }
       // 전봇대 (주택가 · 번화가 · 남쪽): 한쪽 가장자리를 따라 16m 마다 + 전선
       if (POLE_DIST[T.district(A[0], A[1])] && !main && len > 14) {
-        for (let d = 2.5; d < len - 2; d += 16) { const x = A[0] + ux * d + nx * 1.9, z = A[1] + uz * d + nz * 1.9; if (T.blockedByBuilding(x, z, 0.5) || T.inWater(x, z) || T.height(x, z) < 0.6 || inGarden(x, z) || inSak(x, z)) { poles.length = 0; continue; } const o = P.pole(); o.position.set(x, T.height(x, z), z); o.rotation.y = Math.atan2(ux, uz) + PI / 2; grp('poles').add(o); poles.push([x, T.height(x, z), z]); }
+        for (let d = 2.5; d < len - 2; d += 16) { const x = A[0] + ux * d + nx * 1.9, z = A[1] + uz * d + nz * 1.9; if (T.blockedByBuilding(x, z, 0.5) || T.inWater(x, z) || T.height(x, z) < 0.6 || inGarden(x, z)) { poles.length = 0; continue; } const o = P.pole(); o.position.set(x, T.height(x, z), z); o.rotation.y = Math.atan2(ux, uz) + PI / 2; grp('poles').add(o); poles.push([x, T.height(x, z), z]); }
         polesByEdge.push(poles.slice());
       }
     }
@@ -130,36 +126,6 @@
     }
     for (const g of Object.values(groups)) { FM.PM.bake(g); root.add(g); }
 
-    // ---------- 벚꽃 대로 ----------
-    const sak = new THREE.Group();
-    TREES.forEach(([x, z], i) => { const t = sakuraTree(i * 1.37, 1.05 + (i % 3) * 0.08); t.position.set(x, T.height(x, z), z); t.rotation.y = i * 1.1; sak.add(t); });
-    // 꽃구경 벤치 · 돌 화분 · 분홍 입간판
-    for (let z = 31; z <= 63; z += 10) for (const s of [-1, 1]) { const x = s * 7.6; if (T.blockedByBuilding(x, z, 0.6)) continue; const b = P.bench(); b.position.set(x, T.height(x, z), z); b.rotation.y = s > 0 ? -PI / 2 : PI / 2; sak.add(b); }
-    FM.PM.bake(sak); root.add(sak);
-    // 종이 등 줄 (나무 사이 길을 가로질러) — 밤에 빛남
-    const lanM = new THREE.MeshLambertMaterial({ color: 0xfff0f4, emissive: 0xffa0c0, emissiveIntensity: 0 });
-    const lanM2 = new THREE.MeshLambertMaterial({ color: 0xfffbe8, emissive: 0xffd890, emissiveIntensity: 0 });
-    const lanterns = new THREE.Group();
-    for (let i = 0; i + 1 < TREES.length; i += 2) {
-      const [x0, z0] = TREES[i], [x1, z1] = TREES[i + 1], y0 = T.height(x0, z0) + 3.0, y1 = T.height(x1, z1) + 3.0;
-      const pts = []; for (let t = 0; t <= 1.0001; t += 0.1) pts.push(new THREE.Vector3(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - Math.sin(t * PI) * 0.6 + 1.2, z0 + (z1 - z0) * t));
-      lanterns.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 10, 0.012, 3), wireM));
-      for (let k = 1; k < 8; k++) { const t = k / 8; const l = new THREE.Mesh(SP(0.17, 10, 8), k % 2 ? lanM : lanM2); l.scale.y = 1.3; l.position.set(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t - Math.sin(t * PI) * 0.6 + 1.0, z0 + (z1 - z0) * t); lanterns.add(l); lampPos.push([l.position.x, l.position.z, 0.6]); }
-    }
-    root.add(lanterns);
-    // 인도 꽃잎 카펫 (분홍 꽃잎 수백 장)
-    const pet = new THREE.InstancedMesh(geo('petal', () => new THREE.CircleGeometry(0.06, 5)), new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }), 900);
-    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), pp = new THREE.Vector3(), col = new THREE.Color();
-    for (let i = 0; i < 900; i++) { const side = i % 2 ? 1 : -1, x = side * (3.2 + ((i * 0.618) % 1) * 5.4), z = 25 + ((i * 0.414) % 1) * 44; pp.set(x, T.height(x, z) + 0.09, z); q.setFromEuler(new THREE.Euler(-PI / 2 + Math.sin(i) * 0.2, 0, i)); sc.setScalar(0.8 + (i % 5) * 0.12); m4.compose(pp, q, sc); pet.setMatrixAt(i, m4); pet.setColorAt(i, col.set(PINK[i % 4])); }
-    pet.receiveShadow = true; root.add(pet);
-    // 흩날리는 꽃잎
-    const n = 220, pos = new Float32Array(n * 3), base = [];
-    for (let i = 0; i < n; i++) { const x = -9 + ((i * 0.618) % 1) * 18, z = 25 + ((i * 0.414) % 1) * 44; base.push([x, T.height(x, z) + 0.5 + ((i * 0.732) % 1) * 4.5, z, i * 1.7]); }
-    const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const ptex = FM.PM.ctex('sakPetal', 32, 32, (c, w, h) => { c.fillStyle = '#ffd0e0'; c.beginPath(); c.ellipse(16, 16, 12, 7, 0.5, 0, 7); c.fill(); c.fillStyle = '#ffb0c8'; c.beginPath(); c.ellipse(18, 15, 6, 3, 0.5, 0, 7); c.fill(); });
-    const pm = new THREE.PointsMaterial({ map: ptex, size: 0.32, transparent: true, depthWrite: false, alphaTest: 0.1 });
-    const pts = new THREE.Points(pg, pm); pts.frustumCulled = false; root.add(pts);
-
     // ---------- 밤 빛 웅덩이 (가로등 · 등 아래) ----------
     scene.updateMatrixWorld(true);
     scene.traverse(o => { if (o.userData && o.userData.lampBulb) { const v = new THREE.Vector3(); o.getWorldPosition(v); if (v.y - T.groundY(v.x, v.z) < 6) lampPos.push([v.x, v.z, 1]); } });
@@ -167,18 +133,15 @@
     const poolM = new THREE.MeshBasicMaterial({ map: rad, color: 0xffb860, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -8 });
     const seen = new Set();
     const pools = new THREE.InstancedMesh(geo('pool', () => new THREE.PlaneGeometry(1, 1).rotateX(-PI / 2)), poolM, lampPos.length);
-    let pi = 0;
+    let pi = 0; const pp = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), m4 = new THREE.Matrix4();
     for (const [x, z, k] of lampPos) { const key = Math.round(x * 2) + ',' + Math.round(z * 2); if (seen.has(key)) continue; seen.add(key); pp.set(x, T.groundY(x, z) + 0.12, z); q.identity(); const r = (k || 1) * 6.5; sc.set(r, 1, r); m4.compose(pp, q, sc); pools.setMatrixAt(pi++, m4); }
     pools.count = pi; pools.renderOrder = 3; pools.frustumCulled = false; root.add(pools);
 
     // 매 프레임: 꽃잎 날림 · 밤 빛
     const tick = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial()); tick.frustumCulled = false;
     tick.onBeforeRender = () => {
-      const t = performance.now() / 1000, nt = (FM.W && FM.W.nightness) || 0, a = pg.attributes.position;
-      for (let i = 0; i < n; i++) { const b = base[i]; const fall = (t * 0.35 + b[3]) % 4.5; a.array[i * 3] = b[0] + Math.sin(t * 0.5 + b[3]) * 1.2 + fall * 0.4; a.array[i * 3 + 1] = b[1] - fall; a.array[i * 3 + 2] = b[2] + Math.cos(t * 0.4 + b[3]) * 0.8; }
-      a.needsUpdate = true;
+      const nt = (FM.W && FM.W.nightness) || 0;
       poolM.opacity = Math.min(0.55, Math.max(0, nt - 0.15) * 0.8);
-      lanM.emissiveIntensity = lanM2.emissiveIntensity = Math.max(0, nt - 0.2) * 1.1;
     };
     root.add(tick);
     scene.add(root);

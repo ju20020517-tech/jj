@@ -508,6 +508,8 @@
     bug_jar:     { name: '곤충 표본', icon: '🦋', price: 0, tags: ['science', 'fishing'] },
     fish_catch:  { name: '갓 잡은 물고기', icon: '🐟', price: 0, tags: ['fishing', 'food'] },
     rare_fruit:  { name: '희귀 과일', icon: '🍑', price: 0, tags: ['food', 'luxury'] },
+    veggie_basket: { name: '텃밭 채소 바구니', icon: '🧺', price: 0, tags: ['food', 'nature'], stamina: 15 },
+    big_fish:    { name: '대회급 대물 생선', icon: '🐠', price: 0, tags: ['fishing', 'food', 'luxury'] },
     // 관계 전용
     bouquet:     { name: '고백의 꽃다발', icon: '💐', price: 1500, tags: ['flower', 'romance'], shop: 'mall', special: 'confess' },
     ring:        { name: '약혼반지', icon: '💍', price: 8000, tags: ['luxury', 'romance'], shop: 'mall', special: 'propose' },

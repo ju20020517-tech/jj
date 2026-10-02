@@ -663,7 +663,7 @@
   UI.shop = function (key) {
     const p = st().player;
     const items = Object.entries(D.ITEMS).filter(([, it]) => it.shop === key);
-    const sell = ['fish_catch', 'bug_jar', 'dream_item', 'face_copy', 'rare_fruit'].filter(k => p.inv[k]);
+    const sell = ['fish_catch', 'bug_jar', 'dream_item', 'face_copy', 'rare_fruit', 'veggie_basket', 'big_fish'].filter(k => p.inv[k]);
     modal(SHOP_NAMES[key] || '상점', `<p>🪙 ${Math.floor(p.coins).toLocaleString()} 코인</p><div class="bag">${items.map(([k, it]) => `<div class="it"><span>${it.icon}</span><b>${esc(it.name)}</b><small>${it.price} 🪙</small><button data-buy="${k}">사기</button></div>`).join('')}</div>
       ${sell.length ? `<h4>팔기</h4><div class="bag">${sell.map(k => `<div class="it"><span>${D.ITEMS[k].icon}</span><b>${esc(D.ITEMS[k].name)}</b><small>×${p.inv[k]}</small><button data-sell="${k}">팔기 (+80)</button></div>`).join('')}</div>` : ''}`, b => {
       b.querySelectorAll('[data-buy]').forEach(x => x.onclick = () => { const k = x.dataset.buy, it = D.ITEMS[k]; if (p.coins < it.price) return UI.toast('코인이 부족해요'); p.coins -= it.price; Soc.giveItem(k); FM.Audio.sfx('coin'); UI.toast(`${it.icon} ${it.name} 구입!`); UI.shop(key); });

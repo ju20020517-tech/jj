@@ -459,11 +459,12 @@
       if (pats.bed && tags.includes('bed')) pattern = patTex(pats.bed);
       if (pats.sofa && tags.includes('sofa')) pattern = patTex(pats.sofa);
       if (pats.frame && (tags.includes('frame') || f.type === 'poster')) pattern = patTex(pats.frame);
-      if (f.img && F.photo) pattern = imgTex(f.img);
+      const fImg = f.img || (f.photoId && FM.Photo ? FM.Photo.url(f.photoId) : '');
+      if (fImg && F.photo) pattern = imgTex(fImg);
       const opts = { mat: f.mat, color: f.color, pattern, hue: room.roomStyle && !themeId ? room.kitHue || 0 : 0 };
       if (f.type === 'photo_crush') { const owner = st.villagers.find(v => v.home === iid); const tgt = f.target || (owner && owner.crush && owner.crush.target); if (tgt) opts.faceTex = faceTex(tgt); }
       const o = PM.furniture(f.type, opts);
-      if (pattern && !f.img && !F.parts.some(p => (p[8] || '').includes('pic'))) o.traverse(m => { if (m.isMesh && m.userData.main) { m.material = new THREE.MeshLambertMaterial({ map: pattern }); } });
+      if (pattern && !fImg && !F.parts.some(p => (p[8] || '').includes('pic'))) o.traverse(m => { if (m.isMesh && m.userData.main) { m.material = new THREE.MeshLambertMaterial({ map: pattern }); } });
       o.position.set(f.x, f.y || 0, f.z);   // f.y: 복층(2층) 가구
       o.rotation.y = (f.rot || 0) * Math.PI / 180;
       o.userData.furnIdx = idx;

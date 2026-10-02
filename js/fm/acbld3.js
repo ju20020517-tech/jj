@@ -654,6 +654,7 @@
     return g;
   };
 
+  FM.AB3 = { shopMat, shojiMat, martWin, lantern, noren, pent, frontGable, stoneLantern, wallLamp, bike, picket, pond, bonsaiPine, kawaraWall, archBridge, flare, blossomTree, nightMats };
   // ---------------------------------------------------------
   // 접지 그림자 (AO) — 건물 둘레가 땅에 붙어 보이게
   // ---------------------------------------------------------

@@ -41,7 +41,10 @@
   const stemCache = new Map();
   function stemGeo(h = 0.36) { const k = h.toFixed(2); if (!stemCache.has(k)) { const leaf = new THREE.SphereGeometry(1, 5, 3); stemCache.set(k, merge([[new THREE.CylinderGeometry(0.008, 0.013, h, 4), M4(0, h / 2, 0)], [leaf, M4(0.05, h * 0.3, 0, 0, 0, 0.6, 0.07, 0.012, 0.025)], [leaf, M4(-0.045, h * 0.5, 0.01, 0, 0.4, -0.6, 0.065, 0.012, 0.022)]])); } return stemCache.get(k); }
   const mats = new Map();
-  const lam = (c, ds) => { const k = c + (ds ? 'd' : ''); if (!mats.has(k)) mats.set(k, new THREE.MeshLambertMaterial({ color: c, side: ds ? THREE.DoubleSide : THREE.FrontSide })); return mats.get(k); };
+  // 꽃잎 그라데이션 맵 (가운데 밝게 · 끝 진하게 + 결) — 꽃잎(ds) 재질에만
+  let ptex = null;
+  const petalTex = () => ptex || (ptex = FM.PM && FM.PM.ctex ? FM.PM.ctex('petalGrad', 64, 64, (cx, w, h) => { const gr = cx.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.55, '#f4f0f2'); gr.addColorStop(0.85, '#d6cfd4'); gr.addColorStop(1, '#b8aeb6'); cx.fillStyle = gr; cx.fillRect(0, 0, w, h); cx.strokeStyle = 'rgba(255,255,255,0.5)'; cx.lineWidth = 1.2; for (let i = 0; i < 7; i++) { const a = -0.6 + i * 0.2; cx.beginPath(); cx.moveTo(32, 32); cx.lineTo(32 + Math.cos(a) * 28, 32 + Math.sin(a) * 28); cx.stroke(); } }) : null);
+  const lam = (c, ds) => { const k = c + (ds ? 'd' : ''); if (!mats.has(k)) mats.set(k, new THREE.MeshLambertMaterial({ color: c, side: ds ? THREE.DoubleSide : THREE.FrontSide, map: ds ? petalTex() : null })); return mats.get(k); };
   // 가구 키트 위에 꽃 한 송이
   function bloom(k, kind, color, x, y, z, s = 1, tilt = 0, stem = 0.36) {
     if (stem > 0) { const st = new THREE.Mesh(stemGeo(stem), lam(0x4f9e3e)); st.position.set(x, y, z); st.scale.setScalar(s); st.castShadow = true; k.add(st); }

@@ -36,6 +36,7 @@
     office: [[9, 18, 1]], workshop: [[10, 18, 1.2]], conv: [[0, 24, 0.6]], cityhall: [[9, 17, 0.7]], medical: [[9, 18, 0.5]], school: [[9, 16, 0.6]],
   };
   const NIGHT = new Set(['club', 'observatory', 'pub', 'skylounge', 'teahouse', 'conv', 'alley', 'arcade', 'cliff']);
+  Sch.OUT = OUT; Sch.PEAK = PEAK; Sch.NIGHT = NIGHT;   // 다른 모듈이 새 명소를 덧붙일 수 있게
   const bld = () => (FM.Outing && FM.Outing.BUILDINGS) || [];
   const reachable = id => { const p = MAP.P[id]; return p && (!p.interior || FM.INTERIORS[p.interior]); };
 

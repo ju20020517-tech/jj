@@ -139,7 +139,7 @@
   // 다른 가게 외관 디테일 (기존 건물 위에 덧붙임)
   // =========================================================
   const EXTRA = {
-    cafe: (g, p) => { const { w, d } = p.bld; at(g, cafeTable(0xe74c3c, 0xffffff), -w / 2 + 1.4, 0.4, d / 2 + 2.4); at(g, cafeTable(0x5fae6a, 0xffffff), w / 2 - 3.6, 0.4, d / 2 + 2.6); for (const s of [-1, 1]) at(g, post(2.9, 0x3a3a3a), s * (w / 2 + 0.2), 0.4, d / 2 + 3.6); stringLights(g, [-w / 2 - 0.2, 3.3, d / 2 + 3.6], [w / 2 + 0.2, 3.3, d / 2 + 3.6], 16, 0.4); stringLights(g, [-w / 2 - 0.2, 3.3, d / 2 + 3.6], [-w / 2 + 0.3, 3.6, d / 2 + 0.2], 6, 0.25); stringLights(g, [w / 2 + 0.2, 3.3, d / 2 + 3.6], [w / 2 - 0.3, 3.6, d / 2 + 0.2], 6, 0.25); at(g, bike(0xff8fb1), w / 2 + 0.9, 0.4, d / 2 - 0.5, PI / 2); for (const x of [-w / 2 + 0.4, w / 2 - 0.4]) at(g, K.basket(0xff6f86), x, 3.2, d / 2 + 0.3); },
+    cafe: (g, p) => { const { w, d } = p.bld; for (const s of [-1, 1]) at(g, post(2.9, 0x3a3a3a), s * (w / 2 + 0.2), 0.4, d / 2 + 3.6); stringLights(g, [-w / 2 - 0.2, 3.3, d / 2 + 3.6], [w / 2 + 0.2, 3.3, d / 2 + 3.6], 16, 0.4); stringLights(g, [-w / 2 - 0.2, 3.3, d / 2 + 3.6], [-w / 2 + 0.3, 3.6, d / 2 + 0.2], 6, 0.25); stringLights(g, [w / 2 + 0.2, 3.3, d / 2 + 3.6], [w / 2 - 0.3, 3.6, d / 2 + 0.2], 6, 0.25); at(g, bike(0xff8fb1), w / 2 + 0.9, 0.4, d / 2 - 0.5, PI / 2); for (const x of [-w / 2 + 0.4, w / 2 - 0.4]) at(g, K.basket(0xff6f86), x, 3.2, d / 2 + 0.3); },
     restaurant: (g, p) => {
       const { w, d } = p.bld, red = p.id === 'pub';
       if (!red) {

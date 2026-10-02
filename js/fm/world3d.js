@@ -453,13 +453,17 @@
     const FL = FM.Flora;
     const cols = [0xff7aa8, 0xffc933, 0xff4d5e, 0xff9a3d, 0xffffff, 0xb69cff, 0xff8fd0, 0x7ab8ff, 0xfff0a0, 0xff6f86];
     const types = FL ? ['tulip', 'daisy', 'cosmos', 'rose', 'marigold', 'pansy'] : ['tulip', 'cosmos', 'pansy', 'mum'];
-    const pts = [], mounds = [];
+    const pts = [], mounds = [], edges = [];
+    const PALS = [[0xff6f9a, 0xffb3cc, 0xffffff], [0xffc933, 0xff9a3d, 0xfff0a0], [0xb69cff, 0x7ab8ff, 0xffffff], [0xff4d5e, 0xff8fb1, 0xfff3f3], [0xff9a3d, 0xffd84a, 0xff6f86], [0xffffff, 0xfff0a0, 0xc8e6ff]];
     // 동네 꽃밭: 잎 덤불 위로 꽃이 소복이 (한 꽃밭에 두 종류 섞어서)
     for (const f of FM.DECOR.flowers) {
       if (inGarden(f.x, f.z)) continue;
-      const n = Math.round(f.r * f.r * 13), t1 = types[Math.floor(f.col * 97) % types.length], t2 = types[Math.floor(f.col * 53 + 2) % types.length];
-      for (let i = 0; i < n; i++) { const a = i * 2.39996 + f.col * 9, r = Math.sqrt((i + 0.5) / n) * f.r; const x = f.x + Math.cos(a) * r, z = f.z + Math.sin(a) * r; pts.push([x, z, cols[Math.floor((f.col * 10 + i * 0.37) % 10)], i % 3 ? t1 : t2]); }
-      for (let i = 0; i < 5; i++) { const a = i * 1.3 + f.col * 5, r = (i ? 0.55 : 0) * f.r; mounds.push([f.x + Math.cos(a) * r, f.z + Math.sin(a) * r, f.r * (i ? 0.5 : 0.75)]); }
+      // 한 꽃밭 = 어울리는 2~3색 팔레트 (무지개 뒤범벅 X) · 촘촘하게
+      const n = Math.round(f.r * f.r * 26), t1 = types[Math.floor(f.col * 97) % types.length], t2 = types[Math.floor(f.col * 53 + 2) % types.length], pal = PALS[Math.floor(f.col * 131) % PALS.length];
+      for (let i = 0; i < n; i++) { const a = i * 2.39996 + f.col * 9, r = Math.sqrt((i + 0.5) / n) * f.r * 0.92; const x = f.x + Math.cos(a) * r, z = f.z + Math.sin(a) * r; pts.push([x, z, pal[(i * 7 + (i >> 2)) % pal.length], i % 3 ? t1 : t2]); }
+      for (let i = 0; i < 7; i++) { const a = i * 0.9 + f.col * 5, r = (i ? 0.58 : 0) * f.r; mounds.push([f.x + Math.cos(a) * r, f.z + Math.sin(a) * r, f.r * (i ? 0.46 : 0.7)]); }
+      // 둥근 자갈 테두리
+      const ne = Math.round(f.r * 15); for (let i = 0; i < ne; i++) { const a = i / ne * Math.PI * 2 + f.col; edges.push([f.x + Math.cos(a) * (f.r + 0.12), f.z + Math.sin(a) * (f.r + 0.1), 0.085 + ((i * 37) % 5) * 0.01]); }
     }
     // 건물 앞 꽃밭 (문 양옆)
     for (const pl of Object.values(MAP.P)) {
@@ -478,9 +482,16 @@
     // 잎 덤불
     if (mounds.length) {
       const mi = new THREE.InstancedMesh(lumpy(3.1, 0.16, 10, 7), sway(AC.tm('leaf', 0xffffff).clone(), 0.04, 'fmound'), mounds.length);
-      mounds.forEach(([x, z, r], i) => { p3.set(x, T.height(x, z) + r * 0.12, z); q.setFromEuler(new THREE.Euler(0, x * 3, 0)); s3.set(r, r * 0.42, r); m4.compose(p3, q, s3); mi.setMatrixAt(i, m4); mi.setColorAt(i, c.set(0x5aa848).offsetHSL(Math.sin(x) * 0.02, 0, Math.sin(z * 2) * 0.04)); });
+      mounds.forEach(([x, z, r], i) => { p3.set(x, T.height(x, z) + r * 0.12, z); q.setFromEuler(new THREE.Euler(0, x * 3, 0)); s3.set(r, r * 0.55, r); m4.compose(p3, q, s3); mi.setMatrixAt(i, m4); mi.setColorAt(i, c.set(0x5aa848).offsetHSL(Math.sin(x) * 0.02, 0, Math.sin(z * 2) * 0.04)); });
       mi.castShadow = true; mi.receiveShadow = true; scene.add(mi);
     }
+    if (edges.length) {
+      const ei = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 7, 5), AC.tm('stone', 0xffffff), edges.length);
+      edges.forEach(([x, z, r], i) => { p3.set(x, T.height(x, z) + r * 0.25, z); q.setFromEuler(new THREE.Euler(0, x * 5, 0)); s3.set(r * 1.3, r * 0.75, r); m4.compose(p3, q, s3); ei.setMatrixAt(i, m4); ei.setColorAt(i, c.set(0xe8e0d0).offsetHSL(0, 0, Math.sin(x * 9 + z) * 0.06)); });
+      ei.castShadow = true; ei.receiveShadow = true; scene.add(ei);
+    }
+    // 꽃잎 그라데이션 (가운데 밝게 · 끝은 살짝 진하게 → 입체감)
+    const petalTex = PM.ctex('petalGrad', 64, 64, (cx, w, h) => { const gr = cx.createRadialGradient(32, 32, 2, 32, 32, 32); gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.55, '#f4f0f2'); gr.addColorStop(0.85, '#d6cfd4'); gr.addColorStop(1, '#b8aeb6'); cx.fillStyle = gr; cx.fillRect(0, 0, w, h); cx.strokeStyle = 'rgba(255,255,255,0.5)'; cx.lineWidth = 1.2; for (let i = 0; i < 7; i++) { const a = -0.6 + i * 0.2; cx.beginPath(); cx.moveTo(32, 32); cx.lineTo(32 + Math.cos(a) * 28, 32 + Math.sin(a) * 28); cx.stroke(); } });
     const stemG = FL ? FL.stemGeo(0.36) : flowerGeos().stem;
     const stemM = sway(FL ? H.mat(0x4f9e3e).clone() : new THREE.MeshLambertMaterial({ vertexColors: true }), 0.1, 'fstem');
     const stems = new THREE.InstancedMesh(stemG, stemM, pts.length);
@@ -490,12 +501,12 @@
     stems.receiveShadow = true; scene.add(stems);
     const G2 = FL ? null : flowerGeos();
     for (const [ty, list] of Object.entries(byType)) {
-      const headM = sway(H.mat(0xffffff).clone(), 0.1, 'fhead'); headM.side = THREE.DoubleSide;
+      const headM = sway(H.mat(0xffffff).clone(), 0.1, 'fhead'); headM.side = THREE.DoubleSide; if (FL) { headM.map = petalTex; headM.needsUpdate = true; }
       const inst = new THREE.InstancedMesh(FL ? FL.geo(ty) : G2[ty], headM, list.length);
       const cen = FL && FL.CENTER[ty] ? new THREE.InstancedMesh(FL.centerGeo(ty), sway(H.mat(0xffffff).clone(), 0.1, 'fhead'), list.length) : null;
       list.forEach(([x, z, col], i) => {
         const k = kOf(x, z), y = T.height(x, z) + 0.36 * k;
-        p3.set(x, y, z); q.setFromEuler(new THREE.Euler(ty === 'tulip' ? 0 : -0.3 - Math.abs(Math.sin(x * 3)) * 0.25, x * 7, 0, 'YXZ')); s3.setScalar(k * 1.35); m4.compose(p3, q, s3); inst.setMatrixAt(i, m4); inst.setColorAt(i, c.set(col));
+        p3.set(x, y, z); q.setFromEuler(new THREE.Euler(ty === 'tulip' ? 0 : -0.3 - Math.abs(Math.sin(x * 3)) * 0.25, x * 7, 0, 'YXZ')); s3.setScalar(k * 1.6); m4.compose(p3, q, s3); inst.setMatrixAt(i, m4); inst.setColorAt(i, c.set(col));
         if (cen) { cen.setMatrixAt(i, m4); cen.setColorAt(i, c.set(ty === 'daffodil' ? 0xffa020 : FL.CENTER[ty][1])); }
       });
       inst.castShadow = true; scene.add(inst); if (cen) scene.add(cen);
@@ -639,6 +650,7 @@
     const garden = FM.CeremonyGarden ? FM.CeremonyGarden(scene, T, PM) : null;
     if (FM.SunsetGarden) { try { FM.SunsetGarden(scene, T, PM); } catch (e) { console.error('sunset garden', e); } }
     if (FM.Beach) { try { FM.Beach(scene, T, PM); } catch (e) { console.error('beach', e); } }
+    if (FM.Places2) { try { FM.Places2(scene, T, PM); } catch (e) { console.error('places2', e); } }
     if (FM.TownLife) { try { FM.TownLife(scene, T, PM); } catch (e) { console.error('townlife', e); } }
     if (!garden) { const arch = PM.decor('arch'); arch.position.set(12, 0, -70.5); wg.add(arch); }
     const path = new THREE.Mesh(new THREE.PlaneGeometry(garden ? 1.6 : 2.2, garden ? 12.6 : 16), new THREE.MeshLambertMaterial({ color: 0xff8fb1, transparent: !!garden, opacity: garden ? 0.55 : 1, polygonOffset: true, polygonOffsetFactor: -6 })); const wgY = T.height(12, -66), pY0 = T.height(12, -73.1), pY1 = T.height(12, -60.5);
