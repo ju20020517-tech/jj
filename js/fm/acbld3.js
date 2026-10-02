@@ -394,46 +394,87 @@
     for (const s of [-1, 1]) g.add(tbox(0.3, ht - r, 0.3, 'ashlar', stone, s * (r + 0.12), 0, 0.12, 0.03, 0.8));
     return g;
   }
+  // 흰 돌 테두리 아치창 (책장이 비치고 밤엔 불)
+  const B3bike = typeof bike === 'function' ? bike : null;
+  function libArch(wd, ht) {
+    const g = new THREE.Group(); const r = wd / 2;
+    g.add(M(box(wd, ht - r, 0.05, 0.01), bookWin(), 0, (ht - r) / 2, 0.02));
+    g.add(M(geo('arTop' + wd, () => new THREE.CircleGeometry(r, 20, 0, PI)), bookWin(), 0, ht - r, 0.02));
+    g.add(M(geo('lbRing' + wd, () => new THREE.TorusGeometry(r + 0.1, 0.12, 8, 20, PI)), 0xf6f2ea, 0, ht - r, 0.1));
+    for (const s of [-1, 1]) g.add(M(box(0.2, ht - r, 0.2, 0.02), 0xf6f2ea, s * (r + 0.1), (ht - r) / 2, 0.1));
+    g.add(M(box(wd + 0.5, 0.14, 0.32, 0.02), 0xf6f2ea, 0, -0.05, 0.14));
+    g.add(M(box(0.34, 0.42, 0.2, 0.02), 0xf6f2ea, 0, ht + 0.12, 0.12));   // 쐐기돌
+    for (let i = 1; i < 3; i++) g.add(M(box(0.04, ht - r, 0.03, 0.005), 0xf6f2ea, -r + i * wd / 3, (ht - r) / 2, 0.06));
+    return g;
+  }
+  function column(h, c = 0xfbf8f2) {
+    const g = new THREE.Group();
+    g.add(M(box(0.62, 0.22, 0.62, 0.02), c, 0, 0.11, 0)); g.add(M(cyl(0.26, 0.3, 0.18, 16), c, 0, 0.3, 0));
+    g.add(M(geo('colSh' + h, () => new THREE.CylinderGeometry(0.22, 0.26, h - 0.8, 16)), tm('marble', c), 0, 0.39 + (h - 0.8) / 2, 0));
+    g.add(M(cyl(0.3, 0.24, 0.2, 16), c, 0, h - 0.32, 0)); g.add(M(box(0.66, 0.16, 0.66, 0.02), c, 0, h - 0.12, 0));
+    return g;
+  }
+  function owlStatue() {
+    const g = new THREE.Group(), S2 = 0xc8c4bc;
+    g.add(tbox(0.7, 0.9, 0.7, 'ashlar', 0xb8b4ac, 0, 0, 0, 0.03, 0.6));
+    g.add(M(sphere(0.32, 14, 10), tm('stone', S2), 0, 1.22, 0)).scale.set(1, 1.15, 0.9);
+    g.add(M(sphere(0.24, 14, 10), tm('stone', S2), 0, 1.62, 0.02));
+    for (const s of [-1, 1]) { g.add(M(sphere(0.08, 10, 8), 0xf4f0e8, s * 0.1, 1.66, 0.21)); g.add(M(sphere(0.035, 8, 6), 0x2a2a2a, s * 0.1, 1.66, 0.28)); g.add(M(geo('owlEar', () => new THREE.ConeGeometry(0.07, 0.16, 6)), tm('stone', S2), s * 0.15, 1.84, 0)); }
+    g.add(M(geo('owlBeak', () => new THREE.ConeGeometry(0.04, 0.1, 6)), 0xd8a848, 0, 1.58, 0.24).rotateX(PI / 2));
+    g.add(M(box(0.34, 0.08, 0.26, 0.01), 0x3a5a9a, 0, 1.0, 0.24));   // 펼친 책
+    return g;
+  }
   BLD.library = (p) => {
-    const g = new THREE.Group(); const { w, d } = p.bld; const STONE = 0xb8b4ac, CRE = 0xf4ece0, BLUE = 0x3a5a9a, ORG = 0xd8743a, WOODF = 0x6a4a30;
-    const gh = 3.4, tz = 2.6; // 1층 높이 · 테라스 깊이
-    g.add(K.base(w, d, 0.45, 0x9a968e, 'ashlar'));
-    g.add(tbox(w, gh, d, 'ashlar', STONE, 0, 0.4, 0, 0.04, 1.1));
-    // 1층 아치 회랑 5칸 (가운데가 입구)
-    for (let i = 0; i < 5; i++) { const x = -w / 2 + 1.6 + i * (w - 3.2) / 4; const a = stoneArch(2.2, 2.8, 0xa8a49c); a.position.set(x, 0.42, d / 2 + 0.02); g.add(a); if (i !== 2) at(g, K.vines(2.6, 0.9, 0xffffff), x + 1.35, 0.4, d / 2 + 0.2); }
-    const dr = K.door(1.4, 2.3, WOODF, { frame: 0xa8a49c, arch: true, lamp: false, matColor: 0x3a5a9a }); dr.position.set(0, 0.42, d / 2 + 0.08); g.add(dr);
-    for (let i = 0; i < 3; i++) g.add(tbox(3.2 - i * 0.4, 0.15, 0.5, 'ashlar', 0xc8c4bc, 0, 0.0 + i * 0.14, d / 2 + 1.45 - i * 0.42, 0.03, 1));
-    // 테라스 (1층 지붕 위) — 흰 난간 · 꽃상자 · 작은 카페 테이블 · 줄무늬 차양
-    g.add(tbox(w + 0.2, 0.16, tz, 'terrazzo', 0xe8e0d4, 0, gh + 0.4, d / 2 - tz / 2, 0.02, 1.4));
-    const rail = new THREE.Group(); rail.position.set(0, gh + 0.56, d / 2 + 0.05); g.add(rail);
-    rail.add(M(box(w + 0.2, 0.1, 0.16, 0.02), 0xfbf8f2, 0, 0.9, 0)); for (let i = 0; i <= 40; i++) rail.add(M(geo('balus', () => new THREE.CylinderGeometry(0.05, 0.07, 0.8, 8)), 0xfbf8f2, -w / 2 + i * w / 40, 0.42, 0));
-    for (let i = 0; i < 5; i++) { const bx = -w / 2 + 1.6 + i * (w - 3.2) / 4; rail.add(tbox(1.3, 0.24, 0.3, 'plank', 0x9a6a44, bx, 1.0, 0.1, 0.02, 0.5)); if (FM.Flora) FM.Flora.bush({ add: o => { rail.add(o); return o; } }, ['daisy', 'rose'], [0xffffff, 0xfff4f8, 0xff6f86], bx, 0.1, 0.36, 7, 2.6, i); }
-    for (const x of [-3.4, 3.2]) { const tb = new THREE.Group(); tb.add(M(cyl(0.38, 0.38, 0.04, 16), 0xffffff, 0, 0.72, 0)); tb.add(M(cyl(0.04, 0.05, 0.7, 6), 0xd8d8d8, 0, 0.36, 0)); for (const s of [-1, 1]) { const ch = new THREE.Group(); ch.add(M(box(0.38, 0.04, 0.38, 0.01), 0xffffff, 0, 0.45, 0)); ch.add(M(box(0.38, 0.4, 0.04, 0.01), 0xffffff, 0, 0.65, -0.18)); for (const xx of [-0.16, 0.16]) ch.add(M(box(0.03, 0.45, 0.03, 0.005), 0xd8d8d8, xx, 0.22, 0)); ch.position.set(s * 0.62, 0, 0); ch.rotation.y = s * -PI / 2; tb.add(ch); } at(g, tb, x, gh + 0.56, d / 2 - 1.2); }
-    // 위층 왼쪽: 크림 회벽 2층 + 파란 슬레이트 모임지붕 + 도머
-    const L = new THREE.Group(); L.position.set(-w / 2 + 4.6, gh + 0.4, -tz / 2); g.add(L);
-    const lw = 9.2, ld = d - tz, lh = 5.4;
-    L.add(tbox(lw, lh, ld, 'stucco', CRE, 0, 0, 0, 0.04, 1.4));
-    for (const [x, z] of [[-lw / 2, -ld / 2], [lw / 2, -ld / 2], [-lw / 2, ld / 2], [lw / 2, ld / 2]]) L.add(tbox(0.4, lh, 0.4, 'ashlar', STONE, x, 0, z, 0.03, 1));
-    for (const y of [1.6, 4.1]) for (let i = 0; i < 4; i++) at(L, K.window(1.0, 1.6, { box: y < 3, boxColor: 0x8a5a34, frame: 0xfbf8f2, curtain: '#fff0d0', seed: i }), -lw / 2 + 1.3 + i * (lw - 2.6) / 3, y, ld / 2 + 0.02);
-    const lr = K.hip(lw + 0.8, ld + 0.8, 3.0, BLUE, 'rooftile'); lr.position.y = lh; L.add(lr);
-    for (const x of [-2.4, 0, 2.4]) { const dm = K.dormer(0xfbf8f2, BLUE, 'stucco'); dm.position.set(x, lh + 0.4, ld / 2 - 0.9); dm.scale.setScalar(0.8); L.add(dm); }
-    at(L, K.balcony(3.2, 0.7, 0xfbf8f2, { flowers: true, floorColor: 0xd8d0c4 }), -lw / 2 + 2.0, 2.65, ld / 2 + 0.02);
-    // 위층 오른쪽: 하프팀버 박공 + 주황 기와 + 원목 발코니
-    const R = new THREE.Group(); R.position.set(w / 2 - 3.4, gh + 0.4, -tz / 2 + 0.3); g.add(R);
-    const rw = 6.8, rd = d - tz + 0.6, rh = 6.0;
-    R.add(tbox(rw, rh, rd, 'timber', 0xf8f2e6, 0, 0, 0, 0.04, 2.4));
-    const rr = frontGable(rw + 0.4, rd, 3.2, ORG, { kind: 'rooftile', wallKind: 'timber', wallColor: 0xf8f2e6, over: 0.5 }); rr.position.y = rh; R.add(rr);
-    const bw = new THREE.Group(); bw.position.set(0, 2.3, rd / 2 + 0.02); R.add(bw);
-    bw.add(M(box(3.6, 2.4, 0.06, 0.01), shojiMat(), 0, 1.3, 0.02)); for (let i = 0; i <= 4; i++) bw.add(M(box(0.1, 2.5, 0.1, 0.01), WOODF, -1.8 + i * 0.9, 1.3, 0.06)); for (const y of [0.1, 1.3, 2.5]) bw.add(M(box(3.7, 0.1, 0.1, 0.01), WOODF, 0, y, 0.06));
-    at(R, K.balcony(4.4, 0.8, WOODF, { flowers: false, floorColor: 0x8a5a34 }), 0, 2.2, rd / 2);
-    const fb = tbox(4.2, 0.3, 0.4, 'plank', 0x8a5a34, 0, 3.2, rd / 2 + 0.85, 0.02, 0.5); R.add(fb); if (FM.Flora) for (let i = 0; i < 4; i++) FM.Flora.bush({ add: o => { R.add(o); return o; } }, ['daisy'], [0xffffff, 0xfff8e8], -1.5 + i * 1.0, rd / 2 + 0.85, 0.35, 7, 1.0, i + 2);
-    at(R, K.vines(5.5, 1.6, 0xffffff), rw / 2 - 0.3, 0, rd / 2 + 0.04); at(R, K.vines(4.5, 1.2, 0xffffff), -rw / 2 + 0.3, 0, rd / 2 + 0.04);
-    // 테라스 위 줄무늬 차양 (오른쪽 집 아래)
-    const aw = K.awning(rw - 0.4, 1.8, 0xe8803a, 0xfff4e4); aw.position.set(w / 2 - 3.4, gh + 2.9, d / 2 - tz + 0.4); g.add(aw);
-    // 간판 · 가로등 · 앞 산책로 난간 · 붉은 꽃 상자
-    const sg = PM.sign('📚 시립 도서관 & 힐링 북카페', 5.6, 0.62, '#3a5a9a', '#fff8e8'); sg.position.set(0, gh + 0.05, d / 2 + 0.22); g.add(sg);
-    for (const x of [-w / 2 + 0.6, -3.0, 3.0, w / 2 - 0.6]) { const lp = new THREE.Group(); lp.add(M(cyl(0.06, 0.09, 2.8, 8), 0x2a2a2e, 0, 1.4, 0)); lp.add(M(box(0.34, 0.42, 0.34, 0.03), glass(0xfff4d8), 0, 3.0, 0)); const b = M(sphere(0.1, 8, 6), glow(0xffd890), 0, 3.0, 0); b.userData.noBake = true; b.userData.lampBulb = true; lp.add(b); lp.add(M(geo('lbCap', () => new THREE.ConeGeometry(0.3, 0.2, 4)), 0x2a2a2e, 0, 3.3, 0).rotateY(PI / 4)); at(g, lp, x, 0.06, d / 2 + 2.6); }
-    for (const x of [-w / 2 + 2.2, w / 2 - 2.2]) { const cr = new THREE.Group(); cr.add(tbox(1.2, 0.45, 0.7, 'plank', 0x9a6a44, 0, 0, 0, 0.02, 0.5)); if (FM.Flora) FM.Flora.bush({ add: o => { cr.add(o); return o; } }, ['tulip', 'rose'], [0xff4d5e, 0xff6f86, 0xffffff], 0, 0, 0.45, 9, 0.9, x); at(g, cr, x, 0.06, d / 2 + 2.0); }
+    const g = new THREE.Group(); const { w, d } = p.bld;
+    const BRICK = 0xc4694a, WH = 0xf6f2ea, SLATE = 0x4a5a72, COPPER = 0x5ab8a0, H1 = 3.6, H2 = 3.2, TOP = 0.6 + H1 + H2;
+    g.add(K.base(w, d, 0.62, 0xb8b2a6, 'ashlar'));
+    g.add(tbox(w, H1 + H2, d, 'brick', BRICK, 0, 0.6, 0, 0.04, 1.3));
+    // 흰 띠 · 코니스 · 모서리 돌
+    g.add(M(box(w + 0.16, 0.24, d + 0.16, 0.02), WH, 0, 0.6 + H1, 0));
+    g.add(M(box(w + 0.4, 0.34, d + 0.4, 0.03), WH, 0, TOP + 0.05, 0)); g.add(M(box(w + 0.2, 0.5, d + 0.2, 0.03), WH, 0, TOP - 0.3, 0));
+    for (const x of [-w / 2, w / 2]) for (const z of [-d / 2, d / 2]) for (let i = 0; i < 8; i++) g.add(M(box(i % 2 ? 0.56 : 0.42, 0.34, i % 2 ? 0.42 : 0.56, 0.02), WH, x, 0.8 + i * 0.86, z));
+    // 1층 큰 아치창 4 · 2층 아치창 6 (책장이 비침)
+    for (const x of [-6.0, -3.6, 3.6, 6.0]) at(g, libArch(1.7, 2.7), x, 0.95, d / 2 + 0.02);
+    for (const x of [-6.0, -3.6, -1.2, 1.2, 3.6, 6.0]) at(g, libArch(1.3, 2.1), x, 0.6 + H1 + 0.45, d / 2 + 0.02);
+    for (const s of [-1, 1]) for (const z of [-3.2, 0, 3.2]) { const a = libArch(1.4, 2.5); a.rotation.y = s * PI / 2; a.position.set(s * (w / 2 + 0.02), 1.0, z); g.add(a); }
+    // 슬레이트 모임지붕 + 가운데 청동 돔 (창 달린 원통 위) + 랜턴 & 첨탑
+    const rf = K.hip(w + 0.6, d + 0.6, 2.4, SLATE, 'rooftile'); rf.position.y = TOP + 0.2; g.add(rf);
+    const dm = new THREE.Group(); dm.position.set(0, TOP + 1.4, 0.6); g.add(dm);
+    dm.add(M(cyl(2.3, 2.4, 1.8, 24), WH, 0, 0.9, 0));
+    for (let i = 0; i < 12; i++) { const a = i / 12 * PI * 2; const wn = M(box(0.42, 0.9, 0.06, 0.02), glow(0xffe0a0), Math.sin(a) * 2.36, 0.95, Math.cos(a) * 2.36); wn.rotation.y = a; wn.userData.noBake = true; dm.add(wn); dm.add(M(box(0.16, 1.5, 0.16, 0.02), WH, Math.sin(a + PI / 12) * 2.4, 0.9, Math.cos(a + PI / 12) * 2.4)); }
+    dm.add(M(cyl(2.55, 2.55, 0.2, 24), WH, 0, 1.85, 0));
+    dm.add(M(geo('libDome', () => new THREE.SphereGeometry(2.35, 28, 14, 0, PI * 2, 0, PI / 2)), tm('metal', COPPER), 0, 1.92, 0));
+    for (let i = 0; i < 12; i++) { const rib = M(geo('libRib', () => new THREE.TorusGeometry(2.37, 0.04, 6, 20, PI / 2)), 0x3a8a78, 0, 1.92, 0); rib.rotation.set(0, i / 12 * PI * 2, PI / 2); rib.rotation.order = 'YZX'; dm.add(rib); }
+    dm.add(M(cyl(0.45, 0.5, 0.7, 12), WH, 0, 4.55, 0)); dm.add(M(geo('libLan', () => new THREE.ConeGeometry(0.55, 0.6, 12)), tm('metal', COPPER), 0, 5.2, 0)); dm.add(M(cyl(0.03, 0.03, 0.9, 6), 0xd8b040, 0, 5.9, 0)); dm.add(M(sphere(0.1, 8, 6), 0xd8b040, 0, 6.35, 0));
+    const lan = M(cyl(0.35, 0.35, 0.5, 12), glow(0xffd890), 0, 4.55, 0); lan.userData.noBake = true; dm.add(lan);
+    // 입구 포르티코: 흰 기둥 4 · 엔타블러처 · 삼각 박공 (책 문장) · 넓은 계단
+    const po = new THREE.Group(); po.position.set(0, 0.6, d / 2); g.add(po);
+    const ch = H1 + 0.9, pz = 1.9;
+    po.add(tbox(6.8, 0.2, pz + 0.4, 'marble', 0xece6da, 0, -0.18, pz / 2, 0.02, 1));
+    for (const x of [-2.7, -0.95, 0.95, 2.7]) at(po, column(ch), x, 0, pz);
+    po.add(M(box(6.6, 0.5, pz + 0.6, 0.03), WH, 0, ch + 0.25, pz / 2));
+    const sg = PM.sign('📚 시립 도서관  ·  CITY LIBRARY', 5.6, 0.42, '#3a5a9a', '#fff8e8'); sg.position.set(0, ch + 0.25, pz + 0.32); po.add(sg);
+    const tri = new THREE.Shape(); tri.moveTo(-3.5, 0); tri.lineTo(3.5, 0); tri.lineTo(0, 1.5); tri.lineTo(-3.5, 0);
+    const ped = M(geo('libPed', () => new THREE.ExtrudeGeometry(tri, { depth: 0.5, bevelEnabled: false })), WH, 0, ch + 0.5, pz - 0.3); po.add(ped);
+    const tri2 = new THREE.Shape(); tri2.moveTo(-2.9, 0.18); tri2.lineTo(2.9, 0.18); tri2.lineTo(0, 1.22); tri2.lineTo(-2.9, 0.18);
+    po.add(M(geo('libPed2', () => new THREE.ExtrudeGeometry(tri2, { depth: 0.04, bevelEnabled: false })), 0x9ab8d8, 0, ch + 0.5, pz + 0.21));
+    const emb = new THREE.Group(); emb.add(M(cyl(0.42, 0.42, 0.08, 20), 0xd8b040).rotateX(PI / 2)); emb.add(M(box(0.5, 0.34, 0.06, 0.02), 0xfbf8f2, 0, 0, 0.06)); emb.add(M(box(0.02, 0.34, 0.07, 0.005), 0x3a5a9a, 0, 0, 0.08)); emb.position.set(0, ch + 1.05, pz + 0.28); po.add(emb);
+    const dr = K.door(1.8, 2.7, 0x5a3a24, { frame: WH, arch: true, lamp: false, matColor: 0x8a2a2a }); dr.position.set(0, 0, 0.06); po.add(dr);
+    for (let i = 0; i < 4; i++) g.add(tbox(6.4 - i * 0.3, 0.16, 0.5, 'marble', 0xe4ded2, 0, 0.6 - 0.16 * (i + 1), d / 2 + pz + 0.45 + i * 0.45, 0.02, 1));
+    // 현수막 (기둥 사이) · 부엉이 석상 · 반납함 · 자전거 거치대
+    for (const [x, t, c] of [[-1.82, '📖 READ', '#c4694a'], [1.82, '✨ 독서 주간', '#3a5a9a']]) { const bn = PM.sign(t, 0.7, 1.8, c, '#ffffff'); bn.position.set(x, ch - 1.3, pz + 0.05); po.add(bn); }
+    for (const s of [-1, 1]) at(g, owlStatue(), s * 3.9, 0.06, d / 2 + pz + 1.6, -s * 0.2);
+    const ret = new THREE.Group(); ret.add(M(box(0.8, 1.1, 0.6, 0.12), 0x3a5a9a, 0, 0.55, 0)); ret.add(M(box(0.5, 0.06, 0.04, 0.01), 0x1a1a1a, 0, 0.85, 0.31)); const rs = PM.sign('📕 반납함', 0.62, 0.22, '#3a5a9a', '#ffffff'); rs.position.set(0, 0.62, 0.31); ret.add(rs); at(g, ret, w / 2 - 1.0, 0.06, d / 2 + 1.4);
+    if (B3bike) at(g, B3bike(0xd85a3a), -w / 2 + 1.4, 0.06, d / 2 + 1.6, 0.3);
+    // 독서 정원: 회양목 울타리 · 꽃밭 · 벤치 · 가로등
+    for (const s of [-1, 1]) {
+      const hx = s * (w / 2 - 2.2);
+      g.add(M(box(3.4, 0.7, 0.7, 0.2), tm('leaf', 0x4a8a3a), hx, 0.41, d / 2 + 3.4));
+      if (FM.Flora) { const fb = new THREE.Group(); FM.Flora.bush({ add: o => { fb.add(o); return o; } }, s < 0 ? ['tulip', 'rose'] : ['daisy', 'cosmos'], s < 0 ? [0xff4d5e, 0xff8fb1, 0xffffff] : [0xffffff, 0xffd84a, 0xb69cff], 0, 0, 0.9, 14, 1.0, s + 3); at(g, fb, hx, 0.06, d / 2 + 2.3); }
+      const bn = new THREE.Group(); bn.add(tbox(1.6, 0.08, 0.45, 'plank', 0x9a6a44, 0, 0.45, 0, 0.01, 0.4)); bn.add(tbox(1.6, 0.4, 0.06, 'plank', 0x9a6a44, 0, 0.55, -0.2, 0.01, 0.4)); for (const q of [-0.7, 0.7]) bn.add(M(box(0.06, 0.48, 0.42, 0.01), 0x2a2a2e, q, 0.22, 0)); at(g, bn, s * (w / 2 + 1.3), 0.06, d / 2 - 1.5, -s * PI / 2);
+    }
+    for (const x of [-w / 2 - 0.4, w / 2 + 0.4]) { const lp = new THREE.Group(); lp.add(M(cyl(0.06, 0.09, 2.8, 8), 0x2a2a2e, 0, 1.4, 0)); lp.add(M(box(0.34, 0.42, 0.34, 0.03), glass(0xfff4d8), 0, 3.0, 0)); const b = M(sphere(0.1, 8, 6), glow(0xffd890), 0, 3.0, 0); b.userData.noBake = true; b.userData.lampBulb = true; lp.add(b); lp.add(M(geo('lbCap', () => new THREE.ConeGeometry(0.3, 0.2, 4)), 0x2a2a2e, 0, 3.3, 0).rotateY(PI / 4)); at(g, lp, x, 0.06, d / 2 + 2.6); }
+    at(g, K.vines(4.0, 1.4, 0xffffff), -w / 2 + 0.2, 0.6, d / 2 + 0.06); at(g, K.vines(3.6, 1.2, 0xffffff), w / 2 - 0.2, 0.6, d / 2 + 0.06);
     return g;
   };
 

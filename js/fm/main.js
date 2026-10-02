@@ -338,7 +338,7 @@
       } else { dx = tx / d; dz = tz / d; }
     }
     const running = (k.ShiftLeft || k.ShiftRight || G.runBtn) && p.stamina > 0;
-    const sp = (running ? 7 : G.autoPath ? 6 : 3.8) * dt;
+    const sp = (running ? 7.5 : G.autoPath ? 6.5 : 4.3) * dt;
     p.moving = !!(dx || dz);
     p.run = running && p.moving;
     if (!p.moving) return;

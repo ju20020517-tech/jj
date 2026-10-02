@@ -50,7 +50,7 @@
   }
 
   // 명소 안의 원래 나무는 치움 (소품 자리)
-  const RECTS = [[9, 25, 51, 65], [-121, -109, 44, 58], [84, 108, 27, 44], [-50, -20, -100, -82], [-80, -70, 84, 90], [-34, -21, -2, 15]];
+  const RECTS = [[9, 25, 51, 65], [-117, -103, -79, -64], [45, 79, -40, -6], [-50, -20, -100, -82], [-80, -70, 84, 90], [29, 43, -26, -12], [103, 117, -42, -26], [104, 124, -20, -2]];
   const inR = (x, z) => RECTS.some(([a, b, c, d]) => x > a && x < b && z > c && z < d);
   if (FM.DECOR) { const a = FM.DECOR.trees; for (let i = a.length - 1; i >= 0; i--) if (inR(a[i].x, a[i].z)) a.splice(i, 1); const fl = FM.DECOR.flowers; for (let i = fl.length - 1; i >= 0; i--) if (inR(fl[i].x, fl[i].z)) fl.splice(i, 1); }
   if (Sim.SPOTS) { const Sp = Sim.SPOTS; for (let i = Sp.length - 1; i >= 0; i--) if (!Sp[i].place && inR(Sp[i].x, Sp[i].z)) Sp.splice(i, 1); }
@@ -115,7 +115,8 @@
     tomato: { name: '🍅 방울토마토', price: 20, sell: 70 }, carrot: { name: '🥕 당근', price: 15, sell: 55 }, cabbage: { name: '🥬 양배추', price: 15, sell: 55 },
     strawberry: { name: '🍓 딸기', price: 25, sell: 85 }, corn: { name: '🌽 옥수수', price: 20, sell: 65 }, pumpkin: { name: '🎃 호박', price: 30, sell: 110 }, sunflower: { name: '🌻 해바라기', price: 15, sell: 60 },
   };
-  const BEDS = [[-117.6, 46.4], [-112.4, 46.4], [-117.6, 49.4], [-112.4, 49.4], [-117.6, 52.4], [-112.4, 52.4]];
+  const FO = [FM.MAP.P.farm.x + 115, FM.MAP.P.farm.z - 50];   // 텃밭 원래 자리(-115, 50) 기준 이동량
+  const BEDS = [[-117.6, 46.4], [-112.4, 46.4], [-117.6, 49.4], [-112.4, 49.4], [-117.6, 52.4], [-112.4, 52.4]].map(([x, z]) => [x + FO[0], z + FO[1]]);
   const farm = () => { const st = S(); if (!st.farm) st.farm = { beds: BEDS.map((_, i) => (i < 3 ? { crop: ['tomato', 'cabbage', 'carrot'][i], g: 1 + (i % 2), wet: day() } : { crop: null, g: 0 })) }; return st.farm; };
   let farmRoot = null;
   function cropMesh(crop, stage) {
@@ -141,79 +142,122 @@
     farm().beds.forEach((b, i) => { const [x, z] = BEDS[i]; const m = cropMesh(b.crop, b.g); m.position.set(x, T0.height(x, z), z); m.traverse(o => { if (o.isMesh) { o.castShadow = true; } }); farmRoot.add(m); if (b.crop && b.g >= 3) { const sp = new THREE.Mesh(SP(0.08, 6, 5), glow(0xfff6a0)); sp.position.set(x + 1.6, T0.height(x, z) + 1.0, z); farmRoot.add(sp); } });
   }
   function buildFarm(root) {
+    const putF = (r, o, x, z, ry, dy) => put(r, o, x + FO[0], z + FO[1], ry, dy), rectF = (r, x, z, w, d, m, y) => rect(r, x + FO[0], z + FO[1], w, d, m, y);
     const soil = ctexMat('p2soil', 64, 64, (c, w, h) => { c.fillStyle = '#6a4a32'; c.fillRect(0, 0, w, h); for (let i = 0; i < 160; i++) { c.fillStyle = `rgba(${40 + (i % 3) * 20},${25 + (i % 4) * 10},15,0.6)`; c.fillRect((i * 37) % w, (i * 23) % h, 3, 2); } for (let y = 6; y < h; y += 12) { c.fillStyle = 'rgba(0,0,0,0.2)'; c.fillRect(0, y, w, 3); } }, [2, 1]);
-    rect(root, -115, 50.5, 11, 11.6, ctexMat('p2path', 64, 64, (c, w, h) => { c.fillStyle = '#c8a878'; c.fillRect(0, 0, w, h); for (let i = 0; i < 80; i++) { c.fillStyle = 'rgba(255,255,255,0.25)'; c.fillRect((i * 29) % w, (i * 17) % h, 2, 2); c.fillStyle = 'rgba(90,60,30,0.25)'; c.fillRect((i * 13) % w, (i * 31) % h, 2, 2); } }, [4, 4]), 0.06);
+    rectF(root, -115, 50.5, 11, 11.6, ctexMat('p2path', 64, 64, (c, w, h) => { c.fillStyle = '#c8a878'; c.fillRect(0, 0, w, h); for (let i = 0; i < 80; i++) { c.fillStyle = 'rgba(255,255,255,0.25)'; c.fillRect((i * 29) % w, (i * 17) % h, 2, 2); c.fillStyle = 'rgba(90,60,30,0.25)'; c.fillRect((i * 13) % w, (i * 31) % h, 2, 2); } }, [4, 4]), 0.06);
     BEDS.forEach(([x, z]) => { const bx = new THREE.Group(); add(bx, B(3.4, 0.36, 1.5), tm('plank', 0x9a6a3e), 0, 0.18, 0); const s2 = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.3), soil); s2.rotation.x = -PI / 2; s2.position.y = 0.37; bx.add(s2); put(root, bx, x, z); });
     // 울타리 (낮은 원목) + 문
     const fence = (len) => { const f = new THREE.Group(); for (let i = 0; i <= Math.round(len / 1.0); i++) add(f, B(0.12, 0.9, 0.12), tm('bark', 0x8a6a4a), -len / 2 + i * len / Math.round(len / 1.0), 0.45, 0); for (const y of [0.35, 0.72]) add(f, B(len, 0.08, 0.06), tm('plank', 0xa87a4a), 0, y, 0); return f; };
-    put(root, fence(11), -115, 44.6); put(root, fence(11.6), -120.6, 50.4, PI / 2); put(root, fence(11.6), -109.4, 50.4, PI / 2); put(root, fence(4.2), -118.4, 56.2); put(root, fence(4.2), -111.6, 56.2);
-    const gate = new THREE.Group(); for (const s of [-1, 1]) add(gate, B(0.16, 2.0, 0.16), tm('bark', 0x7a5a3a), s * 1.3, 1.0, 0); add(gate, B(3.0, 0.14, 0.16), tm('plank', 0xa87a4a), 0, 2.0, 0); const gs = sign('🌱 주민 텃밭 · 초록 손', 2.6, 0.5, '#f4ead0', '#4a6a2a'); gs.position.set(0, 2.35, 0.1); gate.add(gs); put(root, gate, -115, 56.3);
+    putF(root, fence(11), -115, 44.6); putF(root, fence(11.6), -120.6, 50.4, PI / 2); putF(root, fence(11.6), -109.4, 50.4, PI / 2); putF(root, fence(4.2), -118.4, 56.2); putF(root, fence(4.2), -111.6, 56.2);
+    const gate = new THREE.Group(); for (const s of [-1, 1]) add(gate, B(0.16, 2.0, 0.16), tm('bark', 0x7a5a3a), s * 1.3, 1.0, 0); add(gate, B(3.0, 0.14, 0.16), tm('plank', 0xa87a4a), 0, 2.0, 0); const gs = sign('🌱 주민 텃밭 · 초록 손', 2.6, 0.5, '#f4ead0', '#4a6a2a'); gs.position.set(0, 2.35, 0.1); gate.add(gs); putF(root, gate, -115, 56.3);
     // 허수아비 · 공구 창고 · 물통 · 물뿌리개 · 수레 · 해바라기
-    const sc = new THREE.Group(); add(sc, C(0.04, 0.05, 1.8), tm('bark', 0x8a6a4a), 0, 0.9, 0); add(sc, B(1.2, 0.06, 0.06), tm('bark', 0x8a6a4a), 0, 1.35, 0); add(sc, B(0.6, 0.6, 0.3), 0x5a7ad8, 0, 1.25, 0); add(sc, SP(0.2, 10, 8), 0xf4e0b0, 0, 1.75, 0); add(sc, C(0.32, 0.32, 0.03, 14), 0xe8c060, 0, 1.92, 0); add(sc, C(0.16, 0.2, 0.16, 12), 0xe8c060, 0, 2.0, 0); for (const s of [-1, 1]) add(sc, SP(0.03, 5, 4), 0x1a1a1a, s * 0.07, 1.78, 0.18); put(root, sc, -115, 47.9);
-    const shed = new THREE.Group(); add(shed, B(1.6, 1.8, 1.4), tm('plank', 0xb8824a), 0, 0.9, 0); const rf = add(shed, B(1.9, 0.08, 1.8), tm('corrug', 0x8a3a2a), 0, 1.92, 0); rf.rotation.x = 0.15; add(shed, B(0.7, 1.4, 0.04), tm('plank', 0x6a4a2a), 0, 0.7, 0.71); for (let i = 0; i < 3; i++) add(shed, C(0.02, 0.02, 1.1), 0x8a6a4a, -0.6 + i * 0.12, 0.6, 0.78).rotation.z = 0.15; put(root, shed, -119.4, 55.0, PI / 2);
-    const bar = new THREE.Group(); add(bar, C(0.35, 0.32, 0.8, 14), tm('plank', 0x8a5a34), 0, 0.4, 0); const wt = add(bar, C(0.32, 0.32, 0.02, 14), lam(0x5aa8c8, { transparent: true, opacity: 0.8 }), 0, 0.78, 0); void wt; add(bar, C(0.12, 0.1, 0.18, 10), 0x4a9ac8, 0.55, 0.09, 0.1); add(bar, C(0.02, 0.02, 0.25, 5), 0x4a9ac8, 0.72, 0.15, 0.1).rotation.z = -0.9; put(root, bar, -110.6, 55.0);
-    const wb = new THREE.Group(); add(wb, B(0.8, 0.3, 0.55), 0x3a8a5a, 0, 0.45, 0); add(wb, C(0.2, 0.2, 0.08, 12), 0x2a2a2a, 0.4, 0.2, 0).rotation.x = PI / 2; for (const s of [-1, 1]) add(wb, B(0.8, 0.04, 0.04), 0x8a6a4a, -0.6, 0.5, s * 0.22); for (let i = 0; i < 4; i++) add(wb, SP(0.1, 6, 5), [0xe8302a, 0xff8a2a, 0x8ac86a, 0xf8d040][i], -0.2 + i * 0.13, 0.65, (i % 2 - 0.5) * 0.2); put(root, wb, -110.6, 45.8, 0.4);
+    const sc = new THREE.Group(); add(sc, C(0.04, 0.05, 1.8), tm('bark', 0x8a6a4a), 0, 0.9, 0); add(sc, B(1.2, 0.06, 0.06), tm('bark', 0x8a6a4a), 0, 1.35, 0); add(sc, B(0.6, 0.6, 0.3), 0x5a7ad8, 0, 1.25, 0); add(sc, SP(0.2, 10, 8), 0xf4e0b0, 0, 1.75, 0); add(sc, C(0.32, 0.32, 0.03, 14), 0xe8c060, 0, 1.92, 0); add(sc, C(0.16, 0.2, 0.16, 12), 0xe8c060, 0, 2.0, 0); for (const s of [-1, 1]) add(sc, SP(0.03, 5, 4), 0x1a1a1a, s * 0.07, 1.78, 0.18); putF(root, sc, -115, 47.9);
+    const shed = new THREE.Group(); add(shed, B(1.6, 1.8, 1.4), tm('plank', 0xb8824a), 0, 0.9, 0); const rf = add(shed, B(1.9, 0.08, 1.8), tm('corrug', 0x8a3a2a), 0, 1.92, 0); rf.rotation.x = 0.15; add(shed, B(0.7, 1.4, 0.04), tm('plank', 0x6a4a2a), 0, 0.7, 0.71); for (let i = 0; i < 3; i++) add(shed, C(0.02, 0.02, 1.1), 0x8a6a4a, -0.6 + i * 0.12, 0.6, 0.78).rotation.z = 0.15; putF(root, shed, -119.4, 55.0, PI / 2);
+    const bar = new THREE.Group(); add(bar, C(0.35, 0.32, 0.8, 14), tm('plank', 0x8a5a34), 0, 0.4, 0); const wt = add(bar, C(0.32, 0.32, 0.02, 14), lam(0x5aa8c8, { transparent: true, opacity: 0.8 }), 0, 0.78, 0); void wt; add(bar, C(0.12, 0.1, 0.18, 10), 0x4a9ac8, 0.55, 0.09, 0.1); add(bar, C(0.02, 0.02, 0.25, 5), 0x4a9ac8, 0.72, 0.15, 0.1).rotation.z = -0.9; putF(root, bar, -110.6, 55.0);
+    const wb = new THREE.Group(); add(wb, B(0.8, 0.3, 0.55), 0x3a8a5a, 0, 0.45, 0); add(wb, C(0.2, 0.2, 0.08, 12), 0x2a2a2a, 0.4, 0.2, 0).rotation.x = PI / 2; for (const s of [-1, 1]) add(wb, B(0.8, 0.04, 0.04), 0x8a6a4a, -0.6, 0.5, s * 0.22); for (let i = 0; i < 4; i++) add(wb, SP(0.1, 6, 5), [0xe8302a, 0xff8a2a, 0x8ac86a, 0xf8d040][i], -0.2 + i * 0.13, 0.65, (i % 2 - 0.5) * 0.2); putF(root, wb, -110.6, 45.8, 0.4);
     farmRoot = new THREE.Group(); root.add(farmRoot); refreshFarm();
   }
 
-  // ---------- 🏮 마츠리 광장 ----------
+  // ---------- 🏮 마츠리 광장 (30×30 · 도리이 2 · 신사 · 야구라 · 노점 8 · 연못) ----------
+  const MP = () => FM.MAP.P.matsuri;
+  function bench(len = 1.8) { const g = new THREE.Group(); add(g, B(len, 0.08, 0.42), tm('plank', 0xb8824a), 0, 0.46, 0); add(g, B(len, 0.36, 0.06), tm('plank', 0xb8824a), 0, 0.72, -0.2); for (const s of [-1, 1]) add(g, B(0.08, 0.46, 0.4), 0x3a2a20, s * (len / 2 - 0.15), 0.23, 0); return g; }
+  function torii(w = 4.6, h = 4.6) {
+    const t = new THREE.Group(); const red = lam(0xe0401a);
+    for (const s of [-1, 1]) { add(t, C(0.22, 0.26, h, 14), red, s * w / 2.55, h / 2, 0); add(t, C(0.3, 0.3, 0.5, 14), 0x1a1a1a, s * w / 2.55, 0.25, 0); }
+    add(t, B(w, 0.3, 0.36), red, 0, h * 0.78, 0); add(t, B(w + 0.9, 0.28, 0.5), 0x1a1a1a, 0, h - 0.1, 0); for (const s of [-1, 1]) { const tip = add(t, B(0.6, 0.22, 0.48), 0x1a1a1a, s * (w / 2 + 0.55), h, 0); tip.rotation.z = s * 0.18; }
+    add(t, B(0.6, 0.8, 0.08), 0x1a1a1a, 0, h * 0.88, 0.12); const pq = sign('祭', 0.46, 0.66, '#1a1a1a', '#e8c050'); pq.position.set(0, h * 0.88, 0.17); t.add(pq);
+    return t;
+  }
+  function stall(t, lanM) {
+    const s = new THREE.Group(); const col = t.c;
+    add(s, B(2.6, 0.95, 0.9), tm('plank', 0xb8824a), 0, 0.48, 0); add(s, B(2.7, 0.08, 1.0), tm('plank', 0xd8a86a), 0, 0.98, 0);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(s, B(0.1, 2.5, 0.1), tm('bark', 0x8a5a34), sx * 1.25, 1.25, sz * 0.55 - 0.2);
+    add(s, B(2.6, 1.5, 0.06), tm('plank', 0xa8784a), 0, 1.6, -0.78);
+    const cm2 = new THREE.MeshLambertMaterial({ map: FM.AC.stripe(col, '#ffffff') }); const rf = add(s, B(3.0, 0.08, 1.7), cm2, 0, 2.55, 0.0); rf.rotation.x = 0.2;
+    for (let i = 0; i < 9; i++) { const v = add(s, B(0.33, 0.24, 0.02), cm2, -1.33 + i * 0.333, 2.32, 0.86); void v; }   // 물결 차양 끝
+    const nm = sign(t.n, 2.3, 0.46, col, '#ffffff'); nm.position.set(0, 2.05, 0.6); s.add(nm);
+    const k = t.k;
+    if (k === 'goldfish') { add(s, B(1.8, 0.25, 0.7), lam(0x3a8ad8, { transparent: true, opacity: 0.75 }), 0, 1.15, 0.05); for (let i = 0; i < 8; i++) add(s, SP(0.05, 6, 5), [0xff5a2a, 0xffffff, 0xff8a2a][i % 3], -0.7 + i * 0.2, 1.24, (i % 2 - 0.5) * 0.3).scale.set(1.6, 0.6, 0.8); for (let i = 0; i < 3; i++) add(s, SP(0.14, 8, 6), lam(0xbfe8ff, { transparent: true, opacity: 0.55 }), -0.9 + i * 0.3, 1.9 - i * 0.05, -0.55); }
+    if (k === 'takoyaki') { add(s, B(1.5, 0.12, 0.6), 0x2a2a2a, 0, 1.08, 0); for (let i = 0; i < 12; i++) add(s, SP(0.065, 6, 5), 0xc8823a, -0.55 + (i % 6) * 0.22, 1.17, (Math.floor(i / 6) - 0.5) * 0.26); }
+    if (k === 'cotton') for (let i = 0; i < 6; i++) { add(s, C(0.01, 0.01, 0.4, 4), 0xffffff, -1.0 + i * 0.4, 1.2, 0.3); add(s, SP(0.16, 8, 6), [0xffb8d8, 0xb8e0ff, 0xffffff][i % 3], -1.0 + i * 0.4, 1.46, 0.3); }
+    if (k === 'shooting') { for (let r = 0; r < 2; r++) for (let i = 0; i < 6; i++) add(s, B(0.18, 0.24, 0.12), [0xff6a8a, 0xffd84a, 0x6ac8ff, 0xb8ff8a][(i + r) % 4], -0.9 + i * 0.36, 1.35 + r * 0.45, -0.6); add(s, B(0.9, 0.06, 0.08), 0x6a4a2a, 0.3, 1.08, 0.3); }
+    if (k === 'yakisoba') { add(s, B(1.6, 0.08, 0.7), 0x3a3a3a, 0, 1.06, 0); for (let i = 0; i < 20; i++) add(s, B(0.18, 0.025, 0.03), [0xc8902a, 0xe8b04a, 0x5aa83a][i % 3], -0.6 + (i % 10) * 0.13, 1.12, (Math.floor(i / 10) - 0.5) * 0.25).rotation.y = i; }
+    if (k === 'kakigori') for (let i = 0; i < 4; i++) { add(s, C(0.12, 0.08, 0.14, 10), lam(0xe8f4ff, { transparent: true, opacity: 0.8 }), -0.75 + i * 0.5, 1.1, 0.15); add(s, SP(0.14, 10, 8), [0xff4a6a, 0x4ad0ff, 0x8aff6a, 0xffd84a][i], -0.75 + i * 0.5, 1.24, 0.15); }
+    if (k === 'ringo') for (let i = 0; i < 10; i++) { add(s, C(0.008, 0.008, 0.3, 4), 0xf4ead8, -0.9 + (i % 5) * 0.45, 1.15, (Math.floor(i / 5) - 0.5) * 0.3); add(s, SP(0.08, 8, 6), lam(0xe8203a, { emissive: 0x400010 }), -0.9 + (i % 5) * 0.45, 1.33, (Math.floor(i / 5) - 0.5) * 0.3); }
+    if (k === 'omen') for (let r = 0; r < 2; r++) for (let i = 0; i < 6; i++) { const m2 = add(s, SP(0.15, 10, 8), [0xffffff, 0xff9aa8, 0xffd84a, 0x8ad0ff, 0xff6a3a, 0x8aff9a][(i + r * 2) % 6], -1.0 + i * 0.4, 1.4 + r * 0.42, -0.72); m2.scale.z = 0.4; }
+    else for (let i = 0; i < 4; i++) { const m2 = add(s, SP(0.11, 8, 6), [0xffffff, 0xff9aa8, 0xffd84a, 0x8ad0ff][i], -0.9 + i * 0.6, 2.2, -0.72); m2.scale.z = 0.4; }
+    for (const sx of [-1.05, 1.05]) { const lm = new THREE.Mesh(SP(0.17, 8, 6), lanM); lm.scale.y = 1.25; lm.position.set(sx, 2.15, 0.75); s.add(lm); }
+    return s;
+  }
   function buildMatsuri(root) {
-    const X = 96, Z = 35;
-    rect(root, X, Z, 22, 15, ctexMat('p2grav', 64, 64, (c, w, h) => { c.fillStyle = '#d8ccb0'; c.fillRect(0, 0, w, h); for (let i = 0; i < 120; i++) { c.fillStyle = `rgba(${120 + (i % 5) * 20},${110 + (i % 5) * 18},${90 + (i % 5) * 14},0.45)`; c.beginPath(); c.arc((i * 37) % w, (i * 23) % h, 1.5 + (i % 3), 0, 7); c.fill(); } }, [6, 4]), 0.06);
-    rect(root, X - 4, Z, 14, 2.4, ctexMat('p2stone', 64, 64, (c, w, h) => { c.fillStyle = '#8a8a8e'; c.fillRect(0, 0, w, h); for (let i = 0; i < 6; i++) { c.fillStyle = `rgb(${160 + i * 8},${160 + i * 8},${164})`; c.beginPath(); c.ellipse(10 + (i % 3) * 22, 14 + Math.floor(i / 3) * 32, 10, 13, i, 0, 7); c.fill(); } }, [6, 1]), 0.075);
-    // 도리이 (서쪽 입구)
-    const tor = new THREE.Group(); const red = lam(0xe0401a);
-    for (const s of [-1, 1]) { add(tor, C(0.22, 0.26, 4.4, 14), red, s * 1.8, 2.2, 0); add(tor, C(0.3, 0.3, 0.5, 14), 0x1a1a1a, s * 1.8, 0.25, 0); }
-    add(tor, B(4.6, 0.3, 0.36), red, 0, 3.55, 0); const kas = add(tor, B(5.4, 0.28, 0.5), 0x1a1a1a, 0, 4.4, 0); void kas; for (const s of [-1, 1]) { const tip = add(tor, B(0.6, 0.22, 0.48), 0x1a1a1a, s * 2.85, 4.5, 0); tip.rotation.z = s * 0.18; }
-    add(tor, B(0.5, 0.75, 0.08), 0x1a1a1a, 0, 3.95, 0.12); const pq = sign('祭', 0.38, 0.6, '#1a1a1a', '#e8c050'); pq.position.set(0, 3.95, 0.17); tor.add(pq);
-    put(root, tor, 85.2, Z, PI / 2);
-    // 붉은 격자 울타리 (북 · 남, 길 자리 비움)
-    const lattice = (len) => { const f = new THREE.Group(); const m = lam(0xd8401a); for (let i = 0; i <= Math.round(len / 1.4); i++) { const x = -len / 2 + i * len / Math.round(len / 1.4); add(f, B(0.16, 1.2, 0.16), m, x, 0.6, 0); add(f, SP(0.1, 8, 6), 0xd4a848, x, 1.26, 0); } for (const y of [0.2, 0.55, 1.0]) add(f, B(len, 0.08, 0.08), m, 0, y, 0); for (let i = 0; i < Math.round(len / 1.4); i++) { const x = -len / 2 + (i + 0.5) * len / Math.round(len / 1.4); add(f, B(0.7, 0.05, 0.05), m, x, 0.78, 0); add(f, B(0.05, 0.4, 0.05), m, x, 0.78, 0); } return f; };
-    for (const [x0, x1] of [[86.5, 100.5], [103.6, 107.2]]) { put(root, lattice(x1 - x0), (x0 + x1) / 2, 28.0); put(root, lattice(x1 - x0), (x0 + x1) / 2, 42.4); }
-    // 야구라 (북 망루) + 홍백 천 + 북 + 초롱 줄
+    const P0 = MP(), X = P0.x, Z = P0.z, H = 15;
+    const red = lam(0xe0401a);
+    rect(root, X, Z, H * 2, H * 2, ctexMat('p2grav', 64, 64, (c, w, h) => { c.fillStyle = '#d8ccb0'; c.fillRect(0, 0, w, h); for (let i = 0; i < 120; i++) { c.fillStyle = `rgba(${120 + (i % 5) * 20},${110 + (i % 5) * 18},${90 + (i % 5) * 14},0.45)`; c.beginPath(); c.arc((i * 37) % w, (i * 23) % h, 1.5 + (i % 3), 0, 7); c.fill(); } }, [8, 8]), 0.06);
+    const stoneM = ctexMat('p2stone', 64, 64, (c, w, h) => { c.fillStyle = '#8a8a8e'; c.fillRect(0, 0, w, h); for (let i = 0; i < 6; i++) { c.fillStyle = `rgb(${160 + i * 8},${160 + i * 8},${164})`; c.beginPath(); c.ellipse(10 + (i % 3) * 22, 14 + Math.floor(i / 3) * 32, 10, 13, i, 0, 7); c.fill(); } }, [1, 8]);
+    rect(root, X, Z + 1.5, 3, 27, stoneM, 0.075);
+    const stoneM2 = ctexMat('p2stoneB', 64, 64, (c, w, h) => { c.fillStyle = '#8a8a8e'; c.fillRect(0, 0, w, h); for (let i = 0; i < 6; i++) { c.fillStyle = `rgb(${160 + i * 8},${160 + i * 8},${164})`; c.beginPath(); c.ellipse(14 + Math.floor(i / 3) * 32, 10 + (i % 3) * 22, 13, 10, i, 0, 7); c.fill(); } }, [6, 1]);
+    rect(root, X + 8, Z - 5, 15, 3, stoneM2, 0.076);
+    put(root, torii(5.0, 5.0), X, Z + H - 0.4, 0);
+    put(root, torii(4.4, 4.4), X + H - 0.4, Z - 5, PI / 2);
+    // 붉은 격자 울타리 (입구 두 곳 비움)
+    const lattice = (len) => { const f = new THREE.Group(); const m = lam(0xd8401a); const n = Math.max(1, Math.round(len / 1.4)); for (let i = 0; i <= n; i++) { const x = -len / 2 + i * len / n; add(f, B(0.16, 1.2, 0.16), m, x, 0.6, 0); add(f, SP(0.1, 8, 6), 0xd4a848, x, 1.26, 0); } for (const y of [0.2, 0.55, 1.0]) add(f, B(len, 0.08, 0.08), m, 0, y, 0); return f; };
+    put(root, lattice(H * 2), X, Z - H);
+    put(root, lattice(H - 2.6), X - H / 2 - 1.3, Z + H); put(root, lattice(H - 2.6), X + H / 2 + 1.3, Z + H);
+    put(root, lattice(H * 2), X - H, Z, PI / 2);
+    put(root, lattice(H - 7.5), X + H, Z - H + (H - 7.5) / 2, PI / 2); put(root, lattice(H + 3.5), X + H, Z + H - (H + 3.5) / 2, PI / 2);
+    // 신사 (북쪽): 돌 기단 · 붉은 기둥 · 녹청 기와 · 새전함 · 방울 줄 · 고마이누
+    const sh = new THREE.Group();
+    add(sh, B(7.4, 0.6, 4.8), tm('stone', 0xa8a49c), 0, 0.3, 0); for (let i = 0; i < 3; i++) add(sh, B(2.4, 0.2, 0.4), tm('stone', 0xb8b4ac), 0, 0.1 + i * 0.2, 2.6 - i * 0.35);
+    add(sh, B(6.0, 2.6, 3.4), tm('timber', 0xf0e4cc), 0, 1.9, -0.4);
+    for (const x of [-3.0, -1.0, 1.0, 3.0]) add(sh, C(0.16, 0.18, 2.8, 12), red, x, 2.0, 1.45);
+    add(sh, B(6.4, 0.24, 0.3), red, 0, 3.25, 1.45);
+    const rf = add(sh, geo('shRoof', () => new THREE.CylinderGeometry(0.01, 4.8, 2.2, 4, 1, false, PI / 4)), tm('jptile', 0x3a6a5a), 0, 4.4, -0.2); rf.scale.set(1.0, 1, 0.72);
+    add(sh, B(7.6, 0.22, 5.4), tm('jptile', 0x3a6a5a), 0, 3.4, -0.2);
+    const box2 = add(sh, B(1.4, 0.6, 0.6), tm('plank', 0x6a4a2a), 0, 0.9, 1.9); void box2; const ss = sign('奉納', 0.8, 0.26, '#6a4a2a', '#f4e0b0'); ss.position.set(0, 0.95, 2.21); sh.add(ss);
+    add(sh, C(0.03, 0.03, 2.0, 6), 0xe8d8a0, 0, 2.2, 1.6); add(sh, SP(0.16, 10, 8), 0xd8b040, 0, 3.2, 1.6);
+    for (const s of [-1, 1]) { const ko = new THREE.Group(); add(ko, B(0.7, 0.6, 0.7), tm('stone', 0xa8a49c), 0, 0.3, 0); add(ko, SP(0.32, 10, 8), tm('stone', 0xbab6ae), 0, 0.85, 0); add(ko, SP(0.24, 10, 8), tm('stone', 0xbab6ae), 0, 1.25, 0.12); ko.position.set(s * 3.3, 0, 2.9); sh.add(ko); }
+    const shName = sign('⛩️ 여름 신사', 1.8, 0.4, '#1a1a1a', '#e8c050'); shName.position.set(0, 3.05, 1.62); sh.add(shName);
+    put(root, sh, X, Z - H + 3.2);
+    // 야구라 (가운데) + 홍백 천 + 북
     const yag = new THREE.Group();
-    for (const [x, z] of [[-1.3, -1.3], [1.3, -1.3], [-1.3, 1.3], [1.3, 1.3]]) add(yag, B(0.2, 3.2, 0.2), tm('bark', 0x8a5a34), x, 1.6, z);
-    add(yag, B(3.0, 0.16, 3.0), tm('plank', 0xb8824a), 0, 2.4, 0);
+    for (const [x, z] of [[-1.6, -1.6], [1.6, -1.6], [-1.6, 1.6], [1.6, 1.6]]) add(yag, B(0.22, 3.8, 0.22), tm('bark', 0x8a5a34), x, 1.9, z);
+    add(yag, B(3.6, 0.18, 3.6), tm('plank', 0xb8824a), 0, 2.8, 0);
     const kohaku = new THREE.MeshLambertMaterial({ map: FM.AC.stripe('#e83030', '#ffffff'), side: THREE.DoubleSide });
-    for (let s = 0; s < 4; s++) { const pnl = new THREE.Mesh(new THREE.PlaneGeometry(2.9, 1.0), kohaku); pnl.position.set(Math.sin(s * PI / 2) * 1.5, 1.9, Math.cos(s * PI / 2) * 1.5); pnl.rotation.y = s * PI / 2; yag.add(pnl); }
-    const roof = add(yag, geo('yagR', () => new THREE.ConeGeometry(2.4, 1.1, 4)), tm('jptile', 0x3a3a40), 0, 3.75, 0); roof.rotation.y = PI / 4;
-    const tk = new THREE.Group(); add(tk, C(0.42, 0.42, 0.7, 18), 0x8a2a1a, 0, 0, 0).rotation.z = PI / 2; for (const s of [-1, 1]) add(tk, C(0.45, 0.45, 0.04, 18), 0xf4ead8, s * 0.36, 0, 0).rotation.z = PI / 2; tk.position.set(0, 2.95, 0); yag.add(tk);
-    put(root, yag, X, 31.4);
-    const dr = new THREE.Group(); add(dr, B(0.9, 0.5, 0.6), tm('bark', 0x5a3a24), 0, 0.25, 0); add(dr, C(0.4, 0.4, 0.6, 18), 0x8a2a1a, 0, 0.85, 0).rotation.x = PI / 2; for (const s of [-1, 1]) add(dr, C(0.42, 0.42, 0.04, 18), 0xf4ead8, 0, 0.85, s * 0.31).rotation.x = PI / 2; put(root, dr, X, 32.6);
-    // 초롱 줄 (야구라 꼭대기 → 둘레 장대 6)
+    for (let s = 0; s < 4; s++) { const pnl = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 1.2), kohaku); pnl.position.set(Math.sin(s * PI / 2) * 1.8, 2.2, Math.cos(s * PI / 2) * 1.8); pnl.rotation.y = s * PI / 2; yag.add(pnl); }
+    const roof = add(yag, geo('yagR2', () => new THREE.ConeGeometry(2.9, 1.3, 4)), tm('jptile', 0x3a3a40), 0, 4.45, 0); roof.rotation.y = PI / 4;
+    const tk = new THREE.Group(); add(tk, C(0.48, 0.48, 0.8, 18), 0x8a2a1a, 0, 0, 0).rotation.z = PI / 2; for (const s of [-1, 1]) add(tk, C(0.51, 0.51, 0.04, 18), 0xf4ead8, s * 0.41, 0, 0).rotation.z = PI / 2; tk.position.set(0, 3.4, 0); yag.add(tk);
+    for (let i = 0; i < 6; i++) add(yag, B(0.5, 0.1, 0.24), tm('plank', 0x8a5a34), 0, 0.3 + i * 0.45, 1.85 + i * 0.0).rotation.x = 0;
+    put(root, yag, X, Z);
+    const dr = new THREE.Group(); add(dr, B(0.9, 0.5, 0.6), tm('bark', 0x5a3a24), 0, 0.25, 0); add(dr, C(0.4, 0.4, 0.6, 18), 0x8a2a1a, 0, 0.85, 0).rotation.x = PI / 2; for (const s of [-1, 1]) add(dr, C(0.42, 0.42, 0.04, 18), 0xf4ead8, 0, 0.85, s * 0.31).rotation.x = PI / 2; put(root, dr, X, Z + 3.0);
+    // 초롱 줄 (야구라 꼭대기 → 둘레 장대 10)
     const lanM = new THREE.MeshLambertMaterial({ color: 0xfff0e0, emissive: 0xff6a3a, emissiveIntensity: 0.15 });
     const lanM2 = new THREE.MeshLambertMaterial({ color: 0xff5a3a, emissive: 0xff3a1a, emissiveIntensity: 0.15 });
-    const top = new THREE.Vector3(X, T0.height(X, 31.4) + 4.1, 31.4);
-    const poles = [[87, 29.4], [87, 41], [105, 29.4], [105, 41], [96, 41.6], [91, 29]];
+    const top = new THREE.Vector3(X, T0.height(X, Z) + 4.9, Z);
+    const poles = [[-14, -14], [0, -14.2], [14, -14], [-14, 0], [14, 1], [-14, 14], [-3, 14.2], [3, 14.2], [14, 14], [14, -8]].map(([a, b]) => [X + a, Z + b]);
     for (const [px, pz] of poles) {
-      const pl = new THREE.Group(); add(pl, C(0.08, 0.1, 4.2), tm('bark', 0x8a5a34), 0, 2.1, 0); put(root, pl, px, pz);
-      const end = new THREE.Vector3(px, T0.height(px, pz) + 4.1, pz);
-      const pts = []; for (let t = 0; t <= 1.0001; t += 0.1) pts.push(new THREE.Vector3().lerpVectors(top, end, t).add(new THREE.Vector3(0, -Math.sin(t * PI) * 0.9, 0)));
+      const pl = new THREE.Group(); add(pl, C(0.08, 0.1, 4.8), tm('bark', 0x8a5a34), 0, 2.4, 0); put(root, pl, px, pz);
+      const end = new THREE.Vector3(px, T0.height(px, pz) + 4.7, pz);
+      const pts = []; for (let t = 0; t <= 1.0001; t += 0.1) pts.push(new THREE.Vector3().lerpVectors(top, end, t).add(new THREE.Vector3(0, -Math.sin(t * PI) * 1.2, 0)));
       root.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 10, 0.015, 3), lam(0x2a2a2a)));
-      for (let k = 1; k < 8; k++) { const t = k / 8; const p = new THREE.Vector3().lerpVectors(top, end, t).add(new THREE.Vector3(0, -Math.sin(t * PI) * 0.9 - 0.25, 0)); const l = new THREE.Mesh(SP(0.2, 10, 8), k % 2 ? lanM : lanM2); l.scale.y = 1.3; l.position.copy(p); root.add(l); }
+      for (let k = 1; k < 11; k++) { const t = k / 11; const p = new THREE.Vector3().lerpVectors(top, end, t).add(new THREE.Vector3(0, -Math.sin(t * PI) * 1.2 - 0.25, 0)); const l = new THREE.Mesh(SP(0.2, 10, 8), k % 2 ? lanM : lanM2); l.scale.y = 1.3; l.position.copy(p); root.add(l); }
     }
+    // 둘레 초롱 줄 (울타리 위)
+    const ring = [[-H, -H], [H, -H], [H, H], [-H, H], [-H, -H]];
+    for (let e = 0; e < 4; e++) { const [ax, az] = ring[e], [bx, bz] = ring[e + 1]; for (let k = 1; k < 12; k++) { const t = k / 12, x = X + ax + (bx - ax) * t, z = Z + az + (bz - az) * t; const l = new THREE.Mesh(SP(0.15, 8, 6), k % 3 ? lanM : lanM2); l.scale.y = 1.3; l.position.set(x, T0.height(x, z) + 1.75, z); root.add(l); } }
     nightGlows.push(lanM, lanM2);
-    // 노점 4 (금붕어 뜨기 · 타코야키 · 솜사탕 · 사격) — 손님 자리 뒤쪽
-    const STALLS = [['🐟 금붕어 뜨기', '#2a6ad8', 89.2, 29.6, 0], ['🐙 타코야키', '#e83030', 94.6, 29.6, 0], ['🍭 솜사탕', '#ff8ab0', 106.2, 29.6, 0], ['🎯 사격', '#2a8a4a', 89.2, 41.0, PI]];
-    for (const [t, col, x, z, r] of STALLS) {
-      const s = new THREE.Group();
-      add(s, B(2.4, 0.95, 0.9), tm('plank', 0xb8824a), 0, 0.48, 0); for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(s, B(0.1, 2.4, 0.1), tm('bark', 0x8a5a34), sx * 1.15, 1.2, sz * 0.4);
-      const cm2 = new THREE.MeshLambertMaterial({ map: FM.AC.stripe(col, '#ffffff') }); const rf = add(s, B(2.7, 0.08, 1.4), cm2, 0, 2.42, 0.15); rf.rotation.x = 0.18;
-      const nm = sign(t, 2.2, 0.45, col, '#ffffff'); nm.position.set(0, 2.05, 0.5); s.add(nm);
-      if (t.includes('금붕어')) { add(s, B(1.6, 0.25, 0.7), lam(0x3a8ad8, { transparent: true, opacity: 0.75 }), 0, 1.05, 0.05); for (let i = 0; i < 6; i++) add(s, SP(0.05, 6, 5), [0xff5a2a, 0xffffff, 0xff8a2a][i % 3], -0.6 + i * 0.24, 1.15, (i % 2 - 0.5) * 0.3).scale.set(1.6, 0.6, 0.8); }
-      if (t.includes('타코')) { add(s, B(1.4, 0.12, 0.6), 0x2a2a2a, 0, 1.0, 0); for (let i = 0; i < 12; i++) add(s, SP(0.06, 6, 5), 0xc8823a, -0.5 + (i % 6) * 0.2, 1.08, (Math.floor(i / 6) - 0.5) * 0.25); }
-      if (t.includes('솜사탕')) for (let i = 0; i < 5; i++) { add(s, C(0.01, 0.01, 0.4, 4), 0xffffff, -0.8 + i * 0.4, 1.15, 0.3); add(s, SP(0.15, 8, 6), [0xffb8d8, 0xb8e0ff, 0xffffff][i % 3], -0.8 + i * 0.4, 1.4, 0.3); }
-      if (t.includes('사격')) for (let i = 0; i < 6; i++) add(s, B(0.18, 0.24, 0.12), [0xff6a8a, 0xffd84a, 0x6ac8ff][i % 3], -0.8 + i * 0.32, 1.6, -0.3);
-      for (let i = 0; i < 4; i++) { const m2 = add(s, SP(0.11, 8, 6), [0xffffff, 0xff9aa8, 0xffd84a, 0x8ad0ff][i], -0.9 + i * 0.6, 2.2, -0.38); m2.scale.z = 0.4; }   // 가면
-      const lm = new THREE.Mesh(SP(0.16, 8, 6), lanM); lm.position.set(1.0, 2.1, 0.6); s.add(lm);
-      put(root, s, x, z, r);
-    }
-    // 동백 덤불 · 분홍 등 · 작은 연못 & 붉은 아치 다리
-    if (FM.Flora) for (const [x, z] of [[87.5, 37.6], [87.5, 32.4], [104.5, 38.8], [100.4, 41.2], [92.4, 41.2]]) { const g = new THREE.Group(); FM.Flora.bush(KK(g), ['rose', 'cosmos'], [0xe8302a, 0xff8a2a, 0xffd040], 0, 0, 0.55, 10, 0.9, x); put(root, g, x, z); }
-    for (const [x, z] of [[86.4, 31.2], [86.4, 38.8]]) { const st = new THREE.Group(); add(st, C(0.05, 0.06, 1.6), 0x2a2a2a, 0, 0.8, 0); add(st, B(0.45, 0.6, 0.45), new THREE.MeshLambertMaterial({ color: 0xffd0e0, emissive: 0xff7aa8, emissiveIntensity: 0.3 }), 0, 1.85, 0); add(st, geo('p2stR', () => new THREE.ConeGeometry(0.4, 0.3, 4)), 0x2a2a2a, 0, 2.3, 0).rotation.y = PI / 4; put(root, st, x, z); }
-    const pond = new THREE.Group(); const pw = new THREE.Mesh(new THREE.CircleGeometry(2.0, 24), new THREE.MeshPhongMaterial({ color: 0x4a8ab8, shininess: 100, transparent: true, opacity: 0.85 })); pw.rotation.x = -PI / 2; pw.position.y = 0.1; pond.add(pw); for (let i = 0; i < 14; i++) { const a = i / 14 * PI * 2; const s2 = add(pond, SP(0.25, 7, 5), tm('stone', 0x8a8682), Math.cos(a) * 2.0, 0.1, Math.sin(a) * 2.0); s2.scale.y = 0.5; }
-    const br = new THREE.Group(); for (let i = 0; i < 10; i++) { const t = (i + 0.5) / 10; const p2 = add(br, B(0.36, 0.06, 1.0), tm('plank', 0xc8823a), -1.6 + t * 3.2, 0.25 + Math.sin(t * PI) * 0.45, 0); p2.rotation.z = Math.cos(t * PI) * 0.45; } for (const z of [-0.5, 0.5]) for (let i = 0; i <= 4; i++) { const t = i / 4; add(br, C(0.05, 0.05, 0.6), red, -1.6 + t * 3.2, 0.55 + Math.sin(t * PI) * 0.45, z); } for (const z of [-0.5, 0.5]) { const pts = []; for (let t = 0; t <= 1.0001; t += 0.1) pts.push(new THREE.Vector3(-1.6 + t * 3.2, 0.85 + Math.sin(t * PI) * 0.45, z)); br.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 10, 0.05, 6), red)); }
-    pond.add(br); put(root, pond, 92.8, 38.4, 0.3);
+    // 노점 8 (서쪽 4 · 동쪽 4 — 손님은 가운데 쪽에서, 상인은 뒤쪽)
+    for (const t of P0.stalls) put(root, stall(t, lanM), t.x, t.z, t.s * PI / 2);
+    // 벤치 · 동백 · 분홍 등 · 노보리 깃발 · 연못 & 붉은 아치 다리
+    for (const [x, z, r] of [[X - 6.5, Z - 3, PI / 2], [X + 6.5, Z + 3, -PI / 2], [X - 6, Z + 13, PI], [X + 6, Z + 13, PI]]) put(root, bench(), x - Math.sin(r) * 0.2, z - Math.cos(r) * 0.2, r);
+    if (FM.Flora) for (const [x, z] of [[X - 12.5, Z - 13], [X - 8, Z - 13], [X + 8.5, Z - 13], [X + 12.8, Z - 13.2], [X - 13, Z + 13], [X + 13, Z + 13]]) { const g = new THREE.Group(); FM.Flora.bush(KK(g), ['rose', 'cosmos'], [0xe8302a, 0xff8a2a, 0xffd040], 0, 0, 0.6, 12, 0.95, x); put(root, g, x, z); }
+    for (const [x, z] of [[X - 3.4, Z + H - 1.2], [X + 3.4, Z + H - 1.2], [X + H - 1.2, Z - 8.2], [X + H - 1.2, Z - 1.8]]) { const st = new THREE.Group(); add(st, C(0.05, 0.06, 1.6), 0x2a2a2a, 0, 0.8, 0); add(st, B(0.45, 0.6, 0.45), new THREE.MeshLambertMaterial({ color: 0xffd0e0, emissive: 0xff7aa8, emissiveIntensity: 0.3 }), 0, 1.85, 0); add(st, geo('p2stR', () => new THREE.ConeGeometry(0.4, 0.3, 4)), 0x2a2a2a, 0, 2.3, 0).rotation.y = PI / 4; put(root, st, x, z); }
+    const NOB = [['夏祭', '#e83030'], ['金魚', '#2a6ad8'], ['花火', '#8a4ad8'], ['祭', '#e8902a']];
+    for (let i = 0; i < 8; i++) { const [tx, col] = NOB[i % 4]; const nb = new THREE.Group(); add(nb, C(0.03, 0.03, 3.4, 6), 0x8a7a6a, 0, 1.7, 0); const f = sign(tx, 0.6, 2.2, col, '#ffffff'); f.position.set(0.31, 2.1, 0.02); nb.add(f); const f2 = sign(tx, 0.6, 2.2, col, '#ffffff'); f2.position.set(0.31, 2.1, -0.02); f2.rotation.y = PI; nb.add(f2); put(root, nb, X - 13.6 + (i % 4) * 2.4 + (i >= 4 ? 17 : 0), Z + H + 0.9, 0); }
+    const pond = new THREE.Group(); const pw = new THREE.Mesh(new THREE.CircleGeometry(2.2, 24), new THREE.MeshPhongMaterial({ color: 0x4a8ab8, shininess: 100, transparent: true, opacity: 0.85 })); pw.rotation.x = -PI / 2; pw.position.y = 0.1; pond.add(pw);
+    for (let i = 0; i < 16; i++) { const a = i / 16 * PI * 2; const s2 = add(pond, SP(0.26, 7, 5), tm('stone', 0x8a8682), Math.cos(a) * 2.2, 0.1, Math.sin(a) * 2.2); s2.scale.y = 0.55; }
+    for (let i = 0; i < 4; i++) { const kf = add(pond, SP(0.07, 6, 5), [0xff5a2a, 0xffffff, 0xff8a2a, 0xffd84a][i], Math.cos(i * 1.7) * 1.1, 0.13, Math.sin(i * 1.7) * 1.1); kf.scale.set(1.8, 0.5, 0.8); }
+    const br = new THREE.Group(); for (let i = 0; i < 10; i++) { const t = (i + 0.5) / 10; const p2 = add(br, B(0.4, 0.06, 1.0), tm('plank', 0xc8823a), -1.8 + t * 3.6, 0.25 + Math.sin(t * PI) * 0.5, 0); p2.rotation.z = Math.cos(t * PI) * 0.45; } for (const z of [-0.5, 0.5]) for (let i = 0; i <= 4; i++) { const t = i / 4; add(br, C(0.05, 0.05, 0.6), red, -1.8 + t * 3.6, 0.55 + Math.sin(t * PI) * 0.5, z); }
+    pond.add(br); put(root, pond, X + 6.5, Z - 9.5, 0.3);
   }
 
   // ---------- 🎣 낚시 부두 ----------
@@ -254,7 +298,8 @@
   const FW_COLS = [0xff2050, 0xffb000, 0x20c0ff, 0x9a60ff, 0x30ff70, 0xff6a10, 0xff50c8];
   // 색이 들어간 불꽃 입자 (가운데 하양 → 바깥 색 번짐)
   const fwTex = col => FM.PM.ctex('fw' + col, 64, 64, (c) => { const h = '#' + col.toString(16).padStart(6, '0'); const gr = c.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.14, h); gr.addColorStop(0.4, h + '66'); gr.addColorStop(1, h + '00'); c.fillStyle = gr; c.fillRect(0, 0, 64, 64); });
-  function launch(n = 6, cx = 96, cz = 35, spread = 14) {
+  function launch(n = 6, cx, cz, spread = 16) {
+    if (cx === undefined) { const m = FM.MAP.P.matsuri; cx = m.x; cz = m.z - 24; }
     if (!SCENE) return;
     for (let k = 0; k < n; k++) setTimeout(() => {
       const N = 150, pos = new Float32Array(N * 3), vel = [];
@@ -407,7 +452,7 @@
             }));
           });
           // 🌱 텃밭
-          if (d(-115, 50) < 8) {
+          if (d(FM.MAP.P.farm.x, FM.MAP.P.farm.z) < 8) {
             const fm = farm(); let bi = -1, bd = 9; BEDS.forEach(([x, z], i) => { const dd = d(x, z); if (dd < bd) { bd = dd; bi = i; } });
             const b = fm.beds[bi];
             if (bi >= 0 && bd < 3) {
@@ -417,7 +462,7 @@
             }
           }
           // 🏮 마츠리
-          if (d(96, 35) < 13) {
+          if (d(MP().x, MP().z) < 17) {
             const night = h >= 18 || h < 2;
             addOpt(1.9, night ? '🎆 불꽃놀이 쏘아 올리기 (50🪙)' : '🎆 불꽃놀이 (밤에만 · 18시 이후)', () => {
               if (!night) return toast('🌙 불꽃놀이는 밤에 쏘아 올릴 수 있어요');
@@ -427,11 +472,23 @@
               const pid = Soc.partnerOf(P), mate = pid && Sim.byId(pid); if (mate && nb.includes(mate)) { Soc.addRomance(mate.id, P, 8); Sim.say(mate, sty(mate, '우와... 너랑 같이 봐서 더 예쁘다 💕'), 4); }
               toast(`🎆 펑! 펑! 밤하늘에 불꽃이 피었어요${nb.length ? ` · ${nb.length}명이 함께 봤어요` : ''}`);
             });
-            if (d(96, 32.6) < 3.5) addOpt(2.0, '🥁 야구라 북 치기', () => { p.pose = 'drums'; setTimeout(() => { p.pose = null; }, 3500); sfx('drum'); const nb = st.villagers.filter(v => v.loc === 'island' && Math.hypot(v.x - p.x, v.z - p.z) < 14 && !v.sceneId).slice(0, 4); nb.forEach(v => Sim.emote(v, '🥁', 3)); toast('🥁 둥! 둥! 축제 분위기가 달아올라요'); });
-            if (d(89.2, 31) < 3) addOpt(2.0, '🐟 금붕어 뜨기 (20🪙)', () => { if (p.coins < 20) return toast('코인이 부족해요'); p.coins -= 20; const n = Math.random() < 0.35 ? 0 : 1 + ((Math.random() * 3) | 0); toast(n ? `🐟 금붕어 ${n}마리를 건졌어요! 뜰채가 아직 멀쩡해요` : '💦 뜰채 종이가 찢어졌어요... 한 번 더?'); });
-            if (d(94.6, 31) < 3) addOpt(2.0, '🐙 타코야키 사 먹기 (25🪙)', () => { if (p.coins < 25) return toast('코인이 부족해요'); p.coins -= 25; p.stamina = Math.min(100, (p.stamina || 0) + 18); toast('🐙 앗 뜨거! 겉바속촉 타코야키 (스태미나 +18)'); });
-            if (d(106.2, 31) < 3) addOpt(2.0, '🍭 솜사탕 사기 (15🪙)', () => { if (p.coins < 15) return toast('코인이 부족해요'); p.coins -= 15; p.stamina = Math.min(100, (p.stamina || 0) + 8); toast('🍭 구름처럼 폭신한 솜사탕!'); });
-            if (d(89.2, 39.4) < 3) addOpt(2.0, '🎯 사격 게임 (20🪙)', () => { if (p.coins < 20) return toast('코인이 부족해요'); p.coins -= 20; const hit = (Math.random() * 6) | 0; if (hit >= 4) { Soc.giveItem('plush'); toast(`🎯 ${hit}발 명중! 경품으로 곰 인형을 받았어요 🧸`); } else toast(`🎯 ${hit}발 명중... 아깝다!`); });
+            if (d(MP().x, MP().z + 3.0) < 2.6) addOpt(2.0, '🥁 야구라 북 치기', () => { p.pose = 'drums'; setTimeout(() => { p.pose = null; }, 3500); sfx('drum'); const nb = st.villagers.filter(v => v.loc === 'island' && Math.hypot(v.x - p.x, v.z - p.z) < 14 && !v.sceneId).slice(0, 4); nb.forEach(v => Sim.emote(v, '🥁', 3)); toast('🥁 둥! 둥! 축제 분위기가 달아올라요'); });
+            for (const t of MP().stalls) {
+              if (d(t.cx, t.z) > 2.4) continue;
+              const vend = FM.Ev && FM.Ev.staffById && FM.Ev.staffById('s_yatai_' + t.k);
+              const buy = (price, fn) => () => { if (p.coins < price) return toast('코인이 부족해요'); p.coins -= price; sfx('coin'); if (vend) { Sim.emote(vend, pick(['😊', '🙇', '✨']), 2); } fn(); };
+              const A = {
+                goldfish: ['🐟 금붕어 뜨기 (20🪙)', 20, () => { const n = Math.random() < 0.35 ? 0 : 1 + ((Math.random() * 3) | 0); toast(n ? `🐟 금붕어 ${n}마리를 건졌어요!` : '💦 앗, 뜰채가 찢어졌어요...'); }],
+                takoyaki: ['🐙 타코야키 사 먹기 (25🪙)', 25, () => { p.stamina = Math.min(100, (p.stamina || 0) + 18); toast('🐙 앗 뜨거! 겉바속촉 타코야키 (스태미나 +18)'); }],
+                cotton: ['🍭 솜사탕 사기 (15🪙)', 15, () => { p.stamina = Math.min(100, (p.stamina || 0) + 8); toast('🍭 구름처럼 폭신한 솜사탕!'); }],
+                yakisoba: ['🍜 야키소바 사 먹기 (30🪙)', 30, () => { p.stamina = Math.min(100, (p.stamina || 0) + 25); toast('🍜 철판에서 갓 볶은 야키소바! (스태미나 +25)'); }],
+                shooting: ['🎯 사격 게임 (20🪙)', 20, () => { const hit = (Math.random() * 6) | 0; if (hit >= 4) { Soc.giveItem('plush'); toast(`🎯 ${hit}발 명중! 인형 경품 획득 🧸`); } else toast(`🎯 ${hit}발 명중... 아쉬워요!`); }],
+                kakigori: ['🍧 빙수 사 먹기 (20🪙)', 20, () => { p.stamina = Math.min(100, (p.stamina || 0) + 12); toast(pick(['🍧 딸기 시럽 빙수! 머리가 띵~', '🍧 블루하와이 빙수! 혀가 파래졌어요'])); }],
+                ringo: ['🍎 사과사탕 사기 (20🪙)', 20, () => { p.stamina = Math.min(100, (p.stamina || 0) + 10); toast('🍎 반짝반짝 새빨간 사과사탕!'); }],
+                omen: ['🎭 축제 가면 사기 (40🪙)', 40, () => { const m = pick(['여우', '고양이', '도깨비', '토끼', '히어로']); toast(`🎭 ${m} 가면을 샀어요! 주민들이 깜짝 놀랄지도?`); const nb = st.villagers.filter(v => v.loc === 'island' && Math.hypot(v.x - p.x, v.z - p.z) < 10).slice(0, 3); nb.forEach(v => Sim.emote(v, pick(['😆', '😲', '🦊']), 3)); }],
+              }[t.k];
+              if (A) addOpt(2.0, A[0], buy(A[1], A[2]));
+            }
           }
           // 🎣 부두
           if (onPier(p.x, p.z) || d(-76, 86) < 5) {

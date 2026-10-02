@@ -122,13 +122,13 @@
     desc: '승부욕이 강한 주민들의 자존심 싸움터' });
   place('sushi', { name: '미식 골목: 24시 회전초밥', district: 'EAST', x: 60, z: 50, bld: { type: 'restaurant', w: 10, d: 8, h: 5, color: 0xf4e1c1 }, door: [60, 45.6], interior: 'sushi_in', tags: ['food'] });
   place('pub', { name: '미식 골목: 레트로 차이니스 펍', district: 'EAST', x: 78, z: 52, bld: { type: 'restaurant', w: 10, d: 8, h: 5, color: 0xc93a2a }, door: [78, 47.6], interior: 'pub_in', tags: ['food'] });
-  place('club', { name: '올나잇 라이브 클럽 & K-POP 무대 "더 베이스먼트"', district: 'EAST', x: 102, z: 50, bld: { type: 'club', w: 10, d: 8, h: 4 }, door: [102, 45.6], interior: 'club_in', tags: ['party', 'stage'],
+  place('club', { name: '올나잇 라이브 클럽 & K-POP 무대 "더 베이스먼트"', district: 'EAST', x: 110, z: -36, bld: { type: 'club', w: 10, d: 8, h: 4 }, door: [110, -31.6], interior: 'club_in', tags: ['party', 'stage'],
     desc: '밤 22시가 되면 네온사인이 가장 밝게 빛나는 지하 클럽' });
   place('conv', { name: '24시 편의점', district: 'EAST', x: 46, z: 36, bld: { type: 'shop', w: 8, d: 6, h: 4, color: 0x7ad0a0 }, door: [46, 32.6], interior: 'conv_in', tags: ['food'] });
   place('alley', { name: '미식 골목', district: 'EAST', x: 69, z: 44, tags: ['food'], spots: [[69, 44, ['lantern']]] });
 
   // ===== 남쪽 공공 & 워터프론트 =====
-  place('office', { name: '메가 오피스 타워 & 테라스 탕비실', district: 'SOUTH', x: -24, z: 56, bld: { type: 'office', w: 16, d: 12, h: 34 }, door: [-15.6, 56], doorFace: 'east', interior: 'office_in', tags: ['office'],
+  place('office', { name: '메가 오피스 타워 & 테라스 탕비실', district: 'EAST', x: 114, z: -12, bld: { type: 'office', w: 16, d: 12, h: 34 }, door: [114, -5.6], interior: 'office_in', tags: ['office'],
     desc: '섬 주민들이 평일 낮(09:00~18:00) 정장을 입고 출근하여 일하고 월급(City Coin)을 버는 마천루' });
   place('cityhall', { name: '시티 행정 복합 센터 & 법원', district: 'SOUTH', x: -44, z: 72, bld: { type: 'cityhall', w: 18, d: 10, h: 10 }, door: [-44, 67.6], doorFace: 'north', interior: 'hall_in', tags: ['cityhall'],
     desc: '주민들의 공식적인 신분 변화, 민원 신청, 갈등 조정이 이루어지는 행정의 중심지' });
@@ -158,21 +158,28 @@
     spots: [[-45.4, -90.6, ['onsen', 'bath'], { face: R90 }], [-43.2, -93.6, ['onsen', 'bath'], { face: Math.PI * 0.8 }], [-46.6, -93.4, ['onsen', 'bath'], { face: R90 * 0.5 }], [-42.6, -90.2, ['onsen', 'bath'], { face: -R90 }],
       [-39.8, -85.2, ['onsen', 'bench'], { seat: true, face: 0 }], [-21, -84.4, ['onsen', 'bench', 'quiet'], { seat: true, face: 0 }]],
     desc: '고지대 숲속, 달을 올려다보며 몸을 담그는 노천탕과 목조 대욕장 · 붉은 연회장' });
-  place('photo', { name: '추억 사진관 "포토 블루"', district: 'CORE', x: -28, z: 3, bld: { type: 'photostudio', w: 10, d: 8, h: 6 }, door: [-28, 7.6], interior: 'photo_in', tags: ['photo'],
-    spots: [[-32.4, 9.2, ['photo', 'bench'], { seat: true, face: 0 }]], desc: '네이비 & 화이트 외관의 사진관. 주민과 함께 표정 · 포즈를 골라 사진을 찍고 앨범에 모아요' });
+  place('photo', { name: '추억 사진관 "포토 블루"', district: 'EAST', x: 36, z: -20, bld: { type: 'photostudio', w: 10, d: 8, h: 6 }, door: [36, -15.6], interior: 'photo_in', tags: ['photo'],
+    spots: [[31.6, -14.2, ['photo', 'bench'], { seat: true, face: 0 }]], desc: '네이비 & 화이트 외관의 사진관. 주민과 함께 표정 · 포즈를 골라 사진을 찍고 앨범에 모아요' });
   place('busk', { name: '버스킹 무대 "블루 하모니"', district: 'SOUTH', x: 17, z: 58, r: 8, tags: ['busk', 'music', 'stage', 'party'],
     spots: [[17, 56.2, ['busk', 'stage'], { face: 0 }], [14.6, 56.4, ['busk_piano', 'stage'], { seat: true, face: 0 }], [12.8, 61.6, ['busk_seat', 'bench'], { seat: true, face: Math.PI }], [17, 62.2, ['busk_seat', 'bench'], { seat: true, face: Math.PI }],
       [21.2, 61.6, ['busk_seat', 'bench'], { seat: true, face: Math.PI }], [11.2, 58.6, ['busk_crowd'], { face: R90 }], [22.8, 58.6, ['busk_crowd'], { face: -R90 }]],
     desc: '하얀 회벽과 파란 줄무늬 차양의 산토리니풍 무대. 역 앞이라 오가는 주민이 발걸음을 멈춰요' });
-  place('farm', { name: '주민 텃밭 "초록 손"', district: 'WEST', x: -115, z: 50, r: 7, tags: ['farm', 'garden', 'quiet'],
-    spots: [[-117.6, 46.4, ['farm'], { face: 0 }], [-112.4, 46.4, ['farm'], { face: 0 }], [-117.6, 49.4, ['farm'], { face: 0 }], [-112.4, 49.4, ['farm'], { face: 0 }],
-      [-117.6, 52.4, ['farm'], { face: 0 }], [-112.4, 52.4, ['farm'], { face: 0 }], [-115, 55.6, ['farm', 'bench'], { seat: true, face: Math.PI }]],
+  place('farm', { name: '주민 텃밭 "초록 손"', district: 'NORTH', x: -110, z: -72, r: 7, tags: ['farm', 'garden', 'quiet'],
+    spots: [[-112.6, -75.6, ['farm'], { face: 0 }], [-107.4, -75.6, ['farm'], { face: 0 }], [-112.6, -72.6, ['farm'], { face: 0 }], [-107.4, -72.6, ['farm'], { face: 0 }],
+      [-112.6, -69.6, ['farm'], { face: 0 }], [-107.4, -69.6, ['farm'], { face: 0 }], [-110, -66.4, ['farm', 'bench'], { seat: true, face: Math.PI }]],
     desc: '나무 상자 텃밭 6칸 · 허수아비 · 공구 창고. 씨앗을 심고 물을 주면 며칠 뒤 수확해요' });
-  place('matsuri', { name: '여름 축제 마츠리 광장', district: 'EAST', x: 96, z: 35, r: 12, tags: ['matsuri', 'festival', 'party', 'food'],
-    spots: [[89.2, 31.2, ['yatai', 'food'], { face: Math.PI }], [94.6, 31.2, ['yatai', 'food'], { face: Math.PI }], [106.2, 31.2, ['yatai', 'food'], { face: Math.PI }], [89.2, 39.4, ['yatai', 'food'], { face: 0 }],
-      [96, 33.6, ['drum'], { face: 0 }], [91, 35, ['fireworks'], { face: Math.PI }], [93.5, 36.8, ['fireworks'], { face: Math.PI }], [99, 37, ['fireworks'], { face: Math.PI }], [101.6, 35, ['fireworks'], { face: Math.PI }],
-      [86.8, 35.4, ['matsuri', 'bench'], { seat: true, face: R90 }], [105.2, 39.2, ['matsuri', 'bench'], { seat: true, face: -R90 }]],
-    desc: '붉은 도리이 · 붉은 격자 울타리 · 야구라 북 · 노점과 초롱 줄. 밤엔 불꽃놀이!' });
+  // 마츠리 광장 (30×30 · 남쪽 · 동쪽 도리이) — 노점 8칸 (서쪽 4 · 동쪽 4), 노점마다 상인 NPC
+  const MX = 62, MZ = -23;
+  const MSTALLS = [
+    ['goldfish', '🐟 금붕어 뜨기', '#2a6ad8', -11, -9, 1], ['takoyaki', '🐙 타코야키', '#e83030', -11, -3.5, 1], ['cotton', '🍭 솜사탕', '#ff8ab0', -11, 2, 1], ['yakisoba', '🍜 야키소바', '#e8902a', -11, 7.5, 1],
+    ['shooting', '🎯 사격', '#2a8a4a', 11, -10.5, -1], ['kakigori', '🍧 빙수', '#3ab0d8', 11, 0, -1], ['ringo', '🍎 사과사탕', '#d82a4a', 11, 5.5, -1], ['omen', '🎭 가면 가게', '#8a4ad8', 11, 11, -1],
+  ].map(([k, n, c, dx, dz, s]) => ({ k, n, c, x: MX + dx, z: MZ + dz, s, vx: MX + dx - s * 0.85, cx: MX + dx + s * 1.25 }));
+  place('matsuri', { name: '여름 축제 마츠리 광장', district: 'EAST', x: MX, z: MZ, r: 16, tags: ['matsuri', 'festival', 'party', 'food'], stalls: MSTALLS,
+    spots: MSTALLS.map(t => [t.cx, t.z, ['yatai', 'food'], { face: -t.s * R90 }]).concat([
+      [MX, MZ + 2.2, ['drum'], { face: 0 }], [MX, MZ - 9.4, ['pray', 'matsuri'], { face: Math.PI }],
+      [MX - 5, MZ + 10.5, ['fireworks'], { face: Math.PI }], [MX - 2, MZ + 11.5, ['fireworks'], { face: Math.PI }], [MX + 2, MZ + 11.5, ['fireworks'], { face: Math.PI }], [MX + 5, MZ + 10.5, ['fireworks'], { face: Math.PI }], [MX - 3.5, MZ + 6.5, ['fireworks'], { face: Math.PI }], [MX + 3.5, MZ + 6.5, ['fireworks'], { face: Math.PI }],
+      [MX - 6.5, MZ - 3, ['matsuri', 'bench'], { seat: true, face: R90 }], [MX + 6.5, MZ + 3, ['matsuri', 'bench'], { seat: true, face: -R90 }], [MX - 6, MZ + 13, ['matsuri', 'bench'], { seat: true, face: Math.PI }], [MX + 6, MZ + 13, ['matsuri', 'bench'], { seat: true, face: Math.PI }]]),
+    desc: '붉은 도리이 두 개 · 신사 · 야구라 북 · 노점 8칸(상인들) · 초롱 줄 · 연못 다리. 밤엔 불꽃놀이!' });
   place('fishpier', { name: '낚시 대회 부두 "은빛 바늘"', district: 'SOUTH', x: -76, z: 98, tags: ['fish', 'sea', 'derby', 'quiet'],
     spots: [[-77.9, 93, ['fish', 'sea', 'derby'], { face: -R90 }], [-74.1, 95, ['fish', 'sea', 'derby'], { face: R90 }], [-77.9, 98, ['fish', 'sea', 'derby'], { face: -R90 }], [-74.1, 100, ['fish', 'sea', 'derby'], { face: R90 }],
       [-79.4, 108.4, ['fish', 'sea', 'derby'], { face: 0 }], [-76, 109.4, ['fish', 'sea', 'derby'], { face: 0 }], [-72.6, 108.4, ['fish', 'sea', 'derby'], { face: 0 }], [-73, 105.4, ['derby_board'], { face: -R90 }]],
@@ -214,7 +221,7 @@
     // 남쪽
     s_n: [0, 48], s_metro: [14, 46], s_off: [-12, 56], s_hall: [-44, 64], s_med: [36, 71], s_mid: [0, 70], s_deck: [0, 84], s_beach: [-30, 84], s_beachw: [-58, 84],
     s_pocha: [40, 78], s_ferry: [52, 92], s_light: [66, 92], s_hallE: [-20, 70], s_fw: [44.5, 92], s_hw: [-56.5, 64],
-    s_bar: [22, 84], s_pier: [-76, 85.2], n_onsen: [-30, -80], c_photo: [-28, 10], s_busk: [17, 53.5], w_farm: [-113, 60], e_matsuri: [96, 28], s_volley: [-17, 86], s_camp: [-54, 87.5], s_cot0: [47.5, 75.2], s_cot1: [64, 75.2], s_cot2: [80, 75.2], s_hbeach: [-72, 72.5], s_cen: [0, 75],
+    s_bar: [22, 84], s_pier: [-76, 85.2], n_onsen: [-30, -80], c_photo: [-28, 10], e_nw: [36, -2], e_photo: [36, -10], e_matS: [62, -2], e_off: [114, -1], e_x: [101, -2], e_x2: [101, -28], e_matE: [80, -28], e_club2: [110, -28], s_busk: [17, 53.5], w_farm: [-108, -62], e_matsuri: [96, 28], e_matIn: [62, -9], s_volley: [-17, 86], s_camp: [-54, 87.5], s_cot0: [47.5, 75.2], s_cot1: [64, 75.2], s_cot2: [80, 75.2], s_hbeach: [-72, 72.5], s_cen: [0, 75],
   };
   const E = [
     // 중앙 십자
@@ -237,7 +244,7 @@
     // 남쪽
     ['c_s', 's_n'], ['s_n', 's_metro'], ['s_n', 's_off'], ['s_n', 's_mid'], ['s_off', 's_hallE'], ['s_hallE', 's_hall'], ['s_hallE', 's_mid'], ['s_mid', 's_med'], ['s_mid', 's_deck'],
     ['s_deck', 's_beach'], ['s_beach', 's_beachw'], ['s_deck', 's_pocha'], ['s_pocha', 's_fw'], ['s_fw', 's_ferry'], ['s_ferry', 's_light'], ['s_metro', 's_mid'], ['s_hall', 's_hw'], ['s_hw', 's_beachw'],
-    ['s_deck', 's_bar'], ['s_beachw', 's_pier'], ['s_pier', 's_camp'], ['n_w', 'n_onsen'], ['n_onsen', 'n_g'], ['c_plw', 'c_photo'], ['c_photo', 'c_w'], ['s_metro', 's_busk'], ['s_busk', 's_mid'], ['w_lib', 'w_farm'], ['e_ar', 'e_matsuri'], ['e_matsuri', 'e_arc'], ['s_bar', 's_pocha'], ['s_deck', 's_volley'], ['s_volley', 's_beach'], ['s_beachw', 's_camp'], ['s_camp', 's_beach'],
+    ['s_deck', 's_bar'], ['s_beachw', 's_pier'], ['s_pier', 's_camp'], ['n_w', 'n_onsen'], ['n_onsen', 'n_g'], ['c_plw', 'c_photo'], ['c_photo', 'c_w'], ['s_metro', 's_busk'], ['s_busk', 's_mid'], ['g_w', 'w_farm'], ['e_ar', 'e_matsuri'], ['e_matsuri', 'e_arc'], ['c_ne1', 'e_nw'], ['e_nw', 'e_metro'], ['e_nw', 'e_photo'], ['e_nw', 'e_matS'], ['e_matS', 'e_mw'], ['e_matS', 'e_matIn'], ['e_matS', 'e_sky'], ['e_sky', 'e_x'], ['e_x', 'e_off'], ['e_x', 'e_x2'], ['e_x2', 'e_club2'], ['e_x2', 'e_matE'], ['s_bar', 's_pocha'], ['s_deck', 's_volley'], ['s_volley', 's_beach'], ['s_beachw', 's_camp'], ['s_camp', 's_beach'],
     ['e_md', 's_cot0'], ['s_pocha', 's_cot0'], ['s_cot0', 's_cot1'], ['s_cot1', 's_cot2'], ['w_flea', 's_hbeach'], ['s_hbeach', 's_hw'], ['s_mid', 's_cen'], ['s_cen', 's_deck'],
   ];
 
