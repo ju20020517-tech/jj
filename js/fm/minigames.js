@@ -22,7 +22,8 @@
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const day = () => Sim.time.day(), hr = () => Sim.time.hour();
-  const has = (v, k) => !!v && (v.keys || []).includes(k);
+  const kv = v => (v && v.keys ? Object.values(v.keys) : []);
+  const has = (v, k) => kv(v).includes(k);
   const face = (v, px = 18) => (FM.Face && v ? FM.Face.img(v, px) : '');
   const nameOf = id => (id === P ? S().player.name : (Sim.byId(id) || {}).name || '?');
   const sfx = k => { try { FM.Audio && FM.Audio.sfx && FM.Audio.sfx(k); } catch (e) { /* */ } };
@@ -114,7 +115,7 @@
     const st = S(), out = [], vs = st.villagers.filter(usable);
     const L1 = D.L1 || {};
     for (const v of vs.slice().sort(() => Math.random() - 0.5).slice(0, 4)) {
-      const k = (v.keys || []).find(x => L1[x]); if (!k) continue;
+      const k = kv(v).find(x => L1[x]); if (!k) continue;
       const wrong = Object.keys(L1).filter(x => x !== k).sort(() => Math.random() - 0.5).slice(0, 3);
       out.push([`우리 마을 ${v.name}의 성격은?`, [L1[k].name].concat(wrong.map(x => L1[x].name)), 0]);
     }
@@ -150,7 +151,7 @@
         const one = () => {
           if (k >= ppl.length) { st.bookClubDay = day(); const prize = 40 + good * 15; earn(prize); for (const v of ppl) { bond(v, 2 + good, '독서 모임'); Sim.emote(v, '📖', 3); } Sim.log('rel', `📖 도서관 일요 독서 모임: ${bk[0]} — ${ppl.map(v => v.name).join(', ')}와 함께 이야기를 나눴어요`, [P].concat(ppl.map(v => v.id)), 1);
             return modal('📖 독서 모임 끝!', `<div class="row big">${bk[0]}</div><div class="row">공감 포인트 ${good}/${ppl.length} · 다과 상품권 <b>${prize}🪙</b></div><div class="row muted">참석한 주민들과 한층 가까워졌어요.</div><div class="row"><button class="btn main" id="bcX">확인</button></div>`, b3 => { b3.querySelector('#bcX').onclick = () => UI().closeModal(); }); }
-          const v = ppl[k], key = (v.keys || []).find(z => LINES[z]) || 'EXTROVERT', best = { ROMANTIC: 0, ANXIOUS: 0, INTROVERT: 0, SCHOLARLY: 1, SNOB: 1, CRANKY: 2, LAZY: 2, ARTISTIC: 2, EXTROVERT: 1, ATHLETIC: 0 }[key] || 0;
+          const v = ppl[k], key = kv(v).find(z => LINES[z]) || 'EXTROVERT', best = { ROMANTIC: 0, ANXIOUS: 0, INTROVERT: 0, SCHOLARLY: 1, SNOB: 1, CRANKY: 2, LAZY: 2, ARTISTIC: 2, EXTROVERT: 1, ATHLETIC: 0 }[key] || 0;
           modal(`📖 ${bk[0]} — 이야기 나누기 (${k + 1}/${ppl.length})`, `<div class="row">${face(v, 40)}</div><div class="row big" style="font-size:16px">${esc(v.name)}: "${LINES[key]}"</div><div class="row" style="flex-direction:column;align-items:stretch"><button class="opt" data-r="0">💗 "맞아, 나도 그 마음 알 것 같아."</button><button class="opt" data-r="1">🧐 "그 부분, 이렇게도 읽히지 않아?"</button><button class="opt" data-r="2">😆 "ㅋㅋ 너답다! 그 얘기 더 해 줘."</button></div>`, b2 => {
             b2.querySelectorAll('[data-r]').forEach(y => y.onclick = () => { if (+y.dataset.r === best) { good++; Sim.emote(v, '💕', 2); UI().toast(`${v.name}: "역시 너랑 얘기하면 통해!"`); } else UI().toast(`${v.name}: "음, 그렇게 볼 수도 있겠다."`); k++; one(); });
           });
@@ -317,7 +318,7 @@
     if (!ms.length) return modal('⛪ 웨딩 플래너', `<div class="row big">💒</div><div class="row">지금 예정된 결혼식이 없어요.</div><div class="row muted">누군가 약혼하면 여기서 꽃 · 드레스 · 장식 · 음악 · 케이크 · 하객을 함께 고를 수 있어요.${Soc.partnerOf(P) ? ' (연인에게 청혼해 보는 건 어때요? 💍)' : ''}</div>`, b => {});
     const m = ms.find(x => x.spouse_a_id === P || x.spouse_b_id === P) || ms[0];
     const A = m.spouse_a_id, B = m.spouse_b_id; const plan = m.plan = m.plan || { flower: m.flower || 'rose', dress: 'classic', deco: 'candle', music: 'organ', cake: 'three', guests: [] };
-    const likes = new Set(); for (const id of [A, B]) { const v = Sim.byId(id); if (v && v.id !== P) for (const k of v.keys || []) for (const t of TASTE[k] || []) likes.add(t); }
+    const likes = new Set(); for (const id of [A, B]) { const v = Sim.byId(id); if (v && v.id !== P) for (const k of kv(v)) for (const t of TASTE[k] || []) likes.add(t); }
     const cost = () => Object.keys(WED).reduce((s, k) => s + (WED[k][1].find(o => o[0] === plan[k]) || [0, 0, 0])[2], 0) + plan.guests.length * 10;
     const fit = () => Object.keys(WED).filter(k => likes.has(plan[k])).length;
     const cands = st.villagers.filter(v => usable(v) && v.id !== A && v.id !== B).sort((a, b) => ((Soc.rel(b.id, A).friendship_point || 0) + (Soc.rel(b.id, B).friendship_point || 0)) - ((Soc.rel(a.id, A).friendship_point || 0) + (Soc.rel(a.id, B).friendship_point || 0))).slice(0, 14);
