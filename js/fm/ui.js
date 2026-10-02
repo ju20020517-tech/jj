@@ -178,7 +178,7 @@
   let talkV = null, typeTimer = null, vnLog = [], vnFull = '', vnShown = 0, vnDone = true, vnR = null;
   UI.talk = function (v) {
     if (!v || v.staff || v.visitor) return;
-    talkV = v; vnLog = [];
+    talkV = v; vnLog = []; vgOpen = null;
     G().talkFocus = v.id; G().target = null; G().autoPath = null;
     // 타임캡슐 파내기
     const cap = Ev.digCapsule && Ev.digCapsule(v);
@@ -208,15 +208,46 @@
     $('#vnNext').hidden = false;
     showOpts();
   }
+  // 대화 선택지 묶음: 많으면 카테고리 4~5칸 → 누르면 펼침 (기능은 그대로)
+  const VG = [
+    ['talk', '💬', '이야기', '근황 · 대화 · 칭찬 · 상담', ['news', 'chat', 'praise', 'consult', 'wMore', 'nickname', 'leak', 'petname']],
+    ['heart', '💗', '마음', '설레는 말 · 고백 · 데이트', ['flirt', 'confessD', 'dateMenu', 'propose', 'babyAsk', 'breakupP', 'coachC']],
+    ['gift', '🎁', '선물', '가방에서 골라 주기', ['gift']],
+    ['ask', '🙏', '부탁 · 함께', '부탁 · 도와주기 · 중재 · 초대', ['cmdList', 'indList', 'errand', 'cleanOrder', 'nudge', 'invite', 'joinIn', 'care', 'unfollow']],
+    ['baby', '👶', '육아', '우유 · 자장가 · 놀이', []],
+  ];
+  const vgOf = o => { if (/^baby:/.test(o.id)) return 'baby'; const g = VG.find(x => x[4].includes(o.id)); return g ? g[0] : null; };
+  let vgOpen = null;
   function showOpts() {
     const r = vnR, v = talkV, box = $('#vnOpts'); if (!r || !v || !box) return;
     const opts = r.options || [];
-    box.innerHTML = opts.map((o, i) => `<button data-i="${i}" class="${o.id === 'bye' ? 'bye' : ''}" ${o.disabled ? 'disabled title="' + esc(o.hint || '') + '"' : ''} style="animation-delay:${i * 0.03}s">${esc(o.label)}${o.disabled && o.hint ? `<small>${esc(o.hint)}</small>` : ''}</button>`).join('');
-    box.classList.toggle('many', opts.length > 7);
-    box.classList.toggle('many3', opts.length > 14);
+    const btn = (o, i, cls = '') => `<button data-i="${i}" class="${o.id === 'bye' ? 'bye' : ''} ${cls}" ${o.disabled ? 'disabled title="' + esc(o.hint || '') + '"' : ''} style="animation-delay:${i * 0.03}s">${esc(o.label)}${o.disabled && o.hint ? `<small>${esc(o.hint)}</small>` : ''}</button>`;
+    box.classList.remove('many', 'many3');
+    const grouped = opts.filter(o => vgOf(o)).length;
+    if (opts.length <= 6 || grouped < 4) {
+      // 짧은 선택지(대답 · 하위 메뉴)는 그대로, 한 줄에 하나
+      vgOpen = null;
+      box.innerHTML = `<div class="vg-list ${opts.length <= 3 ? 'one' : ''}">${opts.map((o, i) => btn(o, i)).join('')}</div>`;
+    } else if (vgOpen) {
+      const g = VG.find(x => x[0] === vgOpen);
+      const list = opts.map((o, i) => [o, i]).filter(([o]) => vgOf(o) === vgOpen);
+      box.innerHTML = `<div class="vg-head"><button data-back="1">◀ 뒤로</button>${g[1]} ${g[2]}</div><div class="vg-list ${list.length <= 3 ? 'one' : ''}">${list.map(([o, i]) => btn(o, i)).join('')}</div>`;
+    } else {
+      // 카테고리 + 따로 떠 있는 선택지(답해야 하는 것)는 위에 강조
+      const pins = opts.map((o, i) => [o, i]).filter(([o]) => !vgOf(o) && o.id !== 'bye' && o.id !== 'menu');
+      const cats = VG.map(g => [g, opts.filter(o => vgOf(o) === g[0])]).filter(([, l]) => l.length);
+      const bye = opts.findIndex(o => o.id === 'bye');
+      box.innerHTML = (pins.length ? `<div class="vg-list one">${pins.map(([o, i]) => btn(o, i, 'vg-pin')).join('')}</div>` : '') +
+        `<div class="vg-grid">${cats.map(([g, l], k) => l.length === 1 ? `<button class="vg-cat" data-i="${opts.indexOf(l[0])}" ${l[0].disabled ? 'disabled' : ''}><b>${g[1]} ${g[2]}</b><small>${esc(l[0].disabled && l[0].hint ? l[0].hint : g[3])}</small></button>`
+          : `<button class="vg-cat ${k === 0 ? 'hot' : ''}" data-g="${g[0]}"><b>${g[1]} ${g[2]}<em>${l.length}</em></b><small>${g[3]}</small></button>`).join('')}</div>` +
+        (bye >= 0 ? btn(opts[bye], bye) : '');
+    }
     box.querySelectorAll('button').forEach(b => b.onclick = e => {
       e.stopPropagation();
+      if (b.dataset.back) { vgOpen = null; return showOpts(); }
+      if (b.dataset.g) { vgOpen = b.dataset.g; FM.Audio.sfx('blip'); return showOpts(); }
       const o = r.options[+b.dataset.i];
+      vgOpen = null;
       vnLog.push({ who: st().player.name, text: o.label });
       if (o.input) { const val = prompt(o.label, ''); if (!val) return; return choose(v, o.id, val.slice(0, 12)); }
       if (o.id === 'gift' && !o.arg) return choose(v, 'gift');
