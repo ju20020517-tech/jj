@@ -90,6 +90,7 @@
     const groups = {}; const grp = d => groups[d] || (groups[d] = new THREE.Group());
     const lampPos = [];
     let seed = 0;
+    const nearDoor = (x, z, r) => Object.values(MAP.P).some(pl => pl.door && Math.hypot(pl.door[0] - x, pl.door[1] - z) < r);
     const polesByEdge = [];
     for (const [a, b] of MAP.E) {
       if ((a.startsWith('c_n') && b === 'c_nt') || (a === 'c_nt' && b === 'n_b')) continue;
@@ -110,7 +111,7 @@
       }
       // 전봇대 (주택가 · 번화가 · 남쪽): 한쪽 가장자리를 따라 16m 마다 + 전선
       if (POLE_DIST[T.district(A[0], A[1])] && !main && len > 14) {
-        for (let d = 2.5; d < len - 2; d += 16) { const x = A[0] + ux * d + nx * 1.9, z = A[1] + uz * d + nz * 1.9; if (T.blockedByBuilding(x, z, 0.5) || T.inWater(x, z) || T.height(x, z) < 0.6 || inGarden(x, z)) { poles.length = 0; continue; } const o = P.pole(); o.position.set(x, T.height(x, z), z); o.rotation.y = Math.atan2(ux, uz) + PI / 2; grp('poles').add(o); poles.push([x, T.height(x, z), z]); }
+        for (let d = 2.5; d < len - 2; d += 16) { const x = A[0] + ux * d + nx * 1.9, z = A[1] + uz * d + nz * 1.9; if (T.blockedByBuilding(x, z, 0.5) || T.inWater(x, z) || T.height(x, z) < 0.6 || inGarden(x, z) || nearDoor(x, z, 7.5)) { poles.length = 0; continue; } const o = P.pole(); o.position.set(x, T.height(x, z), z); o.rotation.y = Math.atan2(ux, uz) + PI / 2; grp('poles').add(o); poles.push([x, T.height(x, z), z]); }
         polesByEdge.push(poles.slice());
       }
     }
