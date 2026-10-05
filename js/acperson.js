@@ -474,7 +474,7 @@
     hime: { L: prof(spikes(70, 6, 22, 0, 1), 102, 108, 50), drape: { y: a => A(a) < 80 ? -0.24 : -0.84, t: 0.08, fw: 52 } },
     sidelong: { L: prof(sweep(spikes(52, 13, 11), 0.28), 104, 108, 58), part: -32, locks: [[64, 28, -0.48, 0.075]], drape: { y: -0.66, t: 0.08, fw: 52, curl: -0.08 } },
     pony: { L: prof(spikes(56, 15, 11, 0.5), 100, 110), locks: [[58, 28, -0.24, 0.05]], extra: [[sph(0, 0.38, -0.44, 0.08), 0.03], [cone([0, 0.36, -0.5], [0, 0.02, -0.7], 0.1, 0.12), 0.04], [cone([0, 0.02, -0.7], [0, -0.44, -0.62], 0.12, 0.02), 0.05]], ahoge: true },
-    twintail: { L: prof(spikes(64, 13, 12), 104, 110), locks: [[60, 28, -0.22, 0.05]], extra: [[mirror(cone([0.42, 0.06, -0.18], [0.66, -0.12, -0.26], 0.09, 0.08)), 0.04], [mirror(cone([0.66, -0.12, -0.26], [0.6, -0.62, -0.2], 0.08, 0.015)), 0.05]] },
+    twintail: { low: -1.0, L: prof(spikes(64, 13, 12), 104, 110), locks: [[60, 28, -0.22, 0.05]], extra: [[mirror(cone([0.44, 0.12, -0.16], [0.53, -0.15, -0.16], 0.1, 0.1)), 0.05], [mirror(cone([0.53, -0.15, -0.16], [0.52, -0.82, -0.12], 0.1, 0.055)), 0.06], [mirror(sph(0.52, -0.84, -0.12, 0.055)), 0.03]] },
     bun: { L: prof(spikes(56, 13, 9, 0.5), 100, 108), locks: [[60, 28, -0.3, 0.04]], extra: [[sph(0, 0.58, -0.12, 0.16), 0.05]] },
     braids: { L: prof(spikes(66, 11, 12), 104, 110), part: 0, extra: [[mirror(chain([[0.44, -0.1, -0.06], [0.46, -0.2, -0.02], [0.47, -0.3, 0.01], [0.48, -0.4, 0.03], [0.48, -0.5, 0.05], [0.48, -0.6, 0.06]], 0.07, 0.045)), 0.03]] },
     pixie: { L: prof(sweep(spikes(62, 13, 12), 0.12), 98, 108, 56), locks: [[66, 26, -0.16, 0.05]], ahoge: true },
@@ -496,6 +496,10 @@
     curlyshort: { r: [0.55, 0.53, 0.53], L: prof(spikes(64, 11, 14), 100, 112), bump: (az, y, pol) => 0.024 * Math.pow(A(Math.sin(az * D2R * 7) * Math.sin(pol * D2R * 8)), 0.6) },
     manbun: { L: prof(sweep(spikes(48, 11, 9), 0.1), 98, 108), part: 24, extra: [[sph(0, 0.42, -0.4, 0.1), 0.04]] },
     bowl: { r: [0.55, 0.52, 0.53], L: prof(spikes(70, 12, 16), 100, 112) },
+    // 사용자 스케치대로: 사선으로 이마를 덮는 앞머리 / 모자 밑으로 삐져나온 가닥 / 보송한 덥수룩 머리 + 바보털
+    sweptfringe: { L: prof(sweep(spikes(56, 16, 12, 0, 0.8), 0.48), 102, 110, 66), part: -50, locks: [[70, 22, -0.16, 0.05]] },
+    capfringe: { L: prof(spikes(80, 18, 9, 0, 0.8), 106, 112, 60), locks: [[62, 30, -0.06, 0.05, 1.32], [78, 26, -0.14, 0.055, 1.3]] },
+    messyshort: { r: [0.56, 0.54, 0.54], L: prof(spikes(78, 20, 12, 0.2, 0.8), 106, 114, 62), locks: [[62, 28, -0.12, 0.06, 1.18], [80, 24, -0.16, 0.06, 1.2]], ahoge: true },
     wavyshort: { L: prof(spikes(62, 15, 9, 0.25), 100, 112), bump: (az, y) => Math.sin(az * D2R * 9) * 0.014 * clamp(y + 0.2, 0, 1), locks: [[66, 24, -0.2, 0.06]] },
     mohawk: { r: [0.47, 0.45, 0.455], L: prof(() => 48, 92, 104), extra: [[ell(0, 0.5, -0.02, 0.07, 0.16, 0.44), 0.06]] },
     tiedlong: { L: prof(sweep(spikes(58, 13, 11), 0.16), 104, 112, 56), part: -24, locks: [[64, 26, -0.3, 0.06]], extra: [[cone([0, -0.16, -0.5], [0, -0.64, -0.48], 0.08, 0.02), 0.05]] },
@@ -504,7 +508,7 @@
   };
   const HAIR_NAMES = {
     bobbang: '일자 단발', longbang: '긴 생머리', longwave: '긴 웨이브', hime: '히메컷', sidelong: '옆가르마 롱', pony: '포니테일', twintail: '양갈래', bun: '똥머리', braids: '양 땋은 머리',
-    pixie: '숏컷', lowtwin: '낮은 양갈래', sidepony: '옆 포니테일', curlybob: '뽀글 단발', curtainmid: '커튼뱅 중단발', odango: '양쪽 똥머리', lowbun: '쪽머리', halfup: '반묶음',
+    pixie: '숏컷', sweptfringe: '사선 앞머리', capfringe: '삐죽 앞머리', messyshort: '보송 덥수룩', lowtwin: '낮은 양갈래', sidepony: '옆 포니테일', curlybob: '뽀글 단발', curtainmid: '커튼뱅 중단발', odango: '양쪽 똥머리', lowbun: '쪽머리', halfup: '반묶음',
     boyshort: '기본 숏', spiky: '삐죽 머리', sideswept: '옆으로 넘긴 머리', centerpart: '5:5 가르마', shaggy: '덥수룩 미디엄', buzz: '버즈컷', slick: '올백', curlyshort: '곱슬 숏',
     manbun: '맨번', bowl: '바가지 머리', wavyshort: '웨이브 숏', mohawk: '모히칸', tiedlong: '묶은 장발', cloud: '뭉게 파마', grandpa: '할아버지 머리',
   };
@@ -513,7 +517,7 @@
   function hairGeo(style, hatOn) {
     const sp = hatOn && HAIR[style].ahoge ? Object.assign({}, HAIR[style], { ahoge: false }) : HAIR[style];
     if (sp !== HAIR[style]) style += ':nohg';
-    const lowest = sp.drape ? -0.92 : sp.extra ? -0.8 : -0.5;
+    const lowest = sp.low != null ? sp.low : sp.drape ? -0.92 : sp.extra ? -0.8 : -0.5;
     return sdfGeo('hair:' + style, hairSDF(sp), [-0.72, lowest, -0.78], [0.72, 0.75, 0.62], 0.017, g => {
       const n = g.attributes.normal, p = g.attributes.position, c = g.attributes.color.array, uv = new Float32Array(n.count * 2);
       for (let i = 0; i < n.count; i++) {
