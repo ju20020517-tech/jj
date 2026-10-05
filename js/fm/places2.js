@@ -50,7 +50,7 @@
   }
 
   // 명소 안의 원래 나무는 치움 (소품 자리)
-  const RECTS = [[9, 25, 51, 65], [-117, -103, -79, -64], [45, 79, -40, -6], [-50, -20, -100, -82], [-80, -70, 84, 90], [29, 43, -26, -12], [103, 117, -42, -26], [104, 124, -20, -2]];
+  const RECTS = [[-42, -18, 44, 66], [-117, -103, -79, -64], [45, 79, -40, -6], [-50, -20, -100, -82], [-80, -70, 84, 90], [29, 43, -26, -12], [103, 117, -42, -26], [104, 124, -20, -2]];
   const inR = (x, z) => RECTS.some(([a, b, c, d]) => x > a && x < b && z > c && z < d);
   if (FM.DECOR) { const a = FM.DECOR.trees; for (let i = a.length - 1; i >= 0; i--) if (inR(a[i].x, a[i].z)) a.splice(i, 1); const fl = FM.DECOR.flowers; for (let i = fl.length - 1; i >= 0; i--) if (inR(fl[i].x, fl[i].z)) fl.splice(i, 1); }
   if (Sim.SPOTS) { const Sp = Sim.SPOTS; for (let i = Sp.length - 1; i >= 0; i--) if (!Sp[i].place && inR(Sp[i].x, Sp[i].z)) Sp.splice(i, 1); }
@@ -79,35 +79,69 @@
 
   // ---------- 🎤 산토리니 버스킹 무대 ----------
   function buildBusk(root) {
-    const g = new THREE.Group(); const X = 17, Z = 58;
-    const cob = ctexMat('p2cobW', 128, 128, (c, w, h) => { c.fillStyle = '#9a9a9e'; c.fillRect(0, 0, w, h); for (let y = 0; y < h + 18; y += 18) for (let x = ((y / 18) % 2) * 12 - 12; x < w + 12; x += 24) { c.fillStyle = `rgb(${236 + ((x + y) % 14)},${236 + ((x + y) % 14)},${234})`; c.beginPath(); c.ellipse(x + 10, y + 8, 10.5, 7.5, 0.1, 0, 7); c.fill(); } }, [5, 5]);
-    disc(root, X, Z, 7.6, cob);
-    // 무대 (흰 단 + 파란 타일 띠) · 흰 산토리니 벽
-    put(root, (() => { const s = new THREE.Group(); add(s, B(5.2, 0.45, 2.6), 0xfbfbf6, 0, 0.22, 0); add(s, B(5.22, 0.2, 0.02), tm('tile', 0x3a6ad8), 0, 0.22, 1.31); for (let i = 0; i < 3; i++) add(s, B(1.6, 0.15, 0.4), 0xf0f0ec, 0, 0.07 + i * 0.0, 1.5 + i * 0.0); return s; })(), X, 55.6);
-    const wall = new THREE.Group();
-    add(wall, B(7.2, 3.0, 0.5), tm('stucco', 0xfbfbf6), 0, 1.5, 0); add(wall, B(2.4, 1.2, 0.5), tm('stucco', 0xfbfbf6), -1.2, 3.4, 0); const dome = add(wall, SP(1.0, 16, 8), 0x2a5ad0, -1.2, 4.0, 0); dome.scale.y = 0.6;
-    for (const x of [-2.6, 1.4, 2.8]) { add(wall, B(0.6, 1.0, 0.06), 0x2a5ad0, x, 1.8, 0.27); const a = add(wall, geo('p2arch', () => new THREE.CircleGeometry(0.3, 12, 0, PI)), 0x2a5ad0, x, 2.3, 0.28); void a; }
-    add(wall, B(1.0, 2.0, 0.06), 0x2a5ad0, 0.0, 1.0, 0.27);
-    for (let i = 0; i < 26; i++) add(wall, SP(0.16, 6, 5), [0xe83a8a, 0xff6aaa, 0xd82a7a][i % 3], 2.2 + (i % 6) * 0.22 - 0.5, 2.8 + Math.floor(i / 6) * 0.2 - (i % 6) * 0.08, 0.3);   // 부겐빌레아
-    for (let i = 0; i < 8; i++) add(wall, SP(0.2, 6, 5), tm('leaf', 0x3a7a3a), 1.7 + (i % 4) * 0.35, 2.4 + Math.floor(i / 4) * 0.4, 0.28).scale.z = 0.5;
-    const lights = []; for (let i = 0; i <= 12; i++) { const t = i / 12; const b = add(wall, SP(0.07, 6, 5), glow(0xfff4c8), -3.4 + t * 6.8, 2.9 - Math.sin(t * PI) * 0.35, 1.6); lights.push(b); }
-    put(root, wall, X, 54.0);
-    // 흰 업라이트 피아노 + 의자
-    const pn = new THREE.Group(); add(pn, B(1.5, 1.25, 0.6), 0xfbfaf6, 0, 0.62, 0); add(pn, B(1.4, 0.06, 0.32), 0xfbfaf6, 0, 0.78, 0.42); for (let i = 0; i < 14; i++) add(pn, B(0.09, 0.02, 0.18), i % 3 === 2 ? 0x1a1a1a : 0xffffff, -0.6 + i * 0.093, 0.82, 0.46); add(pn, B(0.4, 0.3, 0.02), 0xfbf6e8, 0, 1.08, 0.31); add(pn, B(0.7, 0.4, 0.4), 0xfbfaf6, 0, 0.2, 0.9);
-    put(root, pn, 14.6, 55.6, 0, 0.45);
-    // 줄무늬 커피 노점 · 파란 공중전화 · 이정표 · 플라밍고 · 서핑보드 · 가로등 · 청록 난간
-    const kiosk = new THREE.Group(); add(kiosk, B(2.0, 1.0, 0.8), new THREE.MeshLambertMaterial({ map: FM.AC.stripe('#2a5ad0', '#ffffff') }), 0, 0.5, 0); add(kiosk, B(2.1, 0.06, 0.9), 0xfbfbf6, 0, 1.03, 0); for (const s of [-1, 1]) add(kiosk, B(0.06, 1.4, 0.06), 0xfbfbf6, s * 0.95, 1.75, -0.35); const aw = add(kiosk, B(2.3, 0.06, 1.1), new THREE.MeshLambertMaterial({ map: FM.AC.stripe('#2a5ad0', '#ffffff') }), 0, 2.45, 0.1); aw.rotation.x = 0.2; add(kiosk, B(0.4, 0.45, 0.35), 0x23365e, -0.5, 1.28, -0.1); add(kiosk, C(0.06, 0.05, 0.1), 0xffffff, 0.2, 1.11, 0.1); add(kiosk, C(0.06, 0.05, 0.1), 0x2a5ad0, 0.45, 1.11, 0.05);
-    put(root, kiosk, 11.0, 54.8, 0.25);
-    const booth = new THREE.Group(); add(booth, B(0.9, 2.3, 0.9), 0x1a4ab8, 0, 1.15, 0); add(booth, B(0.7, 1.5, 0.02), glass(0xcfe8ff), 0, 1.2, 0.46); add(booth, B(1.0, 0.15, 1.0), 0x1a4ab8, 0, 2.38, 0); const bs = sign('TELEPHONE', 0.7, 0.14, '#1a4ab8', '#ffffff'); bs.position.set(0, 2.15, 0.47); booth.add(bs); put(root, booth, 23.2, 55.4, -0.3);
-    const post = new THREE.Group(); add(post, C(0.06, 0.07, 2.8), 0xfbf6e8, 0, 1.4, 0); [['🏖️ 해변', 0.3], ['♨️ 온천', -0.25], ['🎆 마츠리', 0.4], ['📸 사진관', -0.35], ['🎣 낚시 부두', 0.2]].forEach(([t, r], i) => { const s = sign(t, 1.1, 0.24, '#e8f4fb', '#2a5ad0'); s.position.set(0.45, 2.5 - i * 0.32, 0); s.rotation.y = r; post.add(s); }); put(root, post, 24.2, 60.8);
-    const fl = new THREE.Group(); add(fl, SP(0.25, 10, 8), 0xff8ab0, 0, 1.1, 0).scale.set(1.3, 0.9, 0.8); const nk = add(fl, C(0.04, 0.05, 0.6), 0xff8ab0, 0.2, 1.5, 0); nk.rotation.z = -0.3; add(fl, SP(0.1, 8, 6), 0xff8ab0, 0.32, 1.78, 0); add(fl, C(0.015, 0.015, 0.9), 0xff8ab0, -0.05, 0.45, 0); put(root, fl, 22.4, 53.6);
-    const sb = new THREE.Group(); const brd = add(sb, SP(0.5, 14, 8), new THREE.MeshLambertMaterial({ map: FM.AC.stripe('#2a5ad0', '#ffffff') })); brd.scale.set(0.4, 2.2, 0.08); brd.position.y = 1.05; brd.rotation.z = 0.1; put(root, sb, 20.6, 53.7);
-    for (const [x, z] of [[13.4, 54.6], [20.6, 54.6], [10.6, 61.8], [23.4, 61.8]]) { const lp = new THREE.Group(); add(lp, C(0.07, 0.1, 3.0), 0xfbf6e8, 0, 1.5, 0); add(lp, B(0.36, 0.5, 0.36), glass(0xfff4d8), 0, 3.2, 0); const b = add(lp, SP(0.12, 8, 6), glow(0xffe0a0), 0, 3.2, 0); b.userData.lampBulb = true; add(lp, geo('p2lc', () => new THREE.ConeGeometry(0.3, 0.25, 4)), 0xfbf6e8, 0, 3.55, 0).rotation.y = PI / 4; put(root, lp, x, z); }
-    const rail = (len) => { const r = new THREE.Group(); for (const y of [0.45, 0.95]) add(r, B(len, 0.1, 0.1), 0x2aa8a0, 0, y, 0); for (let i = 0; i <= Math.round(len / 0.9); i++) add(r, B(0.14, 1.1, 0.14), 0x2aa8a0, -len / 2 + i * len / Math.round(len / 0.9), 0.55, 0); return r; };
-    put(root, rail(4.6), 11.2, 63.8, 0.15); put(root, rail(4.6), 22.8, 63.8, -0.15);
-    for (const [x, z] of [[12.0, 64.6], [22.0, 64.6]]) { const pl = new THREE.Group(); add(pl, B(1.2, 0.5, 0.5), 0xfbfbf6, 0, 0.25, 0); if (FM.Flora) FM.Flora.bush(KK(pl), ['daisy', 'bell'], [0xffffff, 0x6a9aff, 0x2a5ad0], 0, 0, 0.4, 9, 0.85, x); put(root, pl, x, z); }
+    const P0 = FM.MAP.P.busk, X = P0.x, Z = P0.z, SZ = Z - 3;   // 무대 중심
+    const g = new THREE.Group();
+    // 바닥: 붉은 벽돌 원형 광장 + 가운데 원형 무늬
+    const brick = ctexMat('p2brickF', 128, 128, (c, w, h) => { c.fillStyle = '#b8684a'; c.fillRect(0, 0, w, h); for (let y = 0; y < h; y += 16) for (let x = ((y / 16) % 2) * 16 - 16; x < w; x += 32) { c.fillStyle = ['#c4724e', '#b06042', '#c87a58', '#a85a3e'][((x + y) / 16 | 0) % 4]; c.fillRect(x + 1, y + 1, 30, 14); } }, [6, 6]);
+    disc(root, X, Z, 10.5, brick);
+    const ring = ctexMat('p2ringF', 128, 128, (c, w, h) => { c.fillStyle = '#e8dcc4'; c.fillRect(0, 0, w, h); c.strokeStyle = '#c8b898'; c.lineWidth = 3; for (let r = 8; r < 64; r += 12) { c.beginPath(); c.arc(64, 64, r, 0, 7); c.stroke(); } });
+    disc(root, X, Z + 1.5, 3.2, ring, 0.085);
+    // 계단식 관객석 (남쪽 반원 3단, 석재 + 원목 좌판)
+    for (let k = 0; k < 3; k++) {
+      const R = 5.6 + k * 1.3, h = 0.32 + k * 0.32, segs = 9;
+      for (let i = 0; i < segs; i++) {
+        const a0 = 0.32 + (i / segs) * (PI - 0.64), a1 = 0.32 + ((i + 1) / segs) * (PI - 0.64), am = (a0 + a1) / 2, len = R * (a1 - a0) + 0.05;
+        const st = new THREE.Group(); add(st, B(len, h, 1.2), tm('stone', 0xd8d0c0), 0, h / 2, 0); add(st, B(len, 0.07, 1.0), tm('plank', 0xb8824a), 0, h + 0.035, 0.05);
+        put(root, st, X + Math.cos(am) * R, SZ + Math.sin(am) * R, PI / 2 - am + PI / 2);
+      }
+    }
+    // 무대 (원목 데크, 앞 계단, 테두리 전구)
+    const stg = new THREE.Group();
+    add(stg, B(7.6, 0.55, 3.8), tm('stone', 0x8a8a90), 0, 0.27, 0);
+    add(stg, B(7.8, 0.08, 4.0), tm('plank', 0xa8743e), 0, 0.59, 0);
+    for (let i = 0; i < 2; i++) add(stg, B(2.4, 0.2, 0.36), tm('plank', 0xa8743e), 0, 0.1 + i * 0.2, 2.15 - i * 0.36);
+    for (let i = 0; i < 20; i++) { const bl = add(stg, SP(0.06, 6, 5), glow(0xfff0b8), -3.8 + i * 0.4, 0.6, 2.0); bl.userData.noBake = true; }
+    put(root, stg, X, SZ);
+    // 조개 모양 음향 지붕 (반원 셸 + 리브) — 하늘색 → 흰색 줄무늬
+    const shell = new THREE.Group();
+    const shM = new THREE.MeshLambertMaterial({ map: FM.AC.stripe('#7ab8e8', '#fbfbf6'), side: THREE.DoubleSide });
+    const sg = new THREE.SphereGeometry(4.6, 24, 12, PI, PI, 0, PI / 2); const sh = new THREE.Mesh(sg, shM); sh.scale.set(1, 1.05, 0.8); sh.position.y = 0.6; sh.castShadow = true; shell.add(sh);
+    for (let i = 0; i <= 8; i++) { const r = add(shell, geo('p2rib', () => new THREE.TorusGeometry(4.62, 0.06, 6, 20, PI / 2)), 0xfbfbf6, 0, 0.6, 0); r.rotation.set(0, PI + i / 8 * PI, PI / 2); r.rotation.order = 'YZX'; r.scale.set(1, 1.05, 0.8); }
+    add(shell, B(9.4, 0.4, 0.4), 0xfbfbf6, 0, 0.6, 0.05);
+    const nm = sign('🎤 BLUE HARMONY · 야외 버스킹 공연장', 5.4, 0.55, '#2a5ad0', '#ffffff'); nm.position.set(0, 4.6, 0.2); shell.add(nm);
+    put(root, shell, X, SZ - 1.0);
+    // 앰프 · 스피커 (양옆) · 마이크 스탠드 · 키보드 · 드럼 · 기타 거치대 · 기타 케이스 팁 상자
+    for (const s2 of [-1, 1]) { const sp = new THREE.Group(); add(sp, B(0.8, 1.3, 0.6), 0x2a2a2e, 0, 0.65, 0); for (const y of [0.4, 0.95]) add(sp, C(0.24, 0.24, 0.04, 16), 0x4a4a52, 0, y, 0.31).rotation.x = PI / 2; add(sp, B(0.8, 0.04, 0.6), 0x8a8a90, 0, 1.31, 0); put(root, sp, X + s2 * 3.3, SZ + 0.8, -s2 * 0.25, 0.63); }
+    const mic = new THREE.Group(); add(mic, C(0.18, 0.2, 0.04, 12), 0x2a2a2e, 0, 0.02, 0); add(mic, C(0.015, 0.015, 1.4, 6), 0x9aa0a8, 0, 0.72, 0); add(mic, SP(0.06, 8, 6), 0x2a2a2e, 0, 1.46, 0.06); put(root, mic, X, SZ + 0.9, 0, 0.63);
+    const kb = new THREE.Group(); add(kb, B(1.3, 0.1, 0.4), 0x2a2a2e, 0, 0.82, 0); for (let i = 0; i < 16; i++) add(kb, B(0.07, 0.02, 0.2), i % 3 === 2 ? 0x1a1a1a : 0xfbfbf6, -0.56 + i * 0.075, 0.88, 0.06); for (const s2 of [-1, 1]) add(kb, B(0.04, 0.8, 0.04), 0x9aa0a8, s2 * 0.5, 0.4, 0).rotation.z = s2 * 0.3; put(root, kb, X - 2.4, SZ + 0.4, 0, 0.63);
+    const dr = new THREE.Group(); add(dr, C(0.35, 0.35, 0.45, 16), 0xd83a3a, 0, 0.35, 0).rotation.x = PI / 2; add(dr, C(0.2, 0.2, 0.25, 14), 0xd83a3a, 0.45, 0.6, 0.1); add(dr, C(0.2, 0.2, 0.25, 14), 0xd83a3a, -0.45, 0.6, 0.1); for (const x of [-0.7, 0.7]) { add(dr, C(0.01, 0.01, 1.2, 4), 0x9aa0a8, x, 0.6, -0.2); add(dr, C(0.25, 0.25, 0.01, 14), 0xe8c050, x, 1.2, -0.2); } put(root, dr, X + 2.3, SZ - 0.6, 0, 0.63);
+    const gc = new THREE.Group(); add(gc, B(1.1, 0.12, 0.42), 0x2a2a2e, 0, 0.06, 0); add(gc, B(1.0, 0.04, 0.34), 0xc83a5a, 0, 0.13, 0); for (let i = 0; i < 7; i++) add(gc, C(0.04, 0.04, 0.01, 8), 0xffd84a, -0.3 + i * 0.1, 0.16, (i % 2 - 0.5) * 0.12); put(root, gc, X + 0.9, SZ + 2.6, 0.3);
+    const gs = new THREE.Group(); add(gs, B(0.3, 0.04, 0.3), 0x2a2a2e, 0, 0.02, 0); const gb = add(gs, SP(0.22, 10, 8), 0xc8823a, 0, 0.3, 0); gb.scale.set(1, 1.2, 0.35); add(gs, B(0.06, 0.7, 0.03), 0x5a3a24, 0, 0.75, 0); put(root, gs, X + 1.4, SZ + 0.3, 0, 0.63);
+    // 무대 위 전구 줄 (셸 → 앞 기둥 4개) + 기둥 꼭대기 조명
+    const lampM = new THREE.MeshLambertMaterial({ color: 0xfff6d0, emissive: 0xffc860, emissiveIntensity: 0.2 });
+    const poles = [[X - 7.5, Z + 5], [X - 3.5, Z + 8.6], [X + 3.5, Z + 8.6], [X + 7.5, Z + 5]];
+    for (const [px, pz] of poles) {
+      const pl = new THREE.Group(); add(pl, C(0.07, 0.09, 4.2), 0x2a2a2e, 0, 2.1, 0); const hd = add(pl, B(0.3, 0.3, 0.3), lampM, 0, 4.2, 0); void hd; put(root, pl, px, pz);
+      const a = new THREE.Vector3(X, T0.height(X, SZ) + 4.6, SZ - 1), e = new THREE.Vector3(px, T0.height(px, pz) + 4.0, pz);
+      const pts = []; for (let t = 0; t <= 1.0001; t += 0.1) pts.push(new THREE.Vector3().lerpVectors(a, e, t).add(new THREE.Vector3(0, -Math.sin(t * PI) * 0.8, 0)));
+      root.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 10, 0.012, 3), lam(0x2a2a2a)));
+      for (let k = 1; k < 10; k++) { const t = k / 10; const q = new THREE.Vector3().lerpVectors(a, e, t).add(new THREE.Vector3(0, -Math.sin(t * PI) * 0.8 - 0.1, 0)); const bl = new THREE.Mesh(SP(0.08, 6, 5), lampM); bl.position.copy(q); root.add(bl); }
+    }
+    nightGlows.push(lampM);
+    // 공연 포스터 기둥 · 오늘의 공연 칠판 · 커피 트럭 · 꽃 화분 · 가로수
+    const col = new THREE.Group(); add(col, C(0.5, 0.5, 2.6, 16), 0xf4ead8, 0, 1.3, 0); add(col, C(0.58, 0.58, 0.18, 16), 0x2a5ad0, 0, 2.7, 0);
+    const posterM = ctexMat('p2poster', 256, 128, (c, w, h) => { const cols = ['#ff6a9a', '#ffd84a', '#7ad8f0', '#8a6ad8', '#7aff9a', '#ff9a4a']; for (let i = 0; i < 6; i++) { c.fillStyle = cols[i]; c.fillRect(i * w / 6, 0, w / 6 - 3, h); c.fillStyle = '#fff'; c.font = 'bold 18px sans-serif'; c.fillText(['LIVE', '♪', 'JAZZ', '♥', 'POP', '★'][i], i * w / 6 + 6, h / 2); } });
+    const pm = new THREE.Mesh(new THREE.CylinderGeometry(0.51, 0.51, 1.4, 16, 1, true), posterM); pm.position.y = 1.5; col.add(pm);
+    put(root, col, X - 8.2, Z + 1);
+    const cb = new THREE.Group(); for (const s2 of [1, -1]) { const pn = add(cb, B(0.8, 1.1, 0.05), 0x2a2a2a, 0, 0.6, s2 * 0.12); pn.rotation.x = -0.15 * s2; } const ct = sign('🎶 오늘의 공연\n16:00 ~ 22:00\n누구나 무대에!', 0.7, 0.9, '#2a2a2a', '#ffffff'); ct.position.set(0, 0.62, 0.2); ct.rotation.x = -0.15; cb.add(ct); put(root, cb, X + 6.4, Z + 7.4, -0.4);
+    const truck = new THREE.Group(); add(truck, B(3.2, 1.9, 1.7), 0x7ad8c8, 0, 1.25, 0); add(truck, B(1.0, 1.4, 1.68), 0x7ad8c8, 2.1, 1.0, 0); add(truck, B(1.8, 0.8, 0.04), glass(0xeafaff), 0, 1.5, 0.86); add(truck, B(2.0, 0.08, 0.5), 0xfbfbf6, 0, 1.0, 1.05);
+    const aw = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.06, 0.9), new THREE.MeshLambertMaterial({ map: FM.AC.stripe('#ff8aa8', '#ffffff') })); aw.position.set(0, 2.15, 1.2); aw.rotation.x = 0.35; truck.add(aw);
+    for (const [x, zz] of [[-1.1, -0.85], [-1.1, 0.85], [1.9, -0.85], [1.9, 0.85]]) { const w = add(truck, C(0.34, 0.34, 0.2, 12), 0x2a2a2a, x, 0.34, zz); w.rotation.x = PI / 2; }
+    const ts = sign('☕ 커피 & 레모네이드', 1.9, 0.36, '#ffffff', '#2a8a8a'); ts.position.set(-0.2, 2.0, 0.87); truck.add(ts);
+    put(root, truck, X + 9.0, Z - 4.5, -PI / 2 + 0.3);
+    for (const [x, z] of [[X - 6.2, SZ - 1.5], [X + 6.2, SZ - 1.5], [X - 9.2, Z + 6], [X + 4.2, Z + 9.8]]) { const pl = new THREE.Group(); add(pl, C(0.45, 0.38, 0.55, 12), tm('stone', 0xe8dcc8), 0, 0.27, 0); if (FM.Flora) FM.Flora.bush(KK(pl), ['tulip', 'daisy'], [0xff6f9a, 0xffffff, 0xffd84a], 0, 0, 0.55, 9, 0.9, x); put(root, pl, x, z); }
     root.add(g);
-    return { lights };
+    return { lights: [] };
   }
 
   // ---------- 🌱 텃밭 ----------
@@ -171,21 +205,21 @@
   function stall(t, lanM) {
     const s = new THREE.Group(); const col = t.c;
     add(s, B(2.6, 0.95, 0.9), tm('plank', 0xb8824a), 0, 0.48, 0); add(s, B(2.7, 0.08, 1.0), tm('plank', 0xd8a86a), 0, 0.98, 0);
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(s, B(0.1, 2.5, 0.1), tm('bark', 0x8a5a34), sx * 1.25, 1.25, sz * 0.55 - 0.2);
-    add(s, B(2.6, 1.5, 0.06), tm('plank', 0xa8784a), 0, 1.6, -0.78);
-    const cm2 = new THREE.MeshLambertMaterial({ map: FM.AC.stripe(col, '#ffffff') }); const rf = add(s, B(3.0, 0.08, 1.7), cm2, 0, 2.55, 0.0); rf.rotation.x = 0.2;
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) add(s, B(0.1, 2.5, 0.1), tm('bark', 0x8a5a34), sx * 1.25, 1.25, sz < 0 ? -1.25 : 0.4);
+    add(s, B(2.6, 1.3, 0.06), tm('plank', 0xa8784a), 0, 1.75, -1.28);
+    const cm2 = new THREE.MeshLambertMaterial({ map: FM.AC.stripe(col, '#ffffff') }); const rf = add(s, B(3.0, 0.08, 2.1), cm2, 0, 2.6, -0.35); rf.rotation.x = 0.2;
     for (let i = 0; i < 9; i++) { const v = add(s, B(0.33, 0.24, 0.02), cm2, -1.33 + i * 0.333, 2.32, 0.86); void v; }   // 물결 차양 끝
     const nm = sign(t.n, 2.3, 0.46, col, '#ffffff'); nm.position.set(0, 2.05, 0.6); s.add(nm);
     const k = t.k;
-    if (k === 'goldfish') { add(s, B(1.8, 0.25, 0.7), lam(0x3a8ad8, { transparent: true, opacity: 0.75 }), 0, 1.15, 0.05); for (let i = 0; i < 8; i++) add(s, SP(0.05, 6, 5), [0xff5a2a, 0xffffff, 0xff8a2a][i % 3], -0.7 + i * 0.2, 1.24, (i % 2 - 0.5) * 0.3).scale.set(1.6, 0.6, 0.8); for (let i = 0; i < 3; i++) add(s, SP(0.14, 8, 6), lam(0xbfe8ff, { transparent: true, opacity: 0.55 }), -0.9 + i * 0.3, 1.9 - i * 0.05, -0.55); }
+    if (k === 'goldfish') { add(s, B(1.8, 0.25, 0.7), lam(0x3a8ad8, { transparent: true, opacity: 0.75 }), 0, 1.15, 0.05); for (let i = 0; i < 8; i++) add(s, SP(0.05, 6, 5), [0xff5a2a, 0xffffff, 0xff8a2a][i % 3], -0.7 + i * 0.2, 1.24, (i % 2 - 0.5) * 0.3).scale.set(1.6, 0.6, 0.8); for (let i = 0; i < 3; i++) add(s, SP(0.14, 8, 6), lam(0xbfe8ff, { transparent: true, opacity: 0.55 }), -0.9 + i * 0.3, 1.9 - i * 0.05, -1.2); }
     if (k === 'takoyaki') { add(s, B(1.5, 0.12, 0.6), 0x2a2a2a, 0, 1.08, 0); for (let i = 0; i < 12; i++) add(s, SP(0.065, 6, 5), 0xc8823a, -0.55 + (i % 6) * 0.22, 1.17, (Math.floor(i / 6) - 0.5) * 0.26); }
     if (k === 'cotton') for (let i = 0; i < 6; i++) { add(s, C(0.01, 0.01, 0.4, 4), 0xffffff, -1.0 + i * 0.4, 1.2, 0.3); add(s, SP(0.16, 8, 6), [0xffb8d8, 0xb8e0ff, 0xffffff][i % 3], -1.0 + i * 0.4, 1.46, 0.3); }
-    if (k === 'shooting') { for (let r = 0; r < 2; r++) for (let i = 0; i < 6; i++) add(s, B(0.18, 0.24, 0.12), [0xff6a8a, 0xffd84a, 0x6ac8ff, 0xb8ff8a][(i + r) % 4], -0.9 + i * 0.36, 1.35 + r * 0.45, -0.6); add(s, B(0.9, 0.06, 0.08), 0x6a4a2a, 0.3, 1.08, 0.3); }
+    if (k === 'shooting') { for (let r = 0; r < 2; r++) for (let i = 0; i < 6; i++) add(s, B(0.18, 0.24, 0.12), [0xff6a8a, 0xffd84a, 0x6ac8ff, 0xb8ff8a][(i + r) % 4], -0.9 + i * 0.36, 1.5 + r * 0.45, -1.2); add(s, B(0.9, 0.06, 0.08), 0x6a4a2a, 0.3, 1.08, 0.3); }
     if (k === 'yakisoba') { add(s, B(1.6, 0.08, 0.7), 0x3a3a3a, 0, 1.06, 0); for (let i = 0; i < 20; i++) add(s, B(0.18, 0.025, 0.03), [0xc8902a, 0xe8b04a, 0x5aa83a][i % 3], -0.6 + (i % 10) * 0.13, 1.12, (Math.floor(i / 10) - 0.5) * 0.25).rotation.y = i; }
     if (k === 'kakigori') for (let i = 0; i < 4; i++) { add(s, C(0.12, 0.08, 0.14, 10), lam(0xe8f4ff, { transparent: true, opacity: 0.8 }), -0.75 + i * 0.5, 1.1, 0.15); add(s, SP(0.14, 10, 8), [0xff4a6a, 0x4ad0ff, 0x8aff6a, 0xffd84a][i], -0.75 + i * 0.5, 1.24, 0.15); }
     if (k === 'ringo') for (let i = 0; i < 10; i++) { add(s, C(0.008, 0.008, 0.3, 4), 0xf4ead8, -0.9 + (i % 5) * 0.45, 1.15, (Math.floor(i / 5) - 0.5) * 0.3); add(s, SP(0.08, 8, 6), lam(0xe8203a, { emissive: 0x400010 }), -0.9 + (i % 5) * 0.45, 1.33, (Math.floor(i / 5) - 0.5) * 0.3); }
-    if (k === 'omen') for (let r = 0; r < 2; r++) for (let i = 0; i < 6; i++) { const m2 = add(s, SP(0.15, 10, 8), [0xffffff, 0xff9aa8, 0xffd84a, 0x8ad0ff, 0xff6a3a, 0x8aff9a][(i + r * 2) % 6], -1.0 + i * 0.4, 1.4 + r * 0.42, -0.72); m2.scale.z = 0.4; }
-    else for (let i = 0; i < 4; i++) { const m2 = add(s, SP(0.11, 8, 6), [0xffffff, 0xff9aa8, 0xffd84a, 0x8ad0ff][i], -0.9 + i * 0.6, 2.2, -0.72); m2.scale.z = 0.4; }
+    if (k === 'omen') for (let r = 0; r < 2; r++) for (let i = 0; i < 6; i++) { const m2 = add(s, SP(0.15, 10, 8), [0xffffff, 0xff9aa8, 0xffd84a, 0x8ad0ff, 0xff6a3a, 0x8aff9a][(i + r * 2) % 6], -1.0 + i * 0.4, 1.6 + r * 0.42, -1.22); m2.scale.z = 0.4; }
+    else for (let i = 0; i < 4; i++) { const m2 = add(s, SP(0.11, 8, 6), [0xffffff, 0xff9aa8, 0xffd84a, 0x8ad0ff][i], -0.9 + i * 0.6, 2.2, -1.22); m2.scale.z = 0.4; }
     for (const sx of [-1.05, 1.05]) { const lm = new THREE.Mesh(SP(0.17, 8, 6), lanM); lm.scale.y = 1.25; lm.position.set(sx, 2.15, 0.75); s.add(lm); }
     return s;
   }
@@ -372,16 +406,18 @@
   function buskShow(A) {
     const st = S(); const crowd = st.villagers.filter(v => free(v) && v !== A && v.loc === 'island').sort(() => Math.random() - 0.5).slice(0, 3);
     const inst = pick(has(A, 'MUSICIAN') || has(A, 'ARTISTIC') ? ['guitar', 'piano', 'sing', 'sax'] : ['sing', 'guitar']);
-    const seats = [[12.8, 61.6], [17, 62.2], [21.2, 61.6]];
+    const BP = FM.MAP.P.busk, seats = [[BP.x - 3.4, BP.z + 3.6], [BP.x, BP.z + 4.6], [BP.x + 3.4, BP.z + 3.6]];
     const actors = { A }; crowd.forEach((v, i) => { actors['BCD'[i]] = v; });
     const go = crowd.map((v, i) => ({ go: 'BCD'[i], to: { loc: 'island', x: seats[i][0], z: seats[i][1] } }));
     Sim.scene({ title: '🎤 버스킹 공연', actors, steps: [
       { par: [{ go: 'A', to: inst === 'piano' ? { place: 'busk', spot: 'busk_piano' } : { place: 'busk', spot: 'busk' } }].concat(go) },
-      { par: [{ pose: 'A', p: inst, t: 8 }].concat(crowd.map((v, i) => ({ pose: 'BCD'[i], p: 'sit', t: 8 }))) },
+      { par: [{ pose: 'A', p: inst, t: 16 }].concat(crowd.map((v, i) => ({ pose: 'BCD'[i], p: 'sit', t: 16 }))) },
+      { par: crowd.map((v, i) => ({ emote: 'BCD'[i], e: pick(['🎵', '😍', '🎶']) })).concat([{ pose: 'A', p: inst, t: 0.1 }]) },
+      { par: [{ pose: 'A', p: inst, t: 16 }].concat(crowd.map((v, i) => ({ pose: 'BCD'[i], p: i % 2 ? 'sway' : 'sit', t: 16 }))) },
       { say: 'A', text: sty(A, pick(['오늘 밤도 들어 줘서 고마워요 🎵', '이 노래는... 우리 섬을 위해!', '앵콜은 박수 크기에 달렸어요~'])), t: 3 },
       { par: crowd.map((v, i) => ({ pose: 'BCD'[i], p: 'clap', t: 3 })).concat([{ pose: 'A', p: inst, t: 3 }]) },
       { par: crowd.map((v, i) => ({ emote: 'BCD'[i], e: pick(['👏', '🎵', '😍', '✨']) })) },
-    ], onEnd: () => { for (const v of crowd) Soc.addFriend(v.id, A.id, 3, 2, '버스킹'); A.mood = Math.min(100, (A.mood || 50) + 10); log(`🎤 ${A.name}이(가) 역 앞 버스킹 무대에서 공연했어요${crowd.length ? ` · 관객 ${crowd.map(v => v.name).join(', ')}` : ''}`, [A.id].concat(crowd.map(v => v.id)), 2); } });
+    ], onEnd: () => { for (const v of crowd) Soc.addFriend(v.id, A.id, 3, 2, '버스킹'); A.mood = Math.min(100, (A.mood || 50) + 10); log(`🎤 ${A.name}이(가) 서쪽 야외 버스킹 공연장에서 공연했어요${crowd.length ? ` · 관객 ${crowd.map(v => v.name).join(', ')}` : ''}`, [A.id].concat(crowd.map(v => v.id)), 2); } });
   }
   FM.bus.on('hour', h => { try { if (h >= 16 && h <= 22 && chance(0.3)) { const st = S(); if ((st.buskDay || 0) === day() && (st.buskN || 0) >= 2) return; const A = pick(st.villagers.filter(v => free(v) && v.loc === 'island' && (has(v, 'MUSIC') || has(v, 'MUSICIAN') || has(v, 'ARTISTIC') || has(v, 'EXTROVERT')))); if (A) { if (st.buskDay !== day()) { st.buskDay = day(); st.buskN = 0; } st.buskN++; buskShow(A); } } } catch (e) { console.error('busk ev', e); } });
 
@@ -442,13 +478,33 @@
         const d = (x, z) => Math.hypot(p.x - x, p.z - z);
         if (p.loc === 'island') {
           // 🎤 버스킹
-          if (d(17, 57) < 6) addOpt(2.0, '🎤 버스킹 공연하기', () => {
-            FM.UI.modal('🎤 무엇으로 공연할까요?', `<div class="grid-btn">${[['sing', '🎤 노래'], ['guitar', '🎸 기타'], ['piano', '🎹 피아노'], ['dance', '💃 댄스']].map(([k, n]) => `<button data-k="${k}">${n}</button>`).join('')}</div>`, b => b.querySelectorAll('[data-k]').forEach(x => x.onclick = () => {
-              FM.UI.closeModal(); const k = x.dataset.k; if (k === 'piano') { p.x = 14.6; p.z = 56.6; } else { p.x = 17; p.z = 56.4; } p.ry = 0; p.pose = k; p.busy = true;
-              const crowd = st.villagers.filter(v => free(v) && v.loc === 'island' && Math.hypot(v.x - 17, v.z - 58) < 26).slice(0, 4);
-              crowd.forEach((v, i) => { Sim.planRoute && Sim.planRoute(v, { loc: 'island', x: [12.8, 17, 21.2, 11.2][i], z: [61.6, 62.2, 61.6, 58.6][i] }); setTimeout(() => { Sim.emote(v, pick(['👏', '🎵', '😍'])); Soc.addFriend(v.id, P, 3, 2, '버스킹'); }, 4000); });
-              setTimeout(() => { p.pose = null; p.busy = false; const tip = 20 + crowd.length * 25 + ((Math.random() * 40) | 0); p.coins += tip; toast(`🎵 공연 끝! 관객 ${crowd.length}명 · 팁 +${tip}🪙`); sfx('coin'); }, 6500);
-              toast('🎶 공연을 시작했어요!');
+          const BP = FM.MAP.P.busk;
+          if (d(BP.x, BP.z - 1) < 7 && !p.busking) addOpt(2.0, '🎤 버스킹 공연하기', () => {
+            FM.UI.modal('🎤 무엇으로 공연할까요?', `<div class="grid-btn">${[['sing', '🎤 노래'], ['guitar', '🎸 기타'], ['piano', '🎹 키보드'], ['dance', '💃 댄스']].map(([k, n]) => `<button data-k="${k}">${n}<small>약 35초 공연</small></button>`).join('')}</div>`, b => b.querySelectorAll('[data-k]').forEach(x => x.onclick = () => {
+              FM.UI.closeModal(); const k = x.dataset.k, SZ = BP.z - 3;
+              if (k === 'piano') { p.x = BP.x - 2.4; p.z = SZ - 0.2; } else { p.x = BP.x; p.z = SZ + 0.6; } p.ry = 0; p.pose = k; p.busy = true; p.busking = true; p.prop = { sing: 'mic', guitar: 'guitar', piano: null, dance: null }[k];
+              const crowd = st.villagers.filter(v => free(v) && v.loc === 'island' && Math.hypot(v.x - BP.x, v.z - BP.z) < 40).slice(0, 5);
+              const cs = [[BP.x - 3.4, BP.z + 3.6], [BP.x, BP.z + 4.6], [BP.x + 3.4, BP.z + 3.6], [BP.x - 5.4, BP.z + 0.6], [BP.x + 5.4, BP.z + 0.6]];
+              crowd.forEach((v, i) => { Sim.planRoute && Sim.planRoute(v, { loc: 'island', x: cs[i][0], z: cs[i][1] }); });
+              const DUR = 35000, t0 = Date.now(), lines = { sing: ['🎤 ♪ 랄라~ 이 섬의 노을처럼~', '🎤 ♬ 너와 나의 여름밤~', '🎤 ♪ 다 같이 불러요!'], guitar: ['🎸 ♪ 딩가딩가~', '🎸 ♬ 코드 체인지!', '🎸 ♪ 솔로 파트!'], piano: ['🎹 ♪ 도레미파솔~', '🎹 ♬ 잔잔한 발라드', '🎹 ♪ 클라이맥스!'], dance: ['💃 ♪ 스텝 업!', '💃 ♬ 턴~!', '💃 ♪ 마지막 포즈!'] }[k];
+              let n = 0;
+              const tick = setInterval(() => {
+                if (!p.busking) return clearInterval(tick);
+                p.pose = k; p.ry = 0; n++;
+                if (n % 3 === 1) { p.bubble = { text: lines[Math.floor(n / 3) % lines.length], until: st.realT + 3 }; }
+                crowd.forEach((v, i) => { if (Math.hypot(v.x - cs[i][0], v.z - cs[i][1]) < 1.2) { v.ry = Math.atan2(BP.x - v.x, SZ - v.z); if (!v.sceneId) v.pose = i < 3 ? 'sit' : (n % 4 < 2 ? 'clap' : 'sway'); if (n % 5 === i) Sim.emote(v, pick(['👏', '🎵', '😍', '✨', '🎶'])); } });
+                const left = Math.max(0, Math.ceil((DUR - (Date.now() - t0)) / 1000));
+                if (n % 5 === 0 && left > 0) toast(`🎶 공연 중… ${left}초 남음`);
+                if (Date.now() - t0 >= DUR) {
+                  clearInterval(tick); p.pose = 'bow'; setTimeout(() => { p.pose = null; p.prop = null; p.busy = false; p.busking = false; }, 1800);
+                  const near = crowd.filter((v, i) => Math.hypot(v.x - cs[i][0], v.z - cs[i][1]) < 3);
+                  near.forEach(v => { v.pose = 'clap'; Soc.addFriend(v.id, P, 3, 2, '버스킹'); Sim.emote(v, '👏', 3); setTimeout(() => { if (v.pose === 'clap') v.pose = null; }, 3000); });
+                  const tip = 30 + near.length * 30 + ((Math.random() * 50) | 0); p.coins += tip; sfx('coin');
+                  toast(`🎵 공연 끝! 관객 ${near.length}명의 박수 · 기타 케이스 팁 +${tip}🪙`);
+                  log(`🎤 ${p.name}이(가) 야외 버스킹 공연장에서 ${{ sing: '노래', guitar: '기타 연주', piano: '키보드 연주', dance: '댄스' }[k]} 공연을 했어요`, [P].concat(near.map(v => v.id)), 1);
+                }
+              }, 1000);
+              toast('🎶 공연 시작! (약 35초)');
             }));
           });
           // 🌱 텃밭
@@ -477,15 +533,16 @@
               if (d(t.cx, t.z) > 2.4) continue;
               const vend = FM.Ev && FM.Ev.staffById && FM.Ev.staffById('s_yatai_' + t.k);
               const buy = (price, fn) => () => { if (p.coins < price) return toast('코인이 부족해요'); p.coins -= price; sfx('coin'); if (vend) { Sim.emote(vend, pick(['😊', '🙇', '✨']), 2); } fn(); };
+              const C = FM.Consume, eatIt = k => C ? C.eat(k) : null, bagIt = k => { Soc.giveItem(k); if (C) C.bag(k); };
               const A = {
-                goldfish: ['🐟 금붕어 뜨기 (20🪙)', 20, () => { const n = Math.random() < 0.35 ? 0 : 1 + ((Math.random() * 3) | 0); toast(n ? `🐟 금붕어 ${n}마리를 건졌어요!` : '💦 앗, 뜰채가 찢어졌어요...'); }],
-                takoyaki: ['🐙 타코야키 사 먹기 (25🪙)', 25, () => { p.stamina = Math.min(100, (p.stamina || 0) + 18); toast('🐙 앗 뜨거! 겉바속촉 타코야키 (스태미나 +18)'); }],
-                cotton: ['🍭 솜사탕 사기 (15🪙)', 15, () => { p.stamina = Math.min(100, (p.stamina || 0) + 8); toast('🍭 구름처럼 폭신한 솜사탕!'); }],
-                yakisoba: ['🍜 야키소바 사 먹기 (30🪙)', 30, () => { p.stamina = Math.min(100, (p.stamina || 0) + 25); toast('🍜 철판에서 갓 볶은 야키소바! (스태미나 +25)'); }],
-                shooting: ['🎯 사격 게임 (20🪙)', 20, () => { const hit = (Math.random() * 6) | 0; if (hit >= 4) { Soc.giveItem('plush'); toast(`🎯 ${hit}발 명중! 인형 경품 획득 🧸`); } else toast(`🎯 ${hit}발 명중... 아쉬워요!`); }],
-                kakigori: ['🍧 빙수 사 먹기 (20🪙)', 20, () => { p.stamina = Math.min(100, (p.stamina || 0) + 12); toast(pick(['🍧 딸기 시럽 빙수! 머리가 띵~', '🍧 블루하와이 빙수! 혀가 파래졌어요'])); }],
-                ringo: ['🍎 사과사탕 사기 (20🪙)', 20, () => { p.stamina = Math.min(100, (p.stamina || 0) + 10); toast('🍎 반짝반짝 새빨간 사과사탕!'); }],
-                omen: ['🎭 축제 가면 사기 (40🪙)', 40, () => { const m = pick(['여우', '고양이', '도깨비', '토끼', '히어로']); toast(`🎭 ${m} 가면을 샀어요! 주민들이 깜짝 놀랄지도?`); const nb = st.villagers.filter(v => v.loc === 'island' && Math.hypot(v.x - p.x, v.z - p.z) < 10).slice(0, 3); nb.forEach(v => Sim.emote(v, pick(['😆', '😲', '🦊']), 3)); }],
+                goldfish: ['🐟 금붕어 뜨기 (20🪙)', 20, () => { const n = Math.random() < 0.35 ? 0 : 1 + ((Math.random() * 3) | 0); if (n) { toast(`🐟 금붕어 ${n}마리를 건졌어요!`); bagIt('goldfish_bag'); } else toast('💦 앗, 뜰채가 찢어졌어요...'); }],
+                takoyaki: ['🐙 타코야키 사 먹기 (25🪙)', 25, () => eatIt('takoyaki')],
+                cotton: ['🍭 솜사탕 사기 (15🪙)', 15, () => eatIt('cotton_candy')],
+                yakisoba: ['🍜 야키소바 사 먹기 (30🪙)', 30, () => eatIt('yakisoba')],
+                shooting: ['🎯 사격 게임 (20🪙)', 20, () => { const hit = (Math.random() * 6) | 0; if (hit >= 4) { toast(`🎯 ${hit}발 명중! 인형 경품 획득 🧸`); bagIt('plush'); } else toast(`🎯 ${hit}발 명중... 아쉬워요!`); }],
+                kakigori: ['🍧 빙수 사 먹기 (20🪙)', 20, () => eatIt('kakigori')],
+                ringo: ['🍎 사과사탕 사기 (20🪙)', 20, () => eatIt('candy_apple')],
+                omen: ['🦊 축제 가면 사기 (40🪙)', 40, () => { bagIt('fox_mask'); const nb = st.villagers.filter(v => v.loc === 'island' && Math.hypot(v.x - p.x, v.z - p.z) < 10).slice(0, 3); nb.forEach(v => Sim.emote(v, pick(['😆', '😲', '🦊']), 3)); }],
               }[t.k];
               if (A) addOpt(2.0, A[0], buy(A[1], A[2]));
             }
@@ -500,7 +557,7 @@
         }
         if (p.loc === 'onsen_in') {
           addOpt(1.8, '♨️ 편백 대욕조에서 목욕하기', () => { p.pose = 'bathe'; setTimeout(() => { p.pose = null; }, 4000); p.stamina = Math.min(100, (p.stamina || 0) + 35); toast('♨️ 편백 향이 은은해요... (스태미나 +35)'); });
-          addOpt(2.0, '🥛 목욕 후 커피우유 (15🪙)', () => { if (p.coins < 15) return toast('코인이 부족해요'); p.coins -= 15; p.stamina = Math.min(100, (p.stamina || 0) + 10); toast('🥛 허리에 손 얹고 꿀꺽! 역시 목욕 후엔 커피우유'); });
+          addOpt(2.0, '🥛 목욕 후 커피우유 (15🪙)', () => { if (p.coins < 15) return toast('코인이 부족해요'); p.coins -= 15; sfx('coin'); if (FM.Consume) FM.Consume.eat('coffee_milk', { drink: true }); });
         }
       } catch (e) { console.error('places2 options', e); }
       return r;

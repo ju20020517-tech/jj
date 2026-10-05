@@ -776,6 +776,7 @@
         p.coins -= it.price; FM.Soc.giveItem(k); FM.Audio && FM.Audio.sfx('coin');
         cur.s.pose = 'bow'; cur.s.prop = null;
         FM.UI.toast(`${it.icon} ${it.name}을(를) 샀어요!`);
+        if (FM.Consume) { const kk = k; setTimeout(() => { if (cur) close(); FM.Consume.afterBuy(kk); }, 1400); }
         const thanks = { barista: '감사합니다! 맛있게 드세요~ ☕', conv: '감사합니다~ 또 오세요!', stylist: '정말 잘 어울리실 거예요! 🌹', grocer: '감사합니다! 포인트 적립해 드렸어요~', tea: '따뜻할 때 드세요 🍵', doctor: '빨리 나으세요!', nurse: '몸조리 잘하세요 💗', librarian: '(소곤) 즐거운 독서 되세요', pocha: '고마워~ 또 와!' }[s.role] || '감사합니다!';
         show(thanks, [{ label: '🛍️ 더 살래요', fn: () => shopTalk(page) }, { label: '↩️ 다른 이야기', fn: () => mainMenu(sty(s, '또 필요한 거 있으세요?')) }, bye()], 'happy');
       } },
@@ -813,6 +814,7 @@
     mainMenu(`${hi} ${pick(GREET[s.role] || ['무엇을 도와드릴까요?'])}`);
   }
   NL.talk = npcTalk;
+  NL.SHOP_OF = SHOP_OF; NL.TALK = TALK; NL.TITLE = TITLE; NL.GREET = GREET;
   // UI 연결: 직원 클릭 · 말 걸기 → 대화 창 / 상점 이용하기 → 직원과 대화로 주문
   const origShop = FM.UI.shop;
   FM.UI.staffTalk = s => npcTalk(s);

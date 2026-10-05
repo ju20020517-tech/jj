@@ -43,7 +43,7 @@
   };
   function yatai() {
     const m = FM.MAP.P.matsuri; if (!m || !m.stalls) return [];
-    return m.stalls.map((t, i) => ({ id: 's_yatai_' + t.k, name: t.n.replace(/^\S+\s/, '') + ' 상인', role: 'yatai', loc: 'island', x: t.vx, z: t.z, ry: t.s * R90,
+    return m.stalls.map((t, i) => ({ id: 's_yatai_' + t.k, name: t.n.replace(/^\S+\s/, '') + ' 상인', role: 'y_' + t.k, loc: 'island', x: t.vx, z: t.z, ry: t.s * R90,
       look: L(YATAI_LOOK[t.k] || 'dog', 'vest', parseInt(t.c.slice(1), 16), { shirt2: 0xffffff, hat: 'headband', hatColor: 0xffffff }), lines: YATAI_LINES[t.k] || ['어서 오세요~'], idx: i }));
   }
   function add() {
@@ -56,6 +56,29 @@
         keys: { L1: 'EXTROVERT', L2: 'DILIGENT', L3: 'WARM', L4: 'CLEAN' }, stats: { speed: 0, idle: [3, 5] }, status: {}, staff: true, np: null,
         look: ISLE && ISLE.normalizeLook ? ISLE.normalizeLook(d.look) : d.look }));
     }
+  }
+  // 노점 · 가게 상품 (대화로 주문) — 먹을 건 사면 바로 먹는 모션, 물건은 가방에 넣는 모션
+  const D = FM.D;
+  Object.assign(D.ITEMS, {
+    takoyaki: { name: '타코야키 (6알)', icon: '🐙', price: 25, tags: ['food', 'snack'], shop: 'y_takoyaki', stamina: 18 },
+    cotton_candy: { name: '구름 솜사탕', icon: '🍭', price: 15, tags: ['food', 'snack', 'cute'], shop: 'y_cotton', stamina: 8 },
+    yakisoba: { name: '철판 야키소바', icon: '🍜', price: 30, tags: ['food'], shop: 'y_yakisoba', stamina: 25 },
+    kakigori: { name: '딸기 빙수', icon: '🍧', price: 20, tags: ['food', 'snack'], shop: 'y_kakigori', stamina: 12 },
+    candy_apple: { name: '반짝 사과사탕', icon: '🍎', price: 20, tags: ['food', 'snack', 'cute'], shop: 'y_ringo', stamina: 10 },
+    goldfish_bag: { name: '금붕어 봉지', icon: '🐟', price: 20, tags: ['cute', 'nature'], shop: 'y_goldfish' },
+    fox_mask: { name: '여우 축제 가면', icon: '🦊', price: 40, tags: ['fashion', 'party'], shop: 'y_omen' },
+    coffee_milk: { name: '병 커피우유', icon: '🥛', price: 15, tags: ['food'], shop: 'onsen', stamina: 15 },
+  });
+  const NL = FM.NpcLife;
+  if (NL && NL.SHOP_OF) {
+    for (const t of (FM.MAP.P.matsuri && FM.MAP.P.matsuri.stalls) || []) {
+      const r = 'y_' + t.k;
+      if (Object.values(D.ITEMS).some(it => it.shop === r)) NL.SHOP_OF[r] = r;
+      NL.TITLE[r] = '노점 상인'; NL.TALK[r] = YATAI_LINES[t.k] || ['어서 오세요~']; NL.GREET[r] = ['축제 즐기고 계세요? 🏮', '어서 오세요~ 하나 드셔 보세요!'];
+    }
+    NL.SHOP_OF.onsen = 'onsen';
+    Object.assign(NL.TITLE, { photo: '사진사', carpenter: '공방 장인', arcade: '오락실 매니저', onsen: '온천 여주인', astro: '천문학자', priest: '신부님', farmer: '텃밭 할아버지', bait: '미끼 가게 사장' });
+    for (const d of LIST) { if (!NL.TALK[d.role] || d.role === 'waiter') NL.TALK[d.role] = (NL.TALK[d.role] || []).concat(d.lines); if (!NL.GREET[d.role]) NL.GREET[d.role] = [d.lines[0]]; }
   }
   add();
   const oLoad = Sim.load;

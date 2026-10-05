@@ -697,7 +697,7 @@
     const sell = ['fish_catch', 'bug_jar', 'dream_item', 'face_copy', 'rare_fruit', 'veggie_basket', 'big_fish'].filter(k => p.inv[k]);
     modal(SHOP_NAMES[key] || '상점', `<p>🪙 ${Math.floor(p.coins).toLocaleString()} 코인</p><div class="bag">${items.map(([k, it]) => `<div class="it"><span>${it.icon}</span><b>${esc(it.name)}</b><small>${it.price} 🪙</small><button data-buy="${k}">사기</button></div>`).join('')}</div>
       ${sell.length ? `<h4>팔기</h4><div class="bag">${sell.map(k => `<div class="it"><span>${D.ITEMS[k].icon}</span><b>${esc(D.ITEMS[k].name)}</b><small>×${p.inv[k]}</small><button data-sell="${k}">팔기 (+80)</button></div>`).join('')}</div>` : ''}`, b => {
-      b.querySelectorAll('[data-buy]').forEach(x => x.onclick = () => { const k = x.dataset.buy, it = D.ITEMS[k]; if (p.coins < it.price) return UI.toast('코인이 부족해요'); p.coins -= it.price; Soc.giveItem(k); FM.Audio.sfx('coin'); UI.toast(`${it.icon} ${it.name} 구입!`); UI.shop(key); });
+      b.querySelectorAll('[data-buy]').forEach(x => x.onclick = () => { const k = x.dataset.buy, it = D.ITEMS[k]; if (p.coins < it.price) return UI.toast('코인이 부족해요'); p.coins -= it.price; Soc.giveItem(k); FM.Audio.sfx('coin'); if (FM.Consume) { closeModal(); FM.Consume.afterBuy(k); return; } UI.toast(`${it.icon} ${it.name} 구입!`); UI.shop(key); });
       b.querySelectorAll('[data-sell]').forEach(x => x.onclick = () => { if (Soc.takeItem(x.dataset.sell)) { p.coins += 80; FM.Audio.sfx('coin'); UI.shop(key); } });
     });
   };
@@ -1356,7 +1356,7 @@
     if (q && qd) html += `<h5>⭐ 퀘스트 목적지</h5><div class="map-chips"><button data-q="1">⭐ ${esc(J(FM.Guide.nextStep(q).text).slice(0, 34))}</button></div>`;
     // 방위별 탭: 중앙 · 북 · 동 · 서 · 남 · 주민 (장소 좌표로 나눔)
     const REG = [['all', '🧭 전체'], ['c', '⛲ 중앙'], ['n', '⬆️ 북쪽'], ['e', '➡️ 동쪽'], ['w', '⬅️ 서쪽'], ['s', '⬇️ 남쪽'], ['v', '👥 주민']];
-    const regOf = p => Math.hypot(p.x, p.z) < 34 ? 'c' : Math.abs(p.x) > Math.abs(p.z) * 0.9 ? (p.x > 0 ? 'e' : 'w') : (p.z < 0 ? 'n' : 's');
+    const regOf = p => ({ CORE: 'c', NORTH: 'n', EAST: 'e', WEST: 'w', SOUTH: 's' })[p.district] || (Math.hypot(p.x, p.z) < 34 ? 'c' : Math.abs(p.x) > Math.abs(p.z) * 0.9 ? (p.x > 0 ? 'e' : 'w') : (p.z < 0 ? 'n' : 's'));
     const RNAME = { c: '⛲ 중앙 광장 일대', n: '⬆️ 북쪽 — 언덕 · 성당 · 온천 · 천문대', e: '➡️ 동쪽 — 번화가 · 마츠리 · 업무 지구', w: '⬅️ 서쪽 — 주택가 · 공원 · 학교 · 도서관', s: '⬇️ 남쪽 — 해변 · 병원 · 부두' };
     const RCOL = { c: '#ffb86a', n: '#b69cff', e: '#ff8ac0', w: '#7ad89a', s: '#6ac8f0' };
     const all = []; for (const arr of Object.values(groups)) for (const p of arr) if (!all.includes(p)) all.push(p);

@@ -90,7 +90,7 @@
     const groups = {}; const grp = d => groups[d] || (groups[d] = new THREE.Group());
     const lampPos = [];
     let seed = 0;
-    const nearDoor = (x, z, r) => Object.values(MAP.P).some(pl => pl.door && Math.hypot(pl.door[0] - x, pl.door[1] - z) < r);
+    const nearDoor = (x, z, r) => Object.values(MAP.P).some(pl => (pl.door && Math.hypot(pl.door[0] - x, pl.door[1] - z) < r) || (!pl.bld && pl.r && ['busk', 'matsuri', 'farm', 'plaza', 'beach'].includes(pl.id) && Math.hypot(pl.x - x, pl.z - z) < pl.r + 3));
     const polesByEdge = [];
     for (const [a, b] of MAP.E) {
       if ((a.startsWith('c_n') && b === 'c_nt') || (a === 'c_nt' && b === 'n_b')) continue;
