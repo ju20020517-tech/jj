@@ -43,7 +43,8 @@
   };
   function yatai() {
     const m = FM.MAP.P.matsuri; if (!m || !m.stalls) return [];
-    return m.stalls.map((t, i) => ({ id: 's_yatai_' + t.k, name: t.n.replace(/^\S+\s/, '') + ' 상인', role: 'y_' + t.k, loc: 'island', x: t.vx, z: t.z, ry: t.s * R90,
+    return m.stalls.map((t, i) => ({ id: 's_yatai_' + t.k, name: t.n.replace(/^\S+\s/, '') + ' 상인', role: 'y_' + t.k, loc: 'island', x: t.vx, z: t.z, ry: t.s * R90 * 0.5,   // 손님 쪽 + 카메라 쪽(남쪽)으로 비스듬히 → 얼굴이 보이게
+     
       look: L(YATAI_LOOK[t.k] || 'dog', 'vest', parseInt(t.c.slice(1), 16), { shirt2: 0xffffff, hat: 'headband', hatColor: 0xffffff }), lines: YATAI_LINES[t.k] || ['어서 오세요~'], idx: i }));
   }
   function add() {

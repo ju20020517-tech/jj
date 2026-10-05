@@ -207,6 +207,24 @@
     if (n.t <= 0) nextTask(s, w);
   }
   NL.tickStaff = tickStaff;
+  // 직원이 등지고 서 있지 않게: 플레이어가 6m 안에 오면 하던 일을 멈추고 플레이어 쪽으로 몸을 돌림 (섬 노점 · 선장 · 농부 포함)
+  //  멀어지면 섬 직원은 원래 방향으로 돌아감
+  function faceVisitors(list) {
+    const p = S().player;
+    for (const s of list) {
+      if (s.sceneId || s.moving || (s.np && s.np.path && s.np.path.length)) continue;
+      if (s.ry0 === undefined) s.ry0 = s.ry;
+      const near = p.loc === s.loc && Math.hypot(p.x - s.x, p.z - s.z) < (s.loc === 'island' ? 7 : 10);
+      if (near) {
+        // 플레이어 쪽 + 카메라 쪽을 섞은 방향 → 화면에서 항상 얼굴이 보임
+        const a1 = faceTo(s, p), cam = FM.G && FM.G.camera ? FM.G.camera.position : null;
+        if (cam) { const a2 = Math.atan2(cam.x - s.x, cam.z - s.z); s.ry = Math.atan2(Math.sin(a1) * 0.35 + Math.sin(a2) * 0.65, Math.cos(a1) * 0.35 + Math.cos(a2) * 0.65); }
+        else s.ry = a1;
+        s.facingP = true;
+      }
+      else if (s.facingP) { s.facingP = false; if (s.loc === 'island') s.ry = s.ry0; }
+    }
+  }
   const GREET = {
     barista: ['어서 오세요~ 카페 앙상블입니다 ☕'], chef: ['이랏샤이마세~! 🍣'], pub: ['어서 와요~ 자리 편한 데 앉아요!'], dj: ['블루문에 오신 걸 환영해요 🎷'], conv: ['어서오세요~ 편의점입니다!'], tea: ['어서 오세요, 차 한 잔 하고 가요 🍵'],
     teacher: ['어머, 견학 오셨어요?'], librarian: ['도서관에 오신 걸 환영해요 (소곤)'], clerk: ['번호표 뽑고 기다려 주세요~'], judge: ['...정숙.'], boss: ['음? 자네는 누군가?'], grocer: ['어서 오세요~ 오늘 과일 특가예요!'],
@@ -637,7 +655,7 @@
       runLater();
       if (k > 0) {
         const E = Ev();
-        if (E && E.staff) for (const s of E.staff) tickStaff(s, d * k);
+        if (E && E.staff) { for (const s of E.staff) tickStaff(s, d * k); faceVisitors(E.staff); }
         tickSocial(d * k);
         tickFood(d * k);
         tickMood(d * st.speed * (Sim.CLOCK || 1));

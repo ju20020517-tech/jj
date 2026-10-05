@@ -829,14 +829,7 @@
         <div class="obs-sec"><b>🧠 주민 심리 센서</b>${who.length ? who.map(v => `<div class="sensor">${icon(v)} <b>${esc(v.name)}</b> 배고픔 ${pct(v.hunger)}% · ${esc(v.act ? v.act.name : v.moving ? '돌아다니는 중' : '딴짓 중')}<br><small>💭 ${esc(Sim.thought(v))} · 스트레스 ${pct(v.stress)} · 기분 ${pct(v.mood)}</small> <button data-talk="${v.id}">💬</button>${v.act && v.act.id === 'sleep' && v.dream ? ` <button data-dream="${v.id}">🌙 꿈 훔쳐보기</button>` : ''}</div>`).join('') : '<small class="muted">지금은 아무도 없어요.</small>'}</div>
         ${room ? `<div class="obs-sec"><b>🧹 방 청결도</b><div class="bar"><i style="width:${pct(room.clean)}%"></i></div><small>쓰레기 ${room.trash.length}개${room.theme ? ' · 테마: ' + esc(D.THEMES[room.theme].name) : ''}${room.unity ? ` · 테마 통일도 ${room.unity}%` : ''}${room.set ? ' · ✨세트 효과' : ''}${room.react !== undefined ? ' · 반응 ' + D.THEME_REACT.find(r => r.lv === room.react).name : ''}</small>
           <div class="chips"><button id="obVac">🌀 신의 청소기</button>${owner && !owner.child ? '<button id="obOrder">🧹 "방 좀 치워!"</button>' : ''}</div></div>
-        ${owner && !owner.child && !room.theme && D.ATMO_L1[owner.keys.L1] ? (() => { const A1 = D.ATMO_L1[owner.keys.L1], A4 = D.ATMO_L4[owner.keys.L4]; const sc = Ev.atmoScore(owner, room); return `<div class="obs-sec atmo"><b>🎨 방 분위기</b> <span class="atmo-score" style="--p:${sc}%">취향 적합도 <b>${sc}%</b></span>
-          <small>베이스(메인 성격 · ${esc(A1.name)}): <span class="sw" style="background:${FM.PM.css(A1.palette[0])}"></span><span class="sw" style="background:${FM.PM.css(A1.palette[1])}"></span> ${esc(A1.pname)} · ${esc(A1.tone)}</small>
-          <small>오버레이(특이 취향 · ${esc(A4.name)}): ${esc(A4.pname)} 무늬 · ${esc(A4.sname)}</small>
-          <div class="chips"><select id="obPat"><option value="">무늬 없음</option>${Object.entries(D.ATMO_PATTERNS).map(([k, n]) => `<option value="${k}" ${room.wallStyle === k ? 'selected' : ''}>🧩 ${n}</option>`).join('')}</select><label>벽 <input type="color" id="obW1" value="${FM.PM.css(room.wall || 0xf4efe6)}"></label><label>포인트 <input type="color" id="obW2" value="${FM.PM.css(room.wall2 || 0xff8fb1)}"></label><button id="obAtmoReset">↺ 주인 취향대로</button></div>
-          ${FM.RoomKit ? (() => { const best = FM.RoomKit.pickStyle(owner.keys); return `<div class="chips"><select id="obStyle"><option value="">🏠 방 스타일: 기본 무늬 벽지</option>${Object.entries(FM.RoomKit.STYLES).map(([k, st]) => `<option value="${k}" ${room.roomStyle === k ? 'selected' : ''}>${st.name}${k === best ? ' ★취향' : ''} (${Math.round(FM.RoomKit.styleFit(owner.keys, k) * 100)}%)</option>`).join('')}</select></div>${room.roomStyle ? `<small>${esc(FM.RoomKit.STYLES[room.roomStyle].desc)}</small><div class="chips"><small>💡 조명: ${esc((FM.RoomKit.MOOD_VARS[room.moodVar || 'base'] || {}).name || '기본')} · 🎨 색 조합 ${room.kitHue ? (room.kitHue > 0 ? '+' : '') + Math.round(room.kitHue * 360) + '°' : '기본'}</small><button id="obReroll">🎲 색·조명 다시 뽑기</button></div>` : ''}`; })() : ''}</div>`; })() : ''}
-        <div class="obs-sec"><b>🎛️ 환경 조작 패널</b>
-          <div class="chips"><button id="obLight">💡 조명 ${room.lightOn === false ? 'OFF' : 'ON'}</button><select id="obLc">${Object.entries(D.LIGHT_COLORS).map(([k, x]) => `<option value="${k}" ${room.light === k ? 'selected' : ''}>${x.name}</option>`).join('')}</select><select id="obBgm">${Object.entries(D.ROOM_BGM).map(([k, n]) => `<option value="${k}" ${room.bgm === k ? 'selected' : ''}>🎵 ${n}</option>`).join('')}</select></div>
-          <div class="chips"><button id="obEdit">🛠️ 방 꾸미기 (가구 즉시 이동)</button><button id="obCode">🔗 인테리어 코드</button></div></div>` : ''}
+        <div class="obs-sec"><div class="chips"><button id="obEdit">🛠️ 방 꾸미기 (스타일 · 분위기 · 조명 · 음악)</button></div></div>` : ''}
       </div>`;
     o.querySelectorAll('[data-cm]').forEach(b => b.onclick = () => { g.camMode = b.dataset.cm; paintObs(); });
     if ($('#obBack')) $('#obBack').onclick = () => g.observe();
@@ -846,21 +839,7 @@
     if (!room) return;
     $('#obVac').onclick = () => { const n = Ev.vacuum(iid); UI.toast(`🌀 쓰레기 ${n}개를 빨아들였어요!`); g.rebuildInterior(); paintObs(); };
     if ($('#obOrder')) $('#obOrder').onclick = () => { Soc.playerChoose(owner, 'cleanOrder'); setTimeout(() => g.rebuildInterior(), 6000); };
-    $('#obLight').onclick = () => { room.lightOn = room.lightOn === false; paintObs(); };
-    const atmoChanged = (rebuild) => { room.atmoRev = (room.atmoRev || 1) + 1; room.atmoByPlayer = true; if (rebuild) g.rebuildInterior(); paintObs(); };
-    $('#obLc').onchange = e => { room.light = e.target.value; atmoChanged(false); };
-    if ($('#obPat')) {
-      $('#obPat').onchange = e => { room.wallStyle = e.target.value || null; room.wallStyleL = room.wallStyleR = null; const A4 = Object.values(D.ATMO_L4).find(a => 'p_' + a.pattern === room.wallStyle); room.particles = A4 ? A4.particle : null; room.ambience = A4 ? A4.sound : null; atmoChanged(true); };
-      $('#obW1').onchange = e => { room.wall = parseInt(e.target.value.slice(1), 16); atmoChanged(true); };
-      $('#obW2').onchange = e => { room.wall2 = parseInt(e.target.value.slice(1), 16); atmoChanged(true); };
-      const applyStyle = id => { const { w, d } = Sim.interiorSize(iid); if (id) Object.assign(room, FM.RoomKit.styleRoom(id, w, d, FM.INTERIORS[iid].door, (Math.random() * 1e9) | 0, owner.keys)); else { const A4 = D.ATMO_L4[owner.keys.L4]; Object.assign(room, FM.defaultRoom(owner, w, d, null, { plain: true }), { roomStyle: null, wallStyleL: null, wallStyleR: null, wallStyle: 'p_' + A4.pattern }); } Sim.freeUse && owner && Sim.freeUse(owner); };
-      $('#obAtmoReset').onclick = () => { const A1 = D.ATMO_L1[owner.keys.L1], A4 = D.ATMO_L4[owner.keys.L4]; Object.assign(room, { wall: A1.palette[0], wall2: A1.palette[1], light: A1.light, wallStyle: 'p_' + A4.pattern, particles: A4.particle, ambience: A4.sound }); if (FM.RoomKit) applyStyle(FM.RoomKit.pickStyle(owner.keys)); atmoChanged(true); };
-      if ($('#obReroll')) $('#obReroll').onclick = () => { Object.assign(room, FM.RoomKit.variant(room.roomStyle, owner.keys, (Math.random() * 1e9) | 0)); atmoChanged(true); };
-      if ($('#obStyle')) $('#obStyle').onchange = e => { applyStyle(e.target.value || null); atmoChanged(true); };
-    }
-    $('#obBgm').onchange = e => { room.bgm = e.target.value; };
     $('#obEdit').onclick = () => UI.openRoomEditor(iid);
-    $('#obCode').onclick = () => UI.codeModal(iid);
   }
   let obsT = 0;
 
@@ -986,7 +965,18 @@
           <div class="chips">${Object.entries(D.MATERIALS).map(([k, m]) => `<button data-mat="${k}" class="${f.mat === k ? 'on' : ''}" style="--c:${FM.PM.css(m.color)}">${m.name}</button>`).join('')}<button data-mat="">기본</button></div>
           <label>색 <input type="color" id="edCol" value="${f.color ? FM.PM.css(f.color) : '#ffffff'}"></label> <button id="edColClear" class="small">색 초기화</button>
           ${F.photo ? `<div class="chips photo-chips"><button id="edImg" class="main">🖼️ 내 이미지 붙이기</button>${f.img ? '<button id="edImgX">✖ 이미지 떼기</button>' : ''}</div>${f.img ? `<img class="ed-thumb" src="${f.img}" alt="">` : '<small class="muted">내 사진이나 그림 파일을 골라서 붙일 수 있어요</small>'}` : ''}</div>` : '<p class="muted">🖐️ 방 안의 가구를 <b>잡고 끌면</b> 옮겨져요 (벽걸이는 벽에 착 붙어요).<br>선택 후 <b>Q/R</b> 회전 · <b>방향키</b> 미세 이동 · <b>Delete</b> 회수</p>'}
-        ${FM.RoomKit ? `<div class="ed-sec"><b>🏠 방 스타일 한 번에 바꾸기</b><div class="chips"><select id="edStyle"><option value="">스타일 고르기…</option>${Object.entries(FM.RoomKit.STYLES).map(([k, x]) => `<option value="${k}" ${room.roomStyle === k ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>${room.roomStyle ? '<button id="edReroll">🎲 색·조명 다시 뽑기</button>' : ''}</div><small class="muted">가구 · 벽지 · 바닥 · 조명이 스타일에 맞게 통째로 바뀌어요 (무료)</small></div>` : ''}
+        ${FM.RoomKit ? (() => { const owner = s.villagers.find(v => v.home === edIid && !v.child); const keys = owner ? owner.keys : (s.player.keys || {}); const best = FM.RoomKit.pickStyle(keys);
+          return `<details class="ed-styles" open><summary>🏠 방 스타일 (누르면 바로 바뀌어요)</summary><div class="st-grid">${(() => { const fitOf = k => FM.RoomKit.styleFit ? FM.RoomKit.styleFit(keys, k) : 0; let L = Object.entries(FM.RoomKit.STYLES).sort((a, b) => (b[0] === room.roomStyle) - (a[0] === room.roomStyle) || fitOf(b[0]) - fitOf(a[0])); edList.styleMore = L.length - 6; if (!edList.allStyles) L = L.slice(0, 6); return L; })().map(([k, x]) => { const fit = Math.round((FM.RoomKit.styleFit ? FM.RoomKit.styleFit(keys, k) : 0) * 100); return `<button data-style="${k}" class="st-card ${room.roomStyle === k ? 'on' : ''}"><i style="background:${FM.PM.css(x.floorColor || 0xd9b88a)}"></i><b>${esc(x.name)}</b><small>${esc((x.desc || '').split('·').slice(0, 2).join('·'))}</small>${k === best ? '<em>추천</em>' : ''}${owner ? `<u>💗 ${fit}%</u>` : ''}</button>`; }).join('')}</div><button id="edStyMore" class="small">${edList.allStyles ? '▲ 추천 6개만 보기' : `▼ 스타일 ${edList.styleMore}개 더 보기`}</button> ${room.roomStyle ? '<button id="edReroll" class="small">🎲 같은 스타일로 색·조명 다시 뽑기</button>' : ''}</details>`; })() : ''}
+        ${(() => { const owner = s.villagers.find(v => v.home === edIid && !v.child); if (!owner || !D.ATMO_L1[owner.keys.L1]) return ''; const A1 = D.ATMO_L1[owner.keys.L1], A4 = D.ATMO_L4[owner.keys.L4]; const sc = Ev.atmoScore(owner, room);
+          return `<details open><summary>🎨 방 분위기 — ${esc(owner.name)} 취향 적합도 <b>${sc}%</b></summary><div class="bar"><i style="width:${sc}%"></i></div>
+            <small>좋아하는 색: <span class="sw" style="background:${FM.PM.css(A1.palette[0])}"></span><span class="sw" style="background:${FM.PM.css(A1.palette[1])}"></span> ${esc(A1.pname)} · ${esc(A1.tone)} / 좋아하는 무늬: ${esc(A4.pname)}</small>
+            <label>벽 무늬 <select id="edPat"><option value="">무늬 없음</option>${Object.entries(D.ATMO_PATTERNS).map(([k, n]) => `<option value="${k}" ${room.wallStyle === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+            <label>벽 색 1 <input type="color" id="edW1" value="${FM.PM.css(room.wall || 0xf4efe6)}"></label><label>벽 색 2 <input type="color" id="edW2" value="${FM.PM.css(room.wall2 || 0xffffff)}"></label>
+            <button id="edAtmoReset" class="small">💗 ${esc(owner.name)} 취향으로 맞추기</button></details>`; })()}
+        <details open><summary>🎛️ 환경 (조명 · 음악)</summary>
+          <div class="chips"><button id="edLight">💡 조명 ${room.lightOn === false ? 'OFF' : 'ON'}</button><select id="edLc">${Object.entries(D.LIGHT_COLORS).map(([k, x]) => `<option value="${k}" ${room.light === k ? 'selected' : ''}>${x.name}</option>`).join('')}</select></div>
+          <label>방 음악 <select id="edBgm">${Object.entries(D.ROOM_BGM).map(([k, x]) => `<option value="${k}" ${room.bgm === k ? 'selected' : ''}>${typeof x === 'string' ? x : x.name}</option>`).join('')}</select></label>
+          <button id="edVac" class="small">🌀 방 청소 (쓰레기 ${room.trash ? room.trash.length : 0}개)</button></details>
         <details open><summary>1. 벽면 & 바닥</summary>
           <label>벽지 색 <input type="color" id="edWall" value="${FM.PM.css(room.wall || 0xf4efe6)}"></label>
           <label>바닥재 <select id="edFloor">${floorKinds.map(k => `<option ${room.floor === k ? 'selected' : ''} value="${k}">${k} (${D.FLOOR_SOUND[k] || ''})</option>`).join('')}</select></label>
@@ -997,10 +987,7 @@
           <div class="fl-tools"><input id="edFQ" type="search" placeholder="🔍 가구 이름 검색" value="${esc(edList.q)}">${FM.RoomKit ? `<select id="edFS"><option value="">🏠 모든 스타일</option>${Object.entries(FM.RoomKit.STYLES).map(([k, x]) => `<option value="${k}" ${edList.style === k ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''}</div>
           ${cats.map(c => `<h5 data-cat="${c}">${FM.FURN_LAYERS[c]}</h5><div class="furn-list thumbs" data-cat="${c}">${Object.values(FM.FURN).filter(x => x.layer === c && x.price > 0).map(x => `<button data-add="${x.id}" data-name="${esc(x.name)}" title="${esc(x.name)}"><img data-ft="${x.id}" alt=""><span>${esc(x.name)}</span></button>`).join('')}</div>`).join('')}
           <p class="muted fl-empty" hidden>찾는 가구가 없어요</p></details>
-        <details><summary>🎫 테마 & 공유</summary>
-          <div class="furn-list">${Object.entries(D.THEMES).map(([k, t]) => `<button data-theme="${k}">${esc(t.name)}<small>${esc(t.cat)}</small></button>`).join('')}</div>
-          <p class="muted">🎨 방 꾸미기는 모두 무료예요. 테마 버튼을 누르면 바로 적용돼요.</p>
-          <button id="edAuto">🎟️ 주민 자율 인테리어 (무료)</button> <button id="edCode">🔗 인테리어 코드 / 템플릿 마켓</button></details>
+
       </div>`;
     $('#edX').onclick = () => UI.closeEditor();
     const rebuild = () => { room.edited = true; G().rebuildInterior(); };
@@ -1026,14 +1013,28 @@
         rebuild(); paintEditor(); UI.toast(`🖼️ ${F2.name}에 내 이미지를 붙였어요! 끌어서 옮겨보세요`);
       });
     });
-    if ($('#edStyle')) $('#edStyle').onchange = ev => {
-      const k = ev.target.value; if (!k) return;
+    e.querySelectorAll('[data-style]').forEach(b => b.onclick = () => {
+      const k = b.dataset.style; if (!k) return;
       const { w, d } = Sim.interiorSize(edIid);
       const owner = st().villagers.find(v => v.home === edIid && !v.child);
       const keys = owner ? owner.keys : (st().player.keys || {});
       Object.assign(room, FM.RoomKit.styleRoom(k, w, d, (FM.INTERIORS[edIid] || {}).door, (Math.random() * 1e9) | 0, keys), { trash: [], theme: null, edited: true });
       edSel = null; G().rebuildInterior(); paintEditor(); UI.toast(`🏠 ${FM.RoomKit.STYLES[k].name} 스타일로 바꿨어요!`);
-    };
+    });
+    if ($('#edStyMore')) $('#edStyMore').onclick = () => { edList.allStyles = !edList.allStyles; paintEditor(); };
+    // 방 분위기
+    const atmoChanged = rb => { room.atmoRev = (room.atmoRev || 1) + 1; room.atmoByPlayer = true; room.edited = true; if (rb) G().rebuildInterior(); paintEditor(); };
+    if ($('#edPat')) {
+      $('#edPat').onchange = ev => { room.wallStyle = ev.target.value || null; room.wallStyleL = room.wallStyleR = null; const A4 = Object.values(D.ATMO_L4).find(a => 'p_' + a.pattern === room.wallStyle); room.particles = A4 ? A4.particle : null; room.ambience = A4 ? A4.sound : null; atmoChanged(true); };
+      $('#edW1').onchange = ev => { room.wall = parseInt(ev.target.value.slice(1), 16); atmoChanged(true); };
+      $('#edW2').onchange = ev => { room.wall2 = parseInt(ev.target.value.slice(1), 16); atmoChanged(true); };
+      $('#edAtmoReset').onclick = () => { const owner = st().villagers.find(v => v.home === edIid && !v.child); const A1 = D.ATMO_L1[owner.keys.L1], A4 = D.ATMO_L4[owner.keys.L4]; Object.assign(room, { wall: A1.palette[0], wall2: A1.palette[1], light: A1.light, wallStyle: 'p_' + A4.pattern, wallStyleL: null, wallStyleR: null, particles: A4.particle, ambience: A4.sound }); atmoChanged(true); UI.toast('💗 주민 취향에 맞췄어요'); };
+    }
+    // 환경
+    $('#edLight').onclick = () => { room.lightOn = room.lightOn === false; G().rebuildInterior(); paintEditor(); };
+    $('#edLc').onchange = ev => { room.light = ev.target.value; atmoChanged(true); };
+    $('#edBgm').onchange = ev => { room.bgm = ev.target.value; };
+    $('#edVac').onclick = () => { const n = Ev.vacuum(edIid); UI.toast(`🌀 쓰레기 ${n}개를 치웠어요!`); G().rebuildInterior(); paintEditor(); };
     if ($('#edReroll')) $('#edReroll').onclick = () => { const owner = st().villagers.find(v => v.home === edIid && !v.child); Object.assign(room, FM.RoomKit.variant(room.roomStyle, owner ? owner.keys : (st().player.keys || {}), (Math.random() * 1e9) | 0)); room.edited = true; G().rebuildInterior(); paintEditor(); };
     $('#edWall').oninput = ev => { room.wall = parseInt(ev.target.value.slice(1), 16); rebuild(); };
     $('#edFloor').onchange = ev => { room.floor = ev.target.value; rebuild(); };
@@ -1063,13 +1064,6 @@
       edSel = room.furn.length - 1; UI.placing = edSel;
       rebuild(); paintEditor(); UI.toast(`${F2.name} 추가! 바닥을 눌러 배치하세요`);
     });
-    e.querySelectorAll('[data-theme]').forEach(b => b.onclick = () => {
-      const owner = st().villagers.find(v => v.home === edIid && !v.child);
-      if (owner) Ev.applyTheme(owner, b.dataset.theme); else { const s2 = Sim.interiorSize(edIid); st().rooms[edIid] = Object.assign(FM.themeRoom(b.dataset.theme, s2.w, s2.d), { lastDecor: Sim.time.day() }); FM.bus.emit('blackout', { iid: edIid }); }
-      edSel = null; setTimeout(paintEditor, 400);
-    });
-    $('#edAuto').onclick = () => { const owner = st().villagers.find(v => v.home === edIid && !v.child); if (!owner) return UI.toast('주민의 방에서만 쓸 수 있어요'); Ev.autoInterior(owner); setTimeout(paintEditor, 400); };
-    $('#edCode').onclick = () => UI.codeModal(edIid);
   }
   // 인테리어 코드 / 스타일 템플릿 마켓
   UI.codeModal = function (iid) {
