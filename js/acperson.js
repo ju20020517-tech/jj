@@ -221,26 +221,35 @@
   //  round 동글 · lash 속눈썹 · bean 콩눈 · dot 점눈 · sleepy 반쯤 감은 · droopy 처진 · sharp 올라간(고양이)
   //  calm 가는 아몬드 · big 큰 반짝 · ring 동그라미 · flat 감은 선 · smile 눈웃음 · tired 다크서클 · sanpaku 삼백안 · heavy 무심 · dreamy 위를 보는
   function drawEye(g, x, y, s, l, kind) {
+    if (kind === 'sanpaku') kind = 'sharp';
     const ic = l.eyeColor != null ? l.eyeColor : 0x5a3424;
     const ink = '#2a1a1c';
     g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = ink; g.fillStyle = ink;
     const arc = (up, lw = 7, w = 20) => { g.lineWidth = lw; g.beginPath(); if (up) { g.moveTo(x - w, y + 6); g.quadraticCurveTo(x, y - 16, x + w, y + 6); } else { g.moveTo(x - w, y - 2); g.quadraticCurveTo(x, y + 13, x + w, y - 2); } g.stroke(); };
     const lashes = (n = 2, yy = y - 20, w = 22) => { g.lineWidth = 3.5; for (let k = 0; k < n; k++) { const px = x + s * (w * 0.55 + k * 7), py = yy + k * 4; g.beginPath(); g.moveTo(px, py); g.lineTo(px + s * 7, py - 6); g.stroke(); } };
     const hl = (cx, cy, r) => { g.fillStyle = '#fff'; circle(g, cx - r * 0.4, cy - r * 0.42, r * 0.3); circle(g, cx + r * 0.38, cy + r * 0.4, r * 0.12); g.fillStyle = ink; };
-    // 흰자 + 동그란 홍채 공통
+    // 흰자는 가장자리만, 홍채가 눈을 거의 채우는 애니 눈 (위는 진하고 아래로 밝아지며 분홍 반사)
     const eyeball = (rx, ry, ir, dx = 0, dy = 2, clipTop = null) => {
       g.save();
       if (clipTop != null) { g.beginPath(); g.rect(x - 60, y + clipTop, 120, 80); g.clip(); }
       g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.clip();
-      const cx = x + dx - s * 1, cy = y + dy;
-      const gr = g.createLinearGradient(0, cy - ir, 0, cy + ir); gr.addColorStop(0, hex(shade(ic, 0.45))); gr.addColorStop(0.6, hex(ic)); gr.addColorStop(1, hex(shade(ic, 1.35)));
-      g.fillStyle = gr; ellipse(g, cx, cy, ir, ir * 1.06);
-      g.fillStyle = hex(shade(ic, 0.2)); ellipse(g, cx, cy, ir * 0.45, ir * 0.48);
-      hl(cx, cy, ir);
+      const cx = x + dx - s * 1.5, cy = y + dy * 0.6 + ry * 0.08, irx = rx * 0.74, iry = ry * 0.84;
+      const gr = g.createLinearGradient(0, cy - iry, 0, cy + iry);
+      gr.addColorStop(0, hex(shade(ic, 0.3))); gr.addColorStop(0.45, hex(shade(ic, 0.85))); gr.addColorStop(0.78, hex(shade(ic, 1.3))); gr.addColorStop(1, hex(mix(shade(ic, 1.45), 0xff9ab8, 0.45)));
+      g.fillStyle = gr; ellipse(g, cx, cy, irx, iry);
+      g.fillStyle = hex(shade(ic, 0.2)); ellipse(g, cx, cy - iry * 0.08, irx * 0.4, iry * 0.42);
+      g.fillStyle = 'rgba(25,10,20,0.35)'; ellipse(g, cx, cy - iry * 0.88, irx * 1.15, iry * 0.34);
+      g.strokeStyle = hex(shade(ic, 0.28)); g.lineWidth = 2; g.beginPath(); g.ellipse(cx, cy, irx, iry, 0, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = '#fff'; ellipse(g, cx - irx * 0.36, cy - iry * 0.4, irx * 0.27, iry * 0.29, -0.35); circle(g, cx + irx * 0.4, cy + iry * 0.45, irx * 0.11);
       g.restore();
       return [cx, cy];
     };
-    const lidTop = (rx, ry, lw = 7.5) => { g.lineWidth = lw; g.beginPath(); g.ellipse(x, y, rx + 1, ry + 1, 0, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); };
+    const lidTop = (rx, ry, lw = 7.5) => {
+      g.lineWidth = lw; g.beginPath(); g.ellipse(x, y, rx + 1, ry + 1, 0, Math.PI * 1.08, Math.PI * 1.92); g.stroke();
+      // 바깥 꼬리
+      const tx = x + s * (rx + 1) * Math.cos(Math.PI * 0.08), ty = y - (ry + 1) * Math.sin(Math.PI * 0.08);
+      g.beginPath(); g.moveTo(tx - s * 4, ty - 3); g.lineTo(tx + s * 7, ty - 6); g.lineTo(tx - s * 1, ty + 4); g.closePath(); g.fill();
+    };
     switch (kind) {
       case 'happy': case 'smile': return arc(true);
       case 'closed': return arc(false);
@@ -250,8 +259,9 @@
       case 'dot': g.fillStyle = ink; ellipse(g, x, y + 2, 7.5, 9); g.fillStyle = '#fff'; circle(g, x - 2.5, y - 1.5, 2.2); return;
       case 'bean': g.fillStyle = ink; ellipse(g, x, y + 1, 15, 19); g.fillStyle = '#fff'; ellipse(g, x - 5, y - 6, 4.8, 5.6, -0.3); circle(g, x + 5, y + 8, 2); return;
       case 'big': { g.fillStyle = ink; ellipse(g, x, y + 1, 19, 22); g.fillStyle = hex(shade(ic, 0.9)); ellipse(g, x, y + 7, 13, 11); g.fillStyle = '#fff'; ellipse(g, x - 7, y - 7, 6.5, 7.5, -0.3); circle(g, x + 7, y + 9, 3); circle(g, x + 9, y - 9, 2.2); lidTop(19, 22, 6); return; }
-      case 'ring': g.lineWidth = 5; g.beginPath(); g.ellipse(x, y, 17, 19, 0, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.stroke(); g.fillStyle = ink; circle(g, x, y + 1, 6.5); lashes(1, y - 18, 20); return;
-      case 'sanpaku': { g.lineWidth = 4; g.beginPath(); g.ellipse(x, y, 20, 18, 0, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.stroke(); g.fillStyle = hex(shade(ic, 0.6)); circle(g, x - s * 2, y - 2, 8); g.fillStyle = ink; circle(g, x - s * 2, y - 2, 4); lidTop(20, 18, 6.5); return; }
+      case 'ring': { const [cx, cy] = eyeball(22, 26, 17, 0, 3); g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 2; g.beginPath(); g.ellipse(cx, cy, 11, 12, 0, 0, Math.PI * 2); g.stroke(); g.strokeStyle = ink; lidTop(22, 26); return; }
+      case 'ringOld': g.lineWidth = 5; g.beginPath(); g.ellipse(x, y, 17, 19, 0, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.stroke(); g.fillStyle = ink; circle(g, x, y + 1, 6.5); lashes(1, y - 18, 20); return;
+      case 'sanpakuOld': { g.lineWidth = 4; g.beginPath(); g.ellipse(x, y, 20, 18, 0, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.stroke(); g.fillStyle = hex(shade(ic, 0.6)); circle(g, x - s * 2, y - 2, 8); g.fillStyle = ink; circle(g, x - s * 2, y - 2, 4); lidTop(20, 18, 6.5); return; }
       case 'sleepy': { eyeball(22, 25, 17, 0, 6, -4); g.lineWidth = 7.5; g.beginPath(); g.moveTo(x - 24, y - 4); g.lineTo(x + 24, y - 4); g.stroke(); return; }
       case 'heavy': { eyeball(22, 25, 17, 0, 4, -8); g.lineWidth = 9; g.beginPath(); g.moveTo(x - 25, y - 9); g.quadraticCurveTo(x, y - 12, x + 25, y - 9); g.stroke(); g.lineWidth = 2.5; g.strokeStyle = 'rgba(60,30,30,0.5)'; g.beginPath(); g.moveTo(x - 20, y - 16); g.quadraticCurveTo(x, y - 20, x + 20, y - 16); g.stroke(); return; }
       case 'tired': { eyeball(21, 24, 16, 0, 3); lidTop(21, 24, 6.5); g.strokeStyle = 'rgba(110,70,110,0.55)'; g.lineWidth = 3; for (const k of [0, 6]) { g.beginPath(); g.moveTo(x - 14, y + 26 + k); g.quadraticCurveTo(x, y + 32 + k, x + 14, y + 26 + k); g.stroke(); } return; }
