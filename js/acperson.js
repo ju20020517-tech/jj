@@ -459,6 +459,28 @@
   const mirror = fn => (x, y, z) => fn(A(x), y, z);
   const chain = (pts, r0, r1) => (x, y, z) => { let d = 1e9; pts.forEach((p, i) => { d = smin(d, sSph(x, y, z, p[0], p[1], p[2], lerp(r0, r1, i / (pts.length - 1))), 0.03); }); return d; };
   const surf = (az, el, off = 0.06) => { const a = az * D2R, e = el * D2R, r = 0.44 + off; return [Math.sin(a) * Math.cos(e) * r, 0.04 + Math.sin(e) * r, Math.cos(a) * Math.cos(e) * r - 0.02]; };
+  // 머리 표면을 따라 흐르는 뾰족한 가닥 (az0,el0 → az1,el1), 끝으로 갈수록 가늘어지고 off1 만큼 들뜸
+  const strand = (az0, el0, az1, el1, r0, r1 = 0.01, off0 = 0.02, off1 = 0.035, bulge = 0) => {
+    const N = 8, P = [];
+    for (let i = 0; i <= N; i++) { const t = i / N; P.push([...surf(lerp(az0, az1, t), lerp(el0, el1, t), lerp(off0, off1, t) + Math.sin(t * Math.PI) * bulge), lerp(r0 * 1.55, r1 * 1.4, Math.pow(t, 1.6))]); }
+    const pad = r0 * 1.6 + 0.03, lo = [0, 1, 2].map(k => Math.min(...P.map(p => p[k])) - pad), hi = [0, 1, 2].map(k => Math.max(...P.map(p => p[k])) + pad);
+    return (x, y, z) => {
+      const out = Math.max(lo[0] - x, x - hi[0], lo[1] - y, y - hi[1], lo[2] - z, z - hi[2]);
+      if (out > 0) return out + 0.02;
+      let d = 1e9;
+      for (let i = 0; i < N; i++) {
+        const a = P[i], b = P[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
+        const t = clamp(((x - a[0]) * dx + (y - a[1]) * dy + (z - a[2]) * dz) / (dx * dx + dy * dy + dz * dz), 0, 1);
+        const cx = a[0] + dx * t, cy = a[1] + dy * t, cz = a[2] + dz * t, r = lerp(a[3], b[3], t);
+        // 납작한 가닥: 머리 바깥 방향(두께)은 얇게, 옆(폭)은 넓게
+        const nx = cx, ny = cy - 0.04, nz = cz + 0.02, nl = hyp(nx, ny, nz) || 1;
+        const vx = x - cx, vy = y - cy, vz = z - cz, vr = (vx * nx + vy * ny + vz * nz) / nl;
+        const vt = hyp(vx - vr * nx / nl, vy - vr * ny / nl, vz - vr * nz / nl);
+        d = Math.min(d, (hyp(vt, vr * 1.7) - r) * 0.6);
+      }
+      return d;
+    };
+  };
   const spikeAt = (az, el, len, r, tilt = 0) => cone(surf(az, el, 0.0), surf(az, el + tilt, len), r, 0.012);
   const polOf = (x, y, z) => Math.acos(clamp((y - 0.05) / (hyp(x, y - 0.05, z) || 1), -1, 1)) / D2R;
 
@@ -497,9 +519,21 @@
     manbun: { L: prof(sweep(spikes(48, 11, 9), 0.1), 98, 108), part: 24, extra: [[sph(0, 0.42, -0.4, 0.1), 0.04]] },
     bowl: { r: [0.55, 0.52, 0.53], L: prof(spikes(70, 12, 16), 100, 112) },
     // 사용자 스케치대로: 사선으로 이마를 덮는 앞머리 / 모자 밑으로 삐져나온 가닥 / 보송한 덥수룩 머리 + 바보털
-    sweptfringe: { L: prof(sweep(spikes(56, 16, 12, 0, 0.8), 0.48), 102, 110, 66), part: -50, locks: [[70, 22, -0.16, 0.05]] },
-    capfringe: { L: prof(spikes(80, 18, 9, 0, 0.8), 106, 112, 60), locks: [[62, 30, -0.06, 0.05, 1.32], [78, 26, -0.14, 0.055, 1.3]] },
-    messyshort: { r: [0.56, 0.54, 0.54], L: prof(spikes(78, 20, 12, 0.2, 0.8), 106, 114, 62), locks: [[62, 28, -0.12, 0.06, 1.18], [80, 24, -0.16, 0.06, 1.2]], ahoge: true },
+    // 해원: 왼쪽 위에서 오른쪽 아래로 이마를 덮는 사선 앞머리 (왼쪽 이마는 드러남)
+    sweptfringe: { L: prof(() => 50, 100, 110, 62), locks: [[72, 22, -0.14, 0.05]], extra: [
+      [strand(-22, 44, 50, -4, 0.16, 0.02), 0.04], [strand(-6, 44, 30, 4, 0.14, 0.015), 0.04], [strand(12, 42, 64, -10, 0.14, 0.02), 0.04], [strand(-12, 42, -22, 14, 0.09, 0.012), 0.03]] },
+    // 이안: 오른쪽 위에서 왼쪽 아래로 뾰족한 가닥이 쓸려 내려오는 앞머리
+    sweptleft: { L: prof(() => 50, 100, 110, 62), locks: [[-72, 22, -0.14, 0.05]], extra: [
+      [strand(40, 46, -36, 4, 0.16, 0.02), 0.04], [strand(26, 46, -12, 10, 0.14, 0.015), 0.04], [strand(54, 42, 10, 14, 0.13, 0.015), 0.04], [strand(14, 46, -56, -4, 0.14, 0.02), 0.04]] },
+    // 레오: 모자 밑으로 내려오는 뾰족한 앞머리 세 갈래 + 양옆 바깥으로 뻗친 가닥
+    capfringe: { L: prof(() => 56, 102, 112), extra: [
+      [strand(-30, 40, -24, 8, 0.13, 0.015), 0.04], [strand(-6, 42, 8, 6, 0.13, 0.015), 0.04], [strand(22, 40, 34, 10, 0.12, 0.015), 0.04],
+      [strand(-64, 34, -94, 2, 0.11, 0.015, 0.02, 0.22), 0.04], [strand(-76, 26, -86, -12, 0.09, 0.012, 0.02, 0.12), 0.04],
+      [strand(64, 34, 94, -4, 0.11, 0.015, 0.02, 0.18), 0.04], [strand(78, 26, 84, -14, 0.09, 0.012, 0.02, 0.1), 0.04]] },
+    // 진: 크고 보송한 덥수룩 머리, 눈썹까지 오는 들쭉날쭉 앞머리, 옆은 바깥으로 뻗침 + 바보털
+    messyshort: { r: [0.57, 0.55, 0.56], L: prof(() => 74, 106, 116, 60), ahoge: true, extra: [
+      [strand(-38, 46, -50, -6, 0.13, 0.004, 0.05, 0.05), 0.04], [strand(-20, 48, -24, -9, 0.13, 0.004, 0.05, 0.05), 0.04], [strand(-2, 48, 2, 0, 0.12, 0.004, 0.05, 0.05), 0.04], [strand(16, 48, 22, -10, 0.13, 0.004, 0.05, 0.05), 0.04], [strand(34, 46, 48, -5, 0.13, 0.004, 0.05, 0.05), 0.04],
+      [strand(-60, 36, -90, -22, 0.14, 0.004, 0.06, 0.2), 0.04], [strand(60, 36, 92, -24, 0.14, 0.004, 0.06, 0.2), 0.04], [strand(-100, 26, -118, -24, 0.13, 0.004, 0.06, 0.18), 0.04], [strand(100, 26, 118, -24, 0.13, 0.004, 0.06, 0.18), 0.04]] },
     wavyshort: { L: prof(spikes(62, 15, 9, 0.25), 100, 112), bump: (az, y) => Math.sin(az * D2R * 9) * 0.014 * clamp(y + 0.2, 0, 1), locks: [[66, 24, -0.2, 0.06]] },
     mohawk: { r: [0.47, 0.45, 0.455], L: prof(() => 48, 92, 104), extra: [[ell(0, 0.5, -0.02, 0.07, 0.16, 0.44), 0.06]] },
     tiedlong: { L: prof(sweep(spikes(58, 13, 11), 0.16), 104, 112, 56), part: -24, locks: [[64, 26, -0.3, 0.06]], extra: [[cone([0, -0.16, -0.5], [0, -0.64, -0.48], 0.08, 0.02), 0.05]] },
@@ -508,7 +542,7 @@
   };
   const HAIR_NAMES = {
     bobbang: '일자 단발', longbang: '긴 생머리', longwave: '긴 웨이브', hime: '히메컷', sidelong: '옆가르마 롱', pony: '포니테일', twintail: '양갈래', bun: '똥머리', braids: '양 땋은 머리',
-    pixie: '숏컷', sweptfringe: '사선 앞머리', capfringe: '삐죽 앞머리', messyshort: '보송 덥수룩', lowtwin: '낮은 양갈래', sidepony: '옆 포니테일', curlybob: '뽀글 단발', curtainmid: '커튼뱅 중단발', odango: '양쪽 똥머리', lowbun: '쪽머리', halfup: '반묶음',
+    pixie: '숏컷', sweptfringe: '사선 앞머리', sweptleft: '왼쪽 사선 앞머리', capfringe: '삐죽 앞머리', messyshort: '보송 덥수룩', lowtwin: '낮은 양갈래', sidepony: '옆 포니테일', curlybob: '뽀글 단발', curtainmid: '커튼뱅 중단발', odango: '양쪽 똥머리', lowbun: '쪽머리', halfup: '반묶음',
     boyshort: '기본 숏', spiky: '삐죽 머리', sideswept: '옆으로 넘긴 머리', centerpart: '5:5 가르마', shaggy: '덥수룩 미디엄', buzz: '버즈컷', slick: '올백', curlyshort: '곱슬 숏',
     manbun: '맨번', bowl: '바가지 머리', wavyshort: '웨이브 숏', mohawk: '모히칸', tiedlong: '묶은 장발', cloud: '뭉게 파마', grandpa: '할아버지 머리',
   };
