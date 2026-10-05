@@ -570,7 +570,7 @@
       L1: pick(Object.keys(D.L1)), L2: pick(Object.keys(D.L2)), L3: pick(Object.keys(D.L3)), L4: pick(Object.keys(D.L4)),
     };
     let look = o.look || (window.ISLE && ISLE.randomLook ? ISLE.randomLook() : { species: 'cat' });
-    if (!o.look && window.ISLE && ISLE.HUMAN_ONLY) styleByPersonality(look, keys);
+    if (!o.look && window.ISLE && ISLE.HUMAN_ONLY) { styleByPersonality(look, keys); if (ISLE.EYE_BY_L1 && ISLE.EYE_BY_L1[keys.L1]) { look.eyeKit = ISLE.EYE_BY_L1[keys.L1]; look.eyes = 'dot'; } }
     else if (!o.look && window.ISLE && ISLE.withSpecies) {
       // 이미 섬에 많은 종은 피해서 다양하게
       const count = {}; for (const v of (S ? S.villagers : [])) count[v.look && v.look.species] = (count[v.look && v.look.species] || 0) + 1;
