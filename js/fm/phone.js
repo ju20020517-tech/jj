@@ -14,6 +14,7 @@
   // [id, 아이콘, 이름, 배경, 동작(tab 이름이면 폰 안에서 열림 / 함수면 실행 후 폰 닫음), 배지 버튼 id]
   const APPS = [
     ['villagers', '👥', '주민', 'linear-gradient(135deg,#ffc8dc,#ff9ac8)', 'villagers'],
+    ['love', '💞', '연애', 'linear-gradient(135deg,#ffd6e8,#ff7ab0)', 'love'],
     ['quest', '📜', '퀘스트', 'linear-gradient(135deg,#fff0b0,#ffd27a)', 'quest'],
     ['news', '📰', '소식', 'linear-gradient(135deg,#d0ecff,#8fc8ff)', 'news'],
     ['bag', '🎒', '가방', 'linear-gradient(135deg,#d8f4c8,#9adc8a)', 'bag'],
@@ -30,7 +31,7 @@
     ['settings', '⚙️', '설정', 'linear-gradient(135deg,#f0ecf4,#cfc6dc)', 'settings'],
     ['help', '❓', '도움말', 'linear-gradient(135deg,#e8f4ff,#bcd8f4)', 'help'],
   ];
-  const TITLE = { villagers: '👥 주민', quest: '📜 퀘스트', news: '📰 소식', bag: '🎒 가방', god: '✨ 신의 툴', settings: '⚙️ 설정', help: '❓ 도움말' };
+  const TITLE = { villagers: '👥 주민', love: '💞 연애', quest: '📜 퀘스트', news: '📰 소식', bag: '🎒 가방', god: '✨ 신의 툴', settings: '⚙️ 설정', help: '❓ 도움말' };
   function click(sel) { const b = $(sel); if (b) b.click(); }
 
   let scr = null;

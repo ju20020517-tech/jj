@@ -211,7 +211,7 @@
   // 대화 선택지 묶음: 많으면 카테고리 4~5칸 → 누르면 펼침 (기능은 그대로)
   const VG = [
     ['talk', '💬', '이야기', '근황 · 대화 · 칭찬 · 상담', ['news', 'chat', 'praise', 'consult', 'wMore', 'nickname', 'leak', 'petname']],
-    ['heart', '💗', '마음', '설레는 말 · 고백 · 데이트', ['flirt', 'confessD', 'dateMenu', 'propose', 'babyAsk', 'breakupP', 'coachC']],
+    ['heart', '💗', '마음', '설레는 말 · 고백 · 데이트', ['flirt', 'confessD', 'dateMenu', 'propose', 'babyAsk', 'breakupP', 'coachC', 'annivTalk', 'workTalk', 'dinnerTogether', 'familyOuting', 'loveHug', 'workLunch']],
     ['gift', '🎁', '선물', '가방에서 골라 주기', ['gift']],
     ['ask', '🙏', '부탁 · 함께', '부탁 · 도와주기 · 중재 · 초대', ['cmdList', 'indList', 'errand', 'cleanOrder', 'nudge', 'invite', 'joinIn', 'care', 'unfollow']],
     ['baby', '👶', '육아', '우유 · 자장가 · 놀이', []],
@@ -351,7 +351,8 @@
     curTab = t;
     document.querySelectorAll('#side .tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
     const body = $('#sideBody');
-    ({ villagers: paintVillagers, quest: paintQuests, news: paintNews, bag: paintBag, god: paintGod, settings: paintSettings, help: paintHelp })[t](body);
+    const fn = ({ villagers: paintVillagers, quest: paintQuests, news: paintNews, bag: paintBag, god: paintGod, settings: paintSettings, help: paintHelp })[t];
+    if (fn) fn(body);
   };
   function locName(v) {
     if (v.loc === 'island') { const d = FM.T.district(v.x, v.z); return MAP.DISTRICTS[d].short + ' 지구'; }
