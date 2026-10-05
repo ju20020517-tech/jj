@@ -216,10 +216,58 @@
   function heart(g, x, y, s) { g.beginPath(); g.moveTo(x, y + s * 0.9); g.bezierCurveTo(x - s * 1.6, y - s * 0.2, x - s * 0.5, y - s * 1.3, x, y - s * 0.4); g.bezierCurveTo(x + s * 0.5, y - s * 1.3, x + s * 1.6, y - s * 0.2, x, y + s * 0.9); g.fill(); }
   function star(g, x, y, r) { g.beginPath(); for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * 0.45 : r, a = i / 10 * Math.PI * 2 - Math.PI / 2; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); }
   const LID = '#3a1a1e';
-  const EYE_AZ = 23, EYE_POL = 101, EYE_SCALE = 1.45;
+  const EYE_AZ = 24, EYE_POL = 100, EYE_SCALE = 1.45;
   // 눈 종류 (참고 시트의 눈 모양들): 성격마다 다르게
   //  round 동글 · lash 속눈썹 · bean 콩눈 · dot 점눈 · sleepy 반쯤 감은 · droopy 처진 · sharp 올라간(고양이)
   //  calm 가는 아몬드 · big 큰 반짝 · ring 동그라미 · flat 감은 선 · smile 눈웃음 · tired 다크서클 · sanpaku 삼백안 · heavy 무심 · dreamy 위를 보는
+  // 예전 Q판 큰 눈 + 사용자가 그려 준 수정: 바깥쪽 흰자 · 굵은 윗선 · 짧고 굵은 아랫선 · 선명한 홍채
+  const ICON_EYES = { happy: 1, smile: 1, closed: 1, flat: 1, x: 1, heart: 1, dot: 1, bean: 1, shock: 1 };
+  function drawEyeQ(g, x, y, s, l, kind) {
+    const ic = l.eyeColor != null ? l.eyeColor : 0x6a3a2a, LIDC = '#1e1214';
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    const W = 38, H = 52;
+    const droop = kind === 'droopy' || kind === 'sad' || kind === 'tired', sharp = kind === 'sharp' || kind === 'glare' || kind === 'sanpaku';
+    const lowLid = kind === 'sleepy' || kind === 'heavy', smug = kind === 'smug' || kind === 'calm';
+    g.save();
+    const lidClip = (yo, yi, c) => { g.beginPath(); g.moveTo(x - s * 60, y + 70); g.lineTo(x + s * 60, y + 70); g.lineTo(x + s * 60, y + yo); g.quadraticCurveTo(x, y + c, x - s * 60, y + yi); g.closePath(); g.clip(); };
+    if (lowLid) lidClip(-14, -14, -16);
+    if (droop) lidClip(-10, -34, -28);
+    if (sharp) lidClip(-34, -10, -24);
+    if (smug) lidClip(-14, -14, -17);
+    g.beginPath(); g.ellipse(x, y, W, H, 0, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.clip();
+    // 홍채: 안쪽으로 치우쳐서 바깥쪽에 흰자가 보이게
+    const sc = kind === 'sanpaku' ? 0.62 : 1;
+    const rx = W * 0.7 * sc, ry = H * 0.84 * sc, cx = x - s * W * 0.18, cy = y + (kind === 'dreamy' ? -6 : 5);
+    const grd = g.createLinearGradient(0, cy - ry, 0, cy + ry);
+    grd.addColorStop(0, hex(shade(ic, 0.55))); grd.addColorStop(0.45, hex(shade(ic, 1.0))); grd.addColorStop(1, hex(shade(ic, 1.45)));
+    g.fillStyle = grd; ellipse(g, cx, cy, rx, ry);
+    g.fillStyle = hex(shade(ic, 0.25)); ellipse(g, cx, cy, rx * 0.4, ry * 0.42);
+    g.strokeStyle = hex(shade(ic, 0.35)); g.lineWidth = 2.5; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = 'rgba(20,10,20,0.25)'; ellipse(g, x, y - H * 0.9, W * 1.2, H * 0.3);
+    // 하이라이트 (큰 거 하나 + 작은 거 하나)
+    g.fillStyle = '#fff';
+    if (kind === 'sparkle' || kind === 'star') star(g, cx - rx * 0.3, cy - ry * 0.35, 11);
+    else ellipse(g, cx - rx * 0.32, cy - ry * 0.36, rx * 0.3, ry * 0.26, -0.3);
+    circle(g, cx + rx * 0.35, cy + ry * 0.45, rx * 0.12);
+    if (kind === 'ring') { g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 2.5; g.beginPath(); g.ellipse(cx, cy, rx * 0.62, ry * 0.62, 0, 0, Math.PI * 2); g.stroke(); }
+    g.restore();
+    // 윗 눈꺼풀 굵은 선 + 바깥 꼬리
+    g.strokeStyle = LIDC; g.fillStyle = LIDC; g.lineWidth = 12;
+    g.beginPath();
+    let tx, ty;
+    if (lowLid) { g.moveTo(x - W, y - 13); g.quadraticCurveTo(x, y - 20, x + W, y - 13); tx = x + s * W; ty = y - 13; }
+    else if (droop) { g.moveTo(x - s * W * 0.95, y - 36); g.quadraticCurveTo(x, y - 40, x + s * W * 1.05, y - 12); tx = x + s * W * 1.05; ty = y - 12; }
+    else if (sharp) { g.moveTo(x - s * W, y - 12); g.quadraticCurveTo(x, y - 32, x + s * W * 1.08, y - 37); tx = x + s * W * 1.08; ty = y - 37; }
+    else if (smug) { g.moveTo(x - W, y - 14); g.quadraticCurveTo(x, y - 19, x + W, y - 14); tx = x + s * W; ty = y - 14; }
+    else { g.moveTo(x - s * W * 1.0, y - H * 0.3); g.quadraticCurveTo(x - s * W * 0.15, y - H * 1.16, x + s * W * 1.05, y - H * 0.42); tx = x + s * W * 1.05; ty = y - H * 0.42; }
+    g.stroke();
+    g.beginPath(); g.moveTo(tx - s * 6, ty - 6); g.lineTo(tx + s * 15, ty - (droop ? -4 : 9)); g.lineTo(tx - s * 3, ty + 7); g.closePath(); g.fill();
+    if (l.lashes || kind === 'lash') { g.lineWidth = 5; for (const [dx, dy] of [[0.62, -0.92], [0.86, -0.7]]) { if (lowLid || smug || droop) break; g.beginPath(); g.moveTo(x + s * W * dx, y + H * dy); g.lineTo(x + s * (W * dx + 10), y + H * dy - 11); g.stroke(); } }
+    // 짧고 굵은 아랫선 (홍채 아래)
+    g.lineWidth = 7; g.beginPath(); g.moveTo(cx - rx * 0.75, y + H * 0.92); g.quadraticCurveTo(cx, y + H * 1.02, cx + rx * 0.75, y + H * 0.9); g.stroke();
+    if (kind === 'tired') { g.strokeStyle = 'rgba(110,70,110,0.5)'; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 18, y + H + 10); g.quadraticCurveTo(x, y + H + 16, x + 18, y + H + 10); g.stroke(); }
+    if (l.mole && ((l.mole === 'L' && s < 0) || (l.mole === 'R' && s > 0))) { g.fillStyle = '#5a3426'; circle(g, x + s * 24, y + 46, 3.2); }
+  }
   function drawEye(g, x, y, s, l, kind) {
     if (kind === 'sanpaku') kind = 'sharp';
     const ic = l.eyeColor != null ? l.eyeColor : 0x5a3424;
@@ -321,7 +369,7 @@
     const g = cv.getContext('2d'); if (small) g.scale(0.5, 0.5);
     g.fillStyle = hex(l.skin); g.fillRect(0, 0, CW, CH);
     // 볼터치 (눈 바로 아래 분홍 타원)
-    if (l.blush !== 'none') { const bc = typeof l.blush === 'number' ? l.blush : 0xff8fa0; for (const az of [-30, 30]) { const x = X(az), y = Y(114); const gr = g.createRadialGradient(x, y, 0, x, y, 30); gr.addColorStop(0, hex(bc) + '90'); gr.addColorStop(0.55, hex(bc) + '45'); gr.addColorStop(1, hex(bc) + '00'); g.fillStyle = gr; ellipse(g, x, y, 32, 18); } }
+    if (l.blush !== 'none') { const bc = typeof l.blush === 'number' ? l.blush : 0xff8fa0; for (const az of [-EYE_AZ - 2, EYE_AZ + 2]) { const x = X(az), y = Y(116); const gr = g.createRadialGradient(x, y, 0, x, y, 32); gr.addColorStop(0, hex(bc) + 'b0'); gr.addColorStop(0.6, hex(bc) + '60'); gr.addColorStop(1, hex(bc) + '00'); g.fillStyle = gr; ellipse(g, x, y, 34, 17); } }
     if (l.freckles) { g.fillStyle = 'rgba(150,85,55,0.5)'; for (const [az, p] of [[-30, 108], [-36, 110], [-26, 112], [30, 108], [36, 110], [26, 112]]) circle(g, X(az), Y(p), 2.6); }
     const ex = [X(-EYE_AZ), X(EYE_AZ)], ey = Y(EYE_POL);
     // 눈썹 (짧고 가늘게)
@@ -343,10 +391,12 @@
     const kind = map[l.eyes] || l.eyeKit || 'round';
     ex.forEach((x, i) => {
       const s = i === 0 ? -1 : 1;
+      let k2 = kind;
+      if (blink && !['happy', 'smile', 'closed', 'flat'].includes(kind)) k2 = 'closed';
+      else if (kind === 'wink') k2 = i === 1 ? 'happy' : (l.eyeKit || 'round');
+      if (!ICON_EYES[k2]) { drawEyeQ(g, x, ey, s, l, k2); return; }
       g.save(); g.translate(x, ey); g.scale(EYE_SCALE, EYE_SCALE); g.translate(-x, -ey);
-      if (blink && !['happy', 'smile', 'closed', 'flat'].includes(kind)) drawEye(g, x, ey, s, l, 'closed');
-      else if (kind === 'wink') drawEye(g, x, ey, s, l, i === 1 ? 'happy' : (l.eyeKit || 'round'));
-      else drawEye(g, x, ey, s, l, kind);
+      drawEye(g, x, ey, s, l, k2);
       g.restore();
     });
     drawMouthAC(g, l.mouth || 'smile', X(0), Y(MOUTH_POL));
