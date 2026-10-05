@@ -56,11 +56,14 @@
       const st = Sim.get();
       st.player.keys = opts.playerKeys || { L1: Sim.u.pick(Object.keys(D.L1)), L2: Sim.u.pick(Object.keys(D.L2)), L3: Sim.u.pick(Object.keys(D.L3)), L4: Sim.u.pick(Object.keys(D.L4)) };
       st.player.look = opts.playerLook || st.player.look || ISLE.normalizeLook(Object.assign(ISLE.randomLook(), { species: 'human' }));
+      st.player.gender = opts.playerGender || st.player.look.gender || null;
     } else if (!G.loadSave()) return G.start({ fresh: true });
     const st = Sim.get();
     // 오랜만에 접속 (실제 시간) — 플레이어 부재 체크는 매일 처리
     st.player.lastRealVisit = st.player.lastRealVisit || Date.now();
     if (!st.player.look) st.player.look = ISLE.normalizeLook(Object.assign(ISLE.randomLook(), { species: 'human' }));
+    // 성별 (예전 세이브: 외모로 추정 — 속눈썹/치마/원피스 = 여자)
+    if (!st.player.gender) { const l = st.player.look || {}; st.player.gender = l.gender || (l.lashes || l.top === 'dress' || l.bottom === 'skirt' ? 'F' : 'M'); }
     if (!st.player.keys) st.player.keys = { L1: 'ROMANTIC', L2: 'CURIOUS', L3: 'WARM', L4: 'STUDY' };
     FM.W.build(islandScene);
     makeBeacons();
@@ -356,8 +359,10 @@
       if (door && G.autoDoor !== door.id && door.dist < 1.1) { G.autoDoor = door.id; FM.UI.hint(`E: ${door.name} 들어가기`); }
     } else {
       const { w, d } = Sim.interiorSize(p.loc);
-      p.x = Math.max(-w / 2 + 0.35, Math.min(w / 2 - 0.35, nx));
-      p.z = Math.max(-d / 2 + 0.35, Math.min(d / 2 - 0.2, nz));
+      let qx = Math.max(-w / 2 + 0.35, Math.min(w / 2 - 0.35, nx)), qz = Math.max(-d / 2 + 0.35, Math.min(d / 2 - 0.2, nz));
+      // 가구 통과 금지 (가구 안으로 들어가면 바깥으로 밀어내 미끄러지듯 비켜 감)
+      if (Sim.roomPush) { const o = Sim.roomPush(p.loc, qx, qz, 0.2); if (o.moved) { const w2 = Sim.roomPush(p.loc, p.x, p.z, 0.2); if (!w2.moved) { qx = o.x; qz = o.z; } } }
+      p.x = qx; p.z = qz;
     }
     p.ry = Math.atan2(dx, dz);
     // 발걸음 소리 (바닥 재질에 따라: 통나무 ➔ 삐걱, 대리석 ➔ 또각)

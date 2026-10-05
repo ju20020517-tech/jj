@@ -689,6 +689,6 @@
   DEC.cone = () => { const g = new THREE.Group(); g.add(mesh(geo('cone1', () => new THREE.ConeGeometry(0.25, 0.7, 12)), mat(0xff6a2a), 0, 0.35, 0)); return g; };
   DEC.car = (c) => { const g = new THREE.Group(); g.add(mesh(box(1.8, 0.7, 3.6, 0.3), mat(c), 0, 0.6, 0)); g.add(mesh(box(1.6, 0.6, 1.9, 0.25), glassMat(0xbfe8ff), 0, 1.2, -0.2)); for (const [x, z] of [[-0.85, -1.1], [0.85, -1.1], [-0.85, 1.1], [0.85, 1.1]]) g.add(mesh(cyl(0.32, 0.32, 0.25), mat(0x2b2b30), x, 0.32, z).rotateZ(Math.PI / 2)); return g; };
   DEC.goal = () => PM.furniture('mini_goal');
-  PM.decor = (k, ...a) => (DEC[k] ? DEC[k](...a) : new THREE.Group());
+  PM.decor = (k, ...a) => { const o = DEC[k] ? DEC[k](...a) : new THREE.Group(); o.userData.decorKind = k; return o; };
   PM.DEC = DEC;
 })();

@@ -986,16 +986,16 @@
     });
   };
   const rl0 = ISLE.randomLook;
-  ISLE.randomLook = function () {
+  ISLE.randomLook = function (gender) {
     const l = rl0();
     if (!ISLE.HUMAN_ONLY) return l;
-    const fem = Math.random() < 0.5, pk = a => a[(Math.random() * a.length) | 0];
+    const fem = gender ? gender === 'F' : Math.random() < 0.5, pk = a => a[(Math.random() * a.length) | 0];
     return ISLE.normalizeLook(Object.assign(l, {
       species: 'human', marking: 'none', skin: pk(SKINS), hair: pk(NAT_HAIR), hairStyle: pk(fem ? F_STY : M_STY), eyeKit: pk(KITS), eyes: 'dot', lashes: fem,
       brows: 'thin', blush: 0xff9a88, mouth: pk(['smile', 'smile', 'grin', 'open']), pattern: 'plain',
       top: pk(['tee', 'shirt', 'cardigan', 'hoodie', 'sweater', 'jacket', 'longtee', fem ? 'dress' : 'tee']), bottom: fem ? pk(['skirt', 'jeans', 'pleats', 'shorts']) : pk(['jeans', 'pants', 'shorts', 'cargo']),
       shoeType: pk(['sneaker', 'loafer', 'boots']), hat: Math.random() < 0.2 ? pk(['cap', 'knit', 'bucket']) : 'none', glasses: Math.random() < 0.12 ? 'round' : 'none',
-      acc: Math.random() < 0.25 ? pk(['backpack', 'satchel', 'scarf', 'tote']) : 'none', height: 1, width: 1,
+      acc: Math.random() < 0.25 ? pk(['backpack', 'satchel', 'scarf', 'tote']) : 'none', height: 1, width: 1, gender: fem ? 'F' : 'M',
     }));
   };
 

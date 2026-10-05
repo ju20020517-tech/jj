@@ -212,7 +212,7 @@
     root.add(conformRect(Tt, X0 + 1.2, X1 - 3.6, -99.6, -98.4, 0.07, WAVE));
     for (const z of [-99.7, -98.3]) root.add(conformRect(Tt, X0 + 1.2, X1 - 3.6, z - 0.12, z + 0.12, 0.12, new THREE.MeshLambertMaterial({ color: STONE2 })));
     const props = new THREE.Group();
-    for (const [id, x, z, r] of L) { const F = FM.FURN[id]; if (!F) continue; const g = new THREE.Group(); F.build(g); g.position.set(x, Tt.height(x, z) + 0.04, z); g.rotation.y = r * PI / 180; g.traverse(o => { if (o.isMesh) { o.castShadow = !o.material.transparent && !o.userData.noBake && !o.userData.nightOnly; o.receiveShadow = true; } }); props.add(g); }
+    for (const [id, x, z, r] of L) { const F = FM.FURN[id]; if (!F) continue; if (!F.use && !/arch|hedge|border|bridge|path|rug|bench|swing|gazebo|pond|stream|lantern_string|garland/.test(id) && F.w && F.d && FM.T.addSolid) FM.T.addSolid(x, z, Math.min(F.w, F.d) * 0.45, id); const g = new THREE.Group(); F.build(g); g.position.set(x, Tt.height(x, z) + 0.04, z); g.rotation.y = r * PI / 180; g.traverse(o => { if (o.isMesh) { o.castShadow = !o.material.transparent && !o.userData.noBake && !o.userData.nightOnly; o.receiveShadow = true; } }); props.add(g); }
     const nightOnly = [], nightGlow = []; props.traverse(o => { if (o.userData.nightOnly || (o.isMesh && o.material && o.material.blending === THREE.AdditiveBlending)) nightOnly.push(o); if (o.userData.nightGlow) nightGlow.push(o); });
     root.add(props); if (PM && PM.bake) PM.bake(props);
     // 흩날리는 푸른 꽃잎 (낮) · 반딧불 (밤)

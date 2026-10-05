@@ -388,7 +388,7 @@
     root.add(conform(Tt, X0, X1, Z0, Z1, 0.05, new THREE.MeshLambertMaterial(Object.assign({ map: mt }, po))));
     const at = aisleTex(); at.repeat.set(1, 7); root.add(conform(Tt, AX - 0.95, AX + 0.95, -73.6, Z1, 0.07, new THREE.MeshLambertMaterial(Object.assign({ map: at }, po))));
     const props = new THREE.Group();
-    for (const [id, x, z, r] of LAYOUT) { const F = FM.FURN[id]; if (!F) continue; const g = new THREE.Group(); F.build(g); g.position.set(x, Tt.height(x, z) + 0.06, z); g.rotation.y = r * PI / 180; g.traverse(o => { if (o.isMesh) { o.castShadow = !o.material.transparent && !o.userData.noBake; o.receiveShadow = true; } }); props.add(g); }
+    for (const [id, x, z, r] of LAYOUT) { const F = FM.FURN[id]; if (!F) continue; if (!F.use && !/arch|hedge|border|bridge|path|rug|bench|swing|gazebo|pond|stream|lantern_string|garland/.test(id) && F.w && F.d && FM.T.addSolid) FM.T.addSolid(x, z, Math.min(F.w, F.d) * 0.45, id); const g = new THREE.Group(); F.build(g); g.position.set(x, Tt.height(x, z) + 0.06, z); g.rotation.y = r * PI / 180; g.traverse(o => { if (o.isMesh) { o.castShadow = !o.material.transparent && !o.userData.noBake; o.receiveShadow = true; } }); props.add(g); }
     const glows = []; props.traverse(o => { if (o.isMesh && o.material && o.material.blending === THREE.AdditiveBlending) glows.push(o); });
     root.add(props); if (PM && PM.bake) PM.bake(props);
     // 반짝이 (낮엔 은은한 반짝임, 밤엔 별가루)

@@ -117,6 +117,65 @@
 
   def('k11_nurse_station', '간호사 스테이션 (모니터 · 차트 · 꽃)', 'work', 2800, 3.0, 1.0, g => { const k = K(g); k.b(3.0, 1.05, 0.45, WH, 0, 0.53, 0.25, 0.1); k.b(3.1, 0.05, 0.6, 0xf8f8f8, 0, 1.08, 0.25, 0.02); k.b(0.08, 0.3, 0.46, 0x8ab8a8, 0, 0.55, 0.48, 0.02); k.b(2.9, 0.74, 0.5, WH, 0, 0.37, -0.25, 0.02); k.b(2.95, 0.04, 0.55, 0xd8e0d8, 0, 0.75, -0.25, 0.01); for (const x of [-0.8, 0.4]) { k.b(0.46, 0.3, 0.03, 0x1a1a1a, x, 1.0, -0.4, 0.01); plane(k, 0.42, 0.26, pic('k11screen', 32, 20, () => {}), x, 1.0, -0.382); k.b(0.06, 0.18, 0.06, 0x2a2a2a, x, 0.84, -0.42); } k.b(0.2, 0.08, 0.16, 0xf4f4f4, 1.1, 0.8, -0.2, 0.02); k.b(0.1, 0.04, 0.2, 0x3a3a3a, 1.1, 0.86, -0.2, 0.02); for (let i = 0; i < 4; i++) k.b(0.25, 0.03, 0.34, [0x3a6ab8, 0xe8c040, 0x3a8a5a, 0xc83a3a][i], -0.2 + i * 0.02, 0.79 + i * 0.03, -0.1, 0.005); k.c(0.06, 0.07, 0.16, glass(0xe8f4ff), -1.3, 1.18, 0.25); for (let i = 0; i < 5; i++) k.s(0.045, [0xfbf8ea, 0xf4b0c0, 0xfbf8ea][i % 3], -1.3 + Math.cos(i * 1.3) * 0.05, 1.33 + (i % 2) * 0.04, 0.25 + Math.sin(i * 1.3) * 0.05); k.b(0.7, 0.18, 0.02, pic('k11nursesign', 64, 16, (c, w, h) => { c.fillStyle = '#3a8a6a'; c.fillRect(0, 0, w, h); c.fillStyle = '#fff'; c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.fillText('NURSE STATION', w / 2, 12); }), 0, 0.85, 0.48, 0.005); }, { use: [{ pose: 'type', dx: 0, dz: -0.8, face: 0, act: 'work_desk', seatH: 0.55 }, { pose: 'stand', dx: 0.5, dz: 0.9, face: 180, act: 'customer' }], tags: ['counter', 'desk'] });
 
+  // ---------------------------------------------------------
+  // 💊 24시 약국 코너 (오른쪽 앞) — 약 상자 가득한 벽 선반 · 약국 카운터 · 일반의약품 진열대 · 초록 십자 간판
+  // ---------------------------------------------------------
+  const GREEN = 0x2f9a5a;
+  const medBoxes = tm('k11medbox', 256, 128, (c, w, h) => {
+    c.fillStyle = '#f4f6f4'; c.fillRect(0, 0, w, h);
+    const cols = ['#e85a5a', '#3a7ad8', '#f0b030', '#3aa86a', '#9a6ad8', '#f07ab0', '#40b8c8', '#ffffff', '#f4e04a'];
+    let x = 2, i = 0;
+    while (x < w - 6) {
+      const bw = 14 + (i * 5) % 12, bh = 70 + (i * 13) % 46, col = cols[i % cols.length];
+      c.fillStyle = col; c.fillRect(x, h - bh, bw, bh);
+      c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillRect(x + 2, h - bh + 10, bw - 4, 10);
+      c.fillStyle = col === '#ffffff' ? '#3aa86a' : '#ffffff'; c.fillRect(x + bw / 2 - 1.5, h - bh + 30, 3, 10); c.fillRect(x + bw / 2 - 5, h - bh + 33.5, 10, 3);
+      c.fillStyle = 'rgba(0,0,0,0.12)'; c.fillRect(x + bw - 2, h - bh, 2, bh);
+      x += bw + 1; i++;
+    }
+  });
+  const otcBoxes = tm('k11otc', 256, 96, (c, w, h) => {
+    c.fillStyle = '#ffffff'; c.fillRect(0, 0, w, h);
+    const cols = ['#ffd84a', '#ff8a5a', '#7ad0a0', '#8ab8f0', '#f0a0c8', '#c8e070'];
+    for (let r = 0; r < 2; r++) for (let x = 3, i = r; x < w - 10; i++) { const bw = 18 + (i * 7) % 10; c.fillStyle = cols[i % cols.length]; c.beginPath(); c.roundRect ? c.roundRect(x, 6 + r * 46, bw, 38, 4) : c.rect(x, 6 + r * 46, bw, 38); c.fill(); c.fillStyle = 'rgba(255,255,255,0.9)'; c.fillRect(x + 3, 14 + r * 46, bw - 6, 6); x += bw + 3; }
+  });
+  const pharmSign = pic('k11pharmsign', 256, 96, (c, w, h) => {
+    c.fillStyle = '#2f9a5a'; c.fillRect(0, 0, w, h); c.fillStyle = '#ffffff'; c.fillRect(6, 6, w - 12, h - 12); c.fillStyle = '#2f9a5a'; c.fillRect(10, 10, w - 20, h - 20);
+    c.fillStyle = '#ffffff'; c.fillRect(30, 30, 12, 36); c.fillRect(18, 42, 36, 12);
+    c.font = 'bold 34px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('24시 약국', 150, 38); c.font = 'bold 20px sans-serif'; c.fillText('PHARMACY', 150, 70);
+  });
+  def('k11_pharm_shelf', '약국 벽 선반 (약 상자 가득)', 'work', 2400, 2.4, 0.45, g => {
+    const k = K(g);
+    k.b(2.4, 2.3, 0.06, WH, 0, 1.15, -0.2, 0.01);
+    for (const x of [-1.18, 1.18]) k.b(0.05, 2.3, 0.45, WH, x, 1.15, 0, 0.01);
+    for (let r = 0; r < 5; r++) { const y = 0.12 + r * 0.44; k.b(2.3, 0.03, 0.42, WH2, 0, y, 0); plane(k, 2.28, 0.36, medBoxes, 0, y + 0.2, 0.05); }
+    k.b(2.44, 0.18, 0.47, GREEN, 0, 2.36, 0, 0.02); k.b(1.2, 0.12, 0.02, 0xffffff, 0, 2.36, 0.24);
+    k.b(2.36, 0.1, 0.4, WH2, 0, 0.05, 0);
+  }, { tags: ['pharmacy', 'shop'], use: [{ pose: 'reach', dx: -0.6, dz: 0.75, face: 180, act: 'buy_kimbap' }] });
+  def('k11_pharm_counter', '약국 카운터 (유리 진열 · 계산대 · 처방전 접수)', 'work', 3600, 2.6, 0.8, g => {
+    const k = K(g);
+    k.b(2.6, 0.95, 0.7, WH, 0, 0.48, 0, 0.03);
+    k.b(2.5, 0.6, 0.02, GREEN, 0, 0.5, 0.36, 0.01);
+    for (const x of [-0.9, 0.9]) { k.b(0.12, 0.36, 0.02, 0xffffff, x, 0.5, 0.375); k.b(0.36, 0.12, 0.02, 0xffffff, x, 0.5, 0.375); }
+    k.b(2.66, 0.05, 0.78, 0xf8f8f8, 0, 0.98, 0, 0.01);
+    // 유리 진열 (작은 약 상자)
+    k.b(1.0, 0.26, 0.5, glass(0xeaf6ff), -0.55, 1.14, 0); plane(k, 0.9, 0.18, otcBoxes, -0.55, 1.09, 0.2);
+    // 계산대 · 처방전 트레이 · 종이 봉투
+    k.b(0.36, 0.08, 0.28, 0x3a3a44, 0.55, 1.05, 0.05, 0.02); const sc = k.b(0.32, 0.22, 0.03, 0x2a2a30, 0.55, 1.2, -0.05, 0.01); sc.rotation.x = -0.25; k.p(0.28, 0.17, glow(0x9ae0c0), 0.55, 1.2, -0.032).rotation.x = -0.25;
+    k.b(0.3, 0.03, 0.22, 0xffffff, 0.98, 1.02, 0.1, 0.01); k.b(0.26, 0.02, 0.18, 0xe8f4ee, 0.98, 1.045, 0.1);
+    k.b(0.16, 0.24, 0.1, 0xf4ecd8, 0.18, 1.12, 0.12, 0.01); k.b(0.17, 0.02, 0.11, GREEN, 0.18, 1.2, 0.12);
+    k.b(0.5, 0.16, 0.02, GREEN, 0.95, 1.3, 0.3, 0.01); plane(k, 0.46, 0.12, pic('k11rx', 128, 32, (c, w, h) => { c.fillStyle = '#2f9a5a'; c.fillRect(0, 0, w, h); c.fillStyle = '#fff'; c.font = 'bold 20px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('처방전 접수', w / 2, h / 2 + 1); }), 0.95, 1.3, 0.312);
+  }, { tags: ['pharmacy', 'shop', 'counter'], use: [{ pose: 'stand', dx: 0.7, dz: -0.75, face: 0, act: 'staff' }, { pose: 'stand', dx: -0.5, dz: 0.85, face: 180, act: 'customer' }, { pose: 'stand', dx: 0.6, dz: 0.85, face: 180, act: 'customer' }] });
+  def('k11_otc_gondola', '일반의약품 · 영양제 진열대 (양면)', 'work', 1600, 1.6, 0.6, g => {
+    const k = K(g);
+    k.b(1.6, 1.3, 0.1, WH, 0, 0.65, 0, 0.01);
+    for (const s of [-1, 1]) for (let r = 0; r < 3; r++) { const y = 0.12 + r * 0.42; k.b(1.56, 0.03, 0.24, WH2, 0, y, s * 0.15); const p = plane(k, 1.5, 0.32, otcBoxes, 0, y + 0.18, s * 0.27); if (s < 0) p.rotation.y = PI; }
+    k.b(1.64, 0.12, 0.62, GREEN, 0, 1.36, 0, 0.02);
+  }, { tags: ['pharmacy', 'shop'], use: [{ pose: 'reach', dx: 0, dz: 0.7, face: 180, act: 'buy_kimbap' }, { pose: 'reach', dx: 0, dz: -0.7, face: 0, act: 'buy_kimbap' }] });
+  def('k11_pharm_sign', '24시 약국 간판 (초록 십자 · 조명)', 'wall', 900, 1.8, 0.1, g => {
+    const k = K(g); k.b(1.84, 0.7, 0.06, GREEN, 0, 2.55, 0, 0.02); plane(k, 1.76, 0.62, pharmSign, 0, 2.55, 0.035);
+  }, { wall: true, tags: ['pharmacy'] });
+
   // =========================================================
   // 메디컬 센터 정의 갱신 (20 × 14)
   // =========================================================
@@ -140,11 +199,17 @@
       f('k11_wall_shelf_desk', 4.6, -6.72), f('k11_wall_shelf_desk', 7.9, -6.72), f('k11_wall_art', 6.2, -6.94), f('k11_wall_sconce', 3.4, -6.94), f('k11_wall_sconce', 9.4, -6.94), f('k11_anthurium', 3.4, -6.5), f('k11_wall_ac', 9.94, -4.2, -90),
       f('k11_ceiling_bar', 4.6, -3.4), f('k11_ceiling_bar', 7.9, -3.4), f('k11_ceiling_bar', 6.3, 0.3), f('k11_ficus', 9.5, -0.2), f('k11_iv_stand', 9.5, -2.4), f('k11_window', 9.94, -5.8, -90),
       // 앞쪽 처치 · 세면 (사진 1 앞) — x -2 ~ 10, z 1 ~ 7
-      f('k11_med_cabinet', 9.62, 2.6, -90), f('k11_treatment_cart', 8.1, 2.1), f('k11_basin_stand', 8.9, 3.6), f('k11_height_scale', 6.4, 2.6), f('k11_stretcher', 8.9, 5.6, 90), f('k11_ficus', 9.5, 6.5), f('k11_ceiling_bar', 7.6, 4.3),
-      f('k11_vanity_sink', -2.3, 5.2, 90), f('k11_nurse_station', 1.8, 2.6), f('k11_blue_office_chair', 1.8, 1.7), f('k11_waiting_chairs', 1.6, 5.3, 180), f('k11_low_table', 1.6, 4.4), f('k11_stretcher', 4.8, 5.8, 90), f('k11_treatment_cart', 3.6, 1.4), f('k11_monstera', -0.8, 1.5), f('k11_iv_stand', 6.8, 5.6), f('k11_ceiling_bar', 1.8, 5.2), f('k11_mint_chair', 4.8, 4.6, 200), f('k11_mint_chair', 5.5, 4.6, 180), f('k11_ficus', 3.9, 3.0), f('k11_anthurium', 1.0, 2.0), f('k11_wall_art', 9.94, 0.8, -90), f('k11_ceiling_bar', 1.0, 3.4), f('k11_window', 9.94, 4.4, -90),
+      // 💊 24시 약국 (오른쪽 앞) — 벽 선반 · 카운터 · 진열대 · 간판
+      f('k11_pharm_shelf', 9.55, 2.0, -90), f('k11_pharm_shelf', 9.55, 4.5, -90), f('k11_pharm_counter', 7.6, 3.3, -90), f('k11_pharm_sign', 9.94, 3.25, -90), f('k11_otc_gondola', 5.3, 5.7), f('k11_ficus', 9.5, 6.5), f('k11_ceiling_bar', 7.6, 4.3),
+      f('k11_vanity_sink', -2.3, 5.2, 90), f('k11_nurse_station', 1.8, 2.6), f('k11_blue_office_chair', 1.8, 1.7), f('k11_waiting_chairs', 1.6, 5.3, 180), f('k11_low_table', 1.6, 4.4), f('k11_treatment_cart', 3.6, 1.4), f('k11_monstera', -0.8, 1.5), f('k11_ceiling_bar', 1.8, 5.2), f('k11_mint_chair', 3.6, 6.2, 135), f('k11_mint_chair', 4.3, 6.4, 170), f('k11_ficus', 3.9, 3.0), f('k11_anthurium', 1.0, 2.0), f('k11_wall_art', 9.94, 0.8, -90), f('k11_ceiling_bar', 1.0, 3.4),
     ] });
   // 스태프 · 입원 시작 위치
-  const applyStaff = () => { const Ev = FM.Ev; if (!Ev || !Ev.staff) return; const s = Ev.staff.find(x => x.id === 's_doctor'); if (s) { s.x = s.sx = -6.3; s.z = s.sz = -0.45; s.ry = 0; } };
+  // 의사: 접수 데스크 뒤(주민 · 약사가 서는 자리와 겹치던 곳) → 진료실 책상 옆 / 약사: 약국 카운터 뒤
+  if (FM.FURN.k11_reception) FM.FURN.k11_reception.use = FM.FURN.k11_reception.use.filter(u => u.act !== 'staff');
+  const applyStaff = () => {
+    const Ev = FM.Ev; if (!Ev || !Ev.staff) return;
+    const s = Ev.staff.find(x => x.id === 's_doctor'); if (s) { s.x = s.sx = -7.6; s.z = s.sz = -3.3; s.ry = PI / 2; }
+  };
   applyStaff(); const Sim = FM.Sim, oLoad = Sim.load; Sim.load = function () { const r = oLoad.apply(this, arguments); applyStaff(); return r; };
   const st = Sim.get && Sim.get(); if (st && st.rooms && st.rooms.med_in) delete st.rooms.med_in;
 })();

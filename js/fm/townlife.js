@@ -107,11 +107,12 @@
         const kit = KITS[dist] || KITS.CORE; const kind = kit[(seed++) % kit.length];
         const o = P[kind](seed); const face = Math.atan2(-nx * side, -nz * side);
         o.position.set(x, T.height(x, z), z); o.rotation.y = face; grp(dist).add(o); used.push([x, z]);
+        if (kind !== 'bench') T.addSolid(x, z, kind === 'vending' ? 0.6 : kind === 'bikes' ? 0.7 : 0.35, kind);   // 길가 소품 충돌
         if (kind === 'lamp') lampPos.push([x + Math.sin(face + PI / 2) * 0.42, z + Math.cos(face + PI / 2) * 0.42]);
       }
       // 전봇대 (주택가 · 번화가 · 남쪽): 한쪽 가장자리를 따라 16m 마다 + 전선
       if (POLE_DIST[T.district(A[0], A[1])] && !main && len > 14) {
-        for (let d = 2.5; d < len - 2; d += 16) { const x = A[0] + ux * d + nx * 1.9, z = A[1] + uz * d + nz * 1.9; if (T.blockedByBuilding(x, z, 0.5) || T.inWater(x, z) || T.height(x, z) < 0.6 || inGarden(x, z) || nearDoor(x, z, 7.5)) { poles.length = 0; continue; } const o = P.pole(); o.position.set(x, T.height(x, z), z); o.rotation.y = Math.atan2(ux, uz) + PI / 2; grp('poles').add(o); poles.push([x, T.height(x, z), z]); }
+        for (let d = 2.5; d < len - 2; d += 16) { const x = A[0] + ux * d + nx * 1.9, z = A[1] + uz * d + nz * 1.9; if (T.blockedByBuilding(x, z, 0.5) || T.inWater(x, z) || T.height(x, z) < 0.6 || inGarden(x, z) || nearDoor(x, z, 7.5)) { poles.length = 0; continue; } const o = P.pole(); T.addSolid(x, z, 0.2, 'pole'); o.position.set(x, T.height(x, z), z); o.rotation.y = Math.atan2(ux, uz) + PI / 2; grp('poles').add(o); poles.push([x, T.height(x, z), z]); }
         polesByEdge.push(poles.slice());
       }
     }

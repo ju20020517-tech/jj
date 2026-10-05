@@ -160,13 +160,40 @@
   // 해변 시설 (원형 충돌)
   for (const b of FM.MAP.BEACH_SOLIDS || []) extraSolid.push(b);
 
+  // 작은 사물 충돌 (나무 · 가로등 · 텐트 · 노점 · 화분 …) — 4m 격자로 빠르게 찾기
+  const CELL = 4, GRID = new Map(), SMALL = [];
+  const gk = (i, j) => i * 100003 + j;
+  function addSolid(x, z, r, id) {
+    const s = { x, z, r, id: id || 'prop', small: true }; SMALL.push(s);
+    const m = r + 0.8;
+    for (let i = Math.floor((x - m) / CELL); i <= Math.floor((x + m) / CELL); i++) for (let j = Math.floor((z - m) / CELL); j <= Math.floor((z + m) / CELL); j++) { const k = gk(i, j); let a = GRID.get(k); if (!a) GRID.set(k, (a = [])); a.push(s); }
+    return s;
+  }
+  function smallSolidAt(x, z, pad = 0.3) {
+    const a = GRID.get(gk(Math.floor(x / CELL), Math.floor(z / CELL))); if (!a) return null;
+    for (const s of a) if (Math.hypot(x - s.x, z - s.z) < s.r + pad) return s;
+    return null;
+  }
+  // 둥근 사물(분수 · 해변 시설 · 작은 소품) 안이면 바깥 가장자리로 밀어냄 → 주민이 사물을 통과하지 않고 가장자리를 따라 돌아감
+  function pushOut(x, z, pad = 0.3) {
+    for (let it = 0; it < 3; it++) {
+      let s = null;
+      for (const c of SOLIDS) if (c.circle && Math.hypot(x - c.x, z - c.z) < c.r + pad) { s = c; break; }
+      if (!s) for (const c of extraSolid) if (Math.hypot(x - c.x, z - c.z) < c.r + pad) { s = c; break; }
+      if (!s) s = smallSolidAt(x, z, pad);
+      if (!s) return { x, z, moved: it > 0 };
+      const dx = x - s.x, dz = z - s.z, d = Math.hypot(dx, dz) || 0.001, R = s.r + pad + 0.01;
+      x = s.x + dx / d * R; z = s.z + dz / d * R;
+    }
+    return { x, z, moved: true };
+  }
   function blockedByBuilding(x, z, pad = 0.35) {
     for (const s of SOLIDS) {
       if (s.circle) { if (Math.hypot(x - s.x, z - s.z) < s.r + pad) return s; }
       else if (x > s.x0 - pad && x < s.x1 + pad && z > s.z0 - pad && z < s.z1 + pad) return s;
     }
     for (const s of extraSolid) if (Math.hypot(x - s.x, z - s.z) < s.r + pad) return s;
-    return null;
+    return smallSolidAt(x, z, Math.min(pad, 0.3));
   }
 
   // 플레이어 이동 가능 여부 (from → to)
@@ -206,6 +233,6 @@
     return 'grass';
   }
 
-  FM.T = { height, groundY, canWalk, inWater, onBridge, onStairs, bridgeY, district, surface, blockedByBuilding, coastVal,
+  FM.T = { height, groundY, canWalk, inWater, onBridge, onStairs, bridgeY, district, surface, blockedByBuilding, coastVal, addSolid, smallSolidAt, pushOut, SMALL,
     WATERS, FOOTBRIDGES, BRIDGE, SOLIDS, extraSolid, PADS, clamp, smooth, lerp };
 })();

@@ -115,8 +115,16 @@
   }
   Soc.family = family;
   const adult = v => v === P || (v && !v.child);
+  // 성별: 연애는 남녀끼리만
+  function genderOf(id) {
+    const v = id === P ? S().player : byId(id); if (!v) return null;
+    if (v.gender) return v.gender;
+    const l = v.look || {}; return l.gender || (l.lashes || l.top === 'dress' || l.bottom === 'skirt' ? 'F' : 'M');
+  }
+  Soc.genderOf = genderOf;
   function canRomance(a, b) {
     if (family(a, b)) return false;
+    const ga = genderOf(a), gb = genderOf(b); if (ga && gb && ga === gb) return false;
     const A = a === P ? P : byId(a), B = b === P ? P : byId(b);
     if (!adult(A) || !adult(B)) return false;
     const r = rel(a, b);
@@ -1217,6 +1225,7 @@
     look.marking = chance(0.5) ? la.marking || 'none' : lb.marking || 'none';
     look.hairStyle = chance(0.5) ? la.hairStyle : lb.hairStyle;
     look.top = 'tee'; look.shirt = pick([0xffd84a, 0x8fd3ff, 0xff8fb1, 0x8ee07a]); look.bottom = 'shorts';
+    const kidSex = chance(0.5) ? 'F' : 'M'; look.gender = kidSex; look.lashes = kidSex === 'F';
     const height = ((la.height || 1) + (lb.height || 1)) / 2 * (1 + rnd(-0.03, 0.03));
     // 성격 유전: 부모 A 메인 + 부모 B 메인 → 유아기 복합 성격
     const keys = { L1: A.keys.L1, L2: pick([A.keys.L2, B.keys.L2]), L3: pick([A.keys.L3, B.keys.L3]), L4: pick([A.keys.L4, B.keys.L4]) };
@@ -1227,7 +1236,7 @@
           genotype_personality: { dominant_a: A.keys.L1, dominant_b: B.keys.L1, recessive_a: A.keys.L3, recessive_b: B.keys.L3 } },
         epigenetics: { parenting_score: 50, environment_bias: 'INDOOR', expressed_third_trait: null },
         parenting_satisfaction: 70, attach: { [aId]: 80, [bId]: 80 }, env: { talk: 0, outdoor: 0, kids: 0, neglect: 0 }, third: null, crying: false } });
-    v.child.attach_a = 80; v.child.attach_b = 80;
+    v.child.attach_a = 80; v.child.attach_b = 80; v.gender = kidSex;
     const m = marriageOf(aId);
     v.home = m ? m.matrimonial_home_id : (aId === P ? 'home_p_in' : A.home);
     v.loc = v.home; v.x = 0; v.z = 0;
@@ -1936,7 +1945,7 @@
     Sim.fx('hearts', v);
     const q = st.quests.find(x => x.type === 'hospital_care' && x.target === v.id && x.state === 'active');
     if (q) finishQuest(q, true, `${v.name}을(를) 간병했어요. 곧 퇴원할 거예요!`);
-    if (v.status.hospital) { v.status.hospital = false; v.stress = 30; v.status.disease = null; Sim.freeUse(v); Sim.log('medical', `🏥 ${v.name}이(가) 플레이어의 간병 덕분에 퇴원했어요!`, [v.id], 1); }
+    if (v.status.hospital) { v.status.hospital = false; v.stress = 30; v.status.disease = null; Sim.freeUse(v); Sim.dressFor(v, null); if (v.status.hatOverride === 'headband') v.status.hatOverride = null; v.status.bandageUntil = null; Sim.log('medical', `🏥 ${v.name}이(가) 플레이어의 간병 덕분에 퇴원했어요!`, [v.id], 1); }
     if (v.crush && v.crush.target === P || canRomance(v.id, P)) addRomance(v.id, P, 8, '병문안 사과 깎기');
     return { text: L.say(v, 'appleVisit', {}, true).replace('깎아왔어', '깎아줘서 고마워') , close: true, options: [] };
   }

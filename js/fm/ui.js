@@ -310,7 +310,7 @@
   UI.staffTalk = function (s) {
     const lines = { boss: '...오늘 업무는 끝냈나?', clerk: '민원 창구입니다. 번호표를 뽑아주세요.', judge: '정숙!', doctor: '어디가 아프신가요? 엉뚱한 병도 고쳐드립니다.', dj: '🎧 오늘 밤도 불태워 보자고!', chef: '오늘의 추천은 참치 대창 초밥!', pub: '탕수육 나왔어요~', barista: '수플레 팬케이크 어떠세요?', stylist: '파격 변신, 해 드릴까요?', conv: '어서오세요~ 삼각김밥 1+1이에요!', tea: '따뜻한 대추차 한 잔 드릴까요?', teacher: '얘들아, 조용!', librarian: '도서관에서는 정숙해 주세요.', captain: '⛴️ 오늘도 이웃 섬 손님이 올 거예요.', pocha: '어서 와~ 우동 한 그릇 해!' };
     UI.toast(`${s.name}: "${lines[s.role] || '안녕하세요!'}"`);
-    const shop = { barista: 'cafe', conv: 'conv', stylist: 'mall', tea: 'tea', pocha: 'pocha', librarian: 'library', doctor: 'pharmacy' }[s.role];
+    const shop = { barista: 'cafe', conv: 'conv', stylist: 'mall', tea: 'tea', pocha: 'pocha', librarian: 'library', pharmacist: 'pharmacy' }[s.role];
     if (shop) UI.shop(shop);
     if (s.role === 'clerk' || s.role === 'judge') UI.cityHall();
   };

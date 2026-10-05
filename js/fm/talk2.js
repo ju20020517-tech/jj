@@ -805,6 +805,21 @@
     const why = aff < 60 ? `아직 너를 잘 모르겠어 (호감 ${Math.round(aff)}/60)` : `설레는 마음이 아직... (설렘 ${Math.round(rom)}/50)`;
     return { text: T(v, { soft: ['고마워... 근데 {w}'], rough: ['...갑자기 뭐래. {w}'], loud: ['어?! 어어... 너무 갑작스러워! {w}'], any: ['마음은 고마워. 하지만 {w}'] }, { w: why }) };
   }
+  // 플레이어 고백도 드라마(컷신)로: 대화창을 닫고 '고백' 회차를 재생
+  function confessDrama(v) {
+    const before = rel(v.id, P).status;
+    const res = confessDirect(v);
+    const Cut = FM.Cut;
+    if (!Cut || !Cut.play || before === 'DATING') return res;
+    const ok = rel(v.id, P).status === 'DATING';
+    const p = pl();
+    const pLine = pick(['저기… 할 말이 있어. 나, 너 좋아해. 나랑 사귀어 줄래?', '계속 말하고 싶었어. …너를 좋아해.', '장난 아니야. 진심으로 좋아해. 내 옆에 있어 줄래?']);
+    const beats = [{ emo: 'A', e: '💓' }, { say: 'A', text: pLine }, { emo: 'B', e: ok ? '😳' : '😮' }, { say: 'B', text: String(res.text || '').replace(/ 💕$/, '') }];
+    if (ok) beats.push({ fx: 'hearts', at: 'B' }, { emo: 'B', e: '❤️' }, { pose: 'A', p: 'cheer' }, { pose: 'B', p: 'cute' });
+    else beats.push({ fx: 'brokenHeart', at: 'A' }, { emo: 'A', e: '💔' }, { pose: 'A', p: 'cry' });
+    setTimeout(() => { try { Cut.play({ theme: 'confess', title: '💌 고백 씬', place: null, cast: { A: p, B: v }, beats, outcome: ok ? 'happy' : 'sad', key: [P, v.id].sort().join('|') }); } catch (e) { console.error('confess cut', e); } }, 60);
+    return { text: res.text, close: true, options: [] };
+  }
   function babyTalk(v) {
     const m = Soc.marriageOf(v.id);
     const r = rel(v.id, P);
@@ -847,8 +862,24 @@
     const r = rel(v.id, P);
     if (r.greetDay !== day()) { r.greetDay = day(); pl().lastTalk[v.id] = day(); Soc.addFriend(v.id, P, D.FRIEND_TRIGGERS.greet.fp, D.FRIEND_TRIGGERS.greet.trust, '인사'); }
     const t = runIntent(v, chooseIntent(v));
-    return { text: `${base.text} ${t.text}`, options: t.options };
+    return { text: `${base.text} ${t.text}`, options: questOpts(v).concat(t.options || []) };
   };
+  // 이 주민과 관련된 퀘스트 선택지는 첫 화면 맨 위에 바로 보여 줌 (예전엔 '메뉴'를 한 번 더 눌러야 보여서 퀘스트가 안 되는 것처럼 보였음)
+  function questOpts(v) {
+    const out = [];
+    try {
+      for (const o of Soc.talkOptions(v)) if (/^q[A-Z]\w*:/.test(o.id) || o.id === 'care') out.push(o);
+      const inv = pl().inv;
+      for (const q of Soc.activeQuests()) {
+        if (q.target !== v.id) continue;
+        let item = null;
+        if (q.type === 'apology' || q.type === 'reunion') item = inv.apology_letter ? 'apology_letter' : inv.apology_gift ? 'apology_gift' : null;
+        else if (q.type === 'jealousy_gift') item = inv.special_gift ? 'special_gift' : null;
+        if (item && !out.some(o => o.id === 'gift')) out.push({ id: 'gift', label: `🎁 ${D.ITEMS[item].name} 건네기 (퀘스트)`, arg: item });
+      }
+    } catch (e) { /* */ }
+    return out;
+  }
   Soc.talkOptions = function (v) {
     const O = origOpts(v);
     if (v.child || v.balloon) return O;
@@ -856,7 +887,7 @@
     const c = ctx(v);
     const extra = [{ id: 'news', label: '🗂️ "요즘 어때?" (근황·관계 듣기)' }, { id: 'cmdList', label: '📣 부탁하기 (행동 시키기)' }, { id: 'indList', label: '🤝 다른 주민과 관계 만들어주기' }];
     if (Soc.canRomance(v.id, P) && c.lover !== P) {
-      extra.push({ id: 'flirt', label: '💗 설레는 말 하기' });
+      if (c.ge('BEST_FRIEND')) extra.push({ id: 'flirt', label: '💗 설레는 말 하기' });   // 꼬시기는 절친이 된 뒤부터
       if (c.ge('FRIEND') && !(c.lover && c.lover !== P)) extra.push({ id: 'confessD', label: '💌 고백하기' });
     }
     if (c.lover === P) extra.push({ id: 'dateMenu', label: '💑 데이트 신청 (장소 약속)' });
@@ -899,7 +930,7 @@
       case 'indDo': { const [mode, o] = arg.split('|'); return fin(v, indDo(v, mode, o)); }
       case 'flirt': return flirtMenu(v);
       case 'flirtDo': return fin(v, flirtDo(v, arg));
-      case 'confessD': return fin(v, confessDirect(v));
+      case 'confessD': return fin(v, confessDrama(v));
       case 'dateMenu': return dateMenu(v);
       case 'dateAt': return fin(v, makePact(v, arg, Math.min(23, Math.max(hour() + 2, 18)), 'date', `${v.name}와(과) 데이트`));
       case 'babyAsk': return fin(v, babyTalk(v));

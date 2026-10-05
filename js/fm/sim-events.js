@@ -884,7 +884,7 @@
   }
   Ev.admit = admit;
   function discharge(v) {
-    v.status.hospital = false; v.stress = 25; v.status.disease = null; Sim.freeUse(v);
+    v.status.hospital = false; v.stress = 25; v.status.disease = null; Sim.freeUse(v); if (v.status.hatOverride === 'headband') v.status.hatOverride = null; v.status.bandageUntil = null;
     Sim.dressFor(v, null);
     const q = S().quests.find(x => x.type === 'hospital_care' && x.target === v.id && x.state === 'active');
     if (q) Soc.finishQuest(q, true, `${v.name}이(가) 동료의 간병으로 퇴원했어요`);

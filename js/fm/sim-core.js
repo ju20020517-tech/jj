@@ -308,6 +308,46 @@
     return { x: d.x + dx / l * 0.8, z: d.z + dz / l * 0.8 };
   }
 
+  // ---------------------------------------------------------
+  // 실내 가구 충돌: 바닥에 놓인 가구를 회전된 상자로 보고 안에 들어가면 가장 가까운 면 밖으로 밀어냄
+  // (깔개 · 벽걸이 · 천장 조명 · 작은 소품은 제외)
+  // ---------------------------------------------------------
+  const roomBoxCache = new Map();
+  function roomBoxes(iid) {
+    const room = S.rooms[iid] || INT[iid]; if (!room || !room.furn) return [];
+    const key = room.furn.length + ':' + (room.furn[0] ? room.furn[0].x + ',' + room.furn[room.furn.length - 1].z : '');
+    const c = roomBoxCache.get(iid); if (c && c.key === key && c.ref === room.furn) return c.boxes;
+    const boxes = [];
+    for (const f of room.furn) {
+      const F = FM.FURN && FM.FURN[f.type]; if (!F || !F.w || !F.d) continue;
+      if (F.layer === 'wall' || F.layer === 'light' || F.flat || F.ceiling || F.wall || /rug|mat|carpet|curtain|poster|frame|window|light|lamp_ceiling/.test(f.type)) continue;
+      if (F.w * F.d < 0.12) continue;
+      const a = (f.rot || 0) * Math.PI / 180;
+      boxes.push({ x: f.x, z: f.z, c: Math.cos(a), s: Math.sin(a), hw: F.w / 2, hd: F.d / 2 });
+    }
+    roomBoxCache.set(iid, { key, ref: room.furn, boxes });
+    return boxes;
+  }
+  function inBox(b, x, z, pad) {
+    const dx = x - b.x, dz = z - b.z;
+    const lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c;
+    return Math.abs(lx) < b.hw + pad && Math.abs(lz) < b.hd + pad ? [lx, lz] : null;
+  }
+  function roomPush(iid, x, z, pad = 0.22, skip) {
+    const boxes = roomBoxes(iid); let moved = false;
+    for (let it = 0; it < 3; it++) {
+      let hit = null, L = null;
+      for (const b of boxes) { if (b === skip) continue; const l = inBox(b, x, z, pad); if (l) { hit = b; L = l; break; } }
+      if (!hit) break;
+      let [lx, lz] = L; const ex = hit.hw + pad + 0.01 - Math.abs(lx), ez = hit.hd + pad + 0.01 - Math.abs(lz);
+      if (ex < ez) lx += Math.sign(lx || 1) * ex; else lz += Math.sign(lz || 1) * ez;
+      x = hit.x + lx * hit.c + lz * hit.s; z = hit.z - lx * hit.s + lz * hit.c; moved = true;
+    }
+    return { x, z, moved };
+  }
+  const boxAt = (iid, x, z) => roomBoxes(iid).find(b => inBox(b, x, z, 0.22));
+  Sim.roomPush = roomPush; Sim.roomBoxes = roomBoxes;
+
   // 한 틱 이동
   function moveAlong(v, dtR) {
     if (!v.route || !v.route.length) return true;
@@ -321,6 +361,15 @@
         if (d < 0.05) { leg.pts.shift(); continue; }
         const s = Math.min(d, budget);
         v.x += dx / d * s; v.z += dz / d * s;
+        // 사물(분수 · 나무 · 가로등 · 실내 가구) 통과 금지: 안으로 들어가면 가장자리로 밀려나 둘레를 따라 돌아감
+        if (!leg.noPush) {
+          if (leg.pk !== tx + ',' + tz) { leg.pk = tx + ',' + tz; leg.best = 1e9; leg.slow = 0; leg.skipBox = v.loc === 'island' ? null : boxAt(v.loc, tx, tz); leg.tgtIn = v.loc === 'island' && T.pushOut ? T.pushOut(tx, tz, 0.3).moved : false; }
+          if (v.loc === 'island') { if (T.pushOut && !leg.tgtIn) { const o = T.pushOut(v.x, v.z, 0.3); if (o.moved) { v.x = o.x; v.z = o.z; } } }   // 목적지가 사물 옆(벤치 등)이면 그대로
+          else if (v.loc !== 'metro') { const o = roomPush(v.loc, v.x, v.z, 0.22, leg.skipBox); if (o.moved) { v.x = o.x; v.z = o.z; } }
+          // 막혀서 3초 넘게 가까워지지 못하면 이번 구간만 충돌을 끔 (끼임 방지)
+          const nd = Math.hypot(tx - v.x, tz - v.z);
+          if (nd < leg.best - 0.05) { leg.best = nd; leg.slow = 0; } else if ((leg.slow += dtR) > 3) leg.noPush = true;
+        }
         v.ry = Math.atan2(dx, dz);
         budget -= s;
         if (s >= d - 1e-6) leg.pts.shift();
@@ -770,6 +819,11 @@
     emit('sceneEnd', sc);
   }
   Sim.endScene = endScene;
+  // 장면 목적지가 분수 · 나무 같은 사물 안이면 바깥으로 (고백 · 화해 장면이 분수 안에서 벌어지던 문제)
+  function clearOf(t, pad = 0.45) {
+    if (!t || t.loc !== 'island' || !T.pushOut) return t;
+    const o = T.pushOut(t.x, t.z, pad); t.x = o.x; t.z = o.z; return t;
+  }
   function resolveTarget(sc, to, actor) {
     if (!to) return null;
     if (to.actor) {
@@ -777,16 +831,16 @@
       if (!o) return null;
       const ang = to.ang !== undefined ? to.ang : Math.atan2(actor.x - o.x, actor.z - o.z);
       const d = to.near !== undefined ? to.near : 1.2;
-      return { loc: o.loc === 'metro' ? 'island' : o.loc, x: o.x + Math.sin(ang) * d, z: o.z + Math.cos(ang) * d };
+      return clearOf({ loc: o.loc === 'metro' ? 'island' : o.loc, x: o.x + Math.sin(ang) * d, z: o.z + Math.cos(ang) * d });
     }
     if (to.place) {
       const p = MAP.P[to.place];
       if (to.spot) {
         const sp = SPOTS.find(s => s.place === to.place && s.tags.includes(to.spot));
-        if (sp) return { loc: 'island', x: sp.x + (to.dx || 0), z: sp.z + (to.dz || 0) };
+        if (sp) return clearOf({ loc: 'island', x: sp.x + (to.dx || 0), z: sp.z + (to.dz || 0) }, 0.6);
       }
       if (to.inside && p.interior) return { loc: p.interior, x: to.x || 0, z: to.z || 0 };
-      return { loc: 'island', x: (to.x !== undefined ? to.x : p.x) + (to.dx || 0), z: (to.z !== undefined ? to.z : p.z) + (to.dz || 0) };
+      return clearOf({ loc: 'island', x: (to.x !== undefined ? to.x : p.x) + (to.dx || 0), z: (to.z !== undefined ? to.z : p.z) + (to.dz || 0) }, 0.6);
     }
     if (to.home) {
       const who = sc.actors[to.home] || actor;

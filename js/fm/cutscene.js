@@ -226,7 +226,14 @@
     if (a && FM.INTERIORS[a.loc]) return { loc: a.loc };
     const s = spotOf(MAP.P.plaza); return { loc: 'island', x: s.x, z: s.z, place: 'plaza' };
   }
-  Cut.venueFor = venueFor;
+  // 드라마 무대(배우 4명이 서는 자리)가 분수 · 나무 · 가로등과 겹치지 않게 무대 중심을 바깥으로 옮김
+  const venueFor0 = venueFor;
+  function venueClear(c) {
+    const v = venueFor0(c);
+    if (v && v.loc === 'island' && FM.T.pushOut && v.x !== undefined) { const o = FM.T.pushOut(v.x, v.z, 2.3); if (o.moved) return Object.assign({}, v, { x: o.x, z: o.z }); }
+    return v;
+  }
+  Cut.venueFor = venueClear;
   // 카메라가 건물·나무에 가리지 않는 방향 고르기
   function clearYaw(center) {
     const G = FM.G, scene = G.islandScene;
@@ -285,7 +292,7 @@
   const poolT = setInterval(() => { if (lightPool()) clearInterval(poolT); }, 500);
   function buildStage(c) {
     const G = FM.G, T = FM.T;
-    const venue = (c.venueUsed = venueFor(c));
+    const venue = (c.venueUsed = venueClear(c));
     const cam = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, 0.1, 2000);
     const group = new THREE.Group(); group.userData.cine = true;
     const inside = venue.loc !== 'island';

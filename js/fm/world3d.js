@@ -381,7 +381,7 @@
 
   function makeTrees() {
     const kinds = { round: [], pine: [], willow: [], palm: [] };
-    for (const t of FM.DECOR.trees) if (!inGarden(t.x, t.z)) kinds[t.kind].push(t);
+    for (const t of FM.DECOR.trees) if (!inGarden(t.x, t.z)) { kinds[t.kind].push(t); T.addSolid(t.x, t.z, 0.32 * (t.s || 1), 'tree'); }   // 나무 기둥 충돌
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), p = new THREE.Vector3(), col = new THREE.Color();
     // 줄기: 뿌리가 살짝 퍼진 나무 기둥 (나무껍질 무늬)
     const trunkG = AC.scaleUV(new THREE.LatheGeometry([[0.0001, 0], [0.5, 0], [0.36, 0.25], [0.27, 0.8], [0.24, 1.8], [0.2, 2.6], [0.0001, 2.6]].map(([x, y]) => new THREE.Vector2(x, y)), 12), 2, 2);
@@ -593,11 +593,14 @@
 
   // 장식 배치
   function place(obj, x, z, ry = 0, y) {
+    const dk = obj.userData && obj.userData.decorKind; if (SOLID_R[dk]) T.addSolid(x, z, SOLID_R[dk], dk);
     obj.position.set(x, y !== undefined ? y : T.groundY(x, z), z);
     obj.rotation.y = ry;
     scene.add(obj);
     return obj;
   }
+  // 사람이 통과하면 안 되는 소품 (앉는 벤치 · 의자 · 선베드는 제외)
+  const SOLID_R = { lamp: 0.25, cafeTable: 0.55, tent: 1.3, campfire: 0.6, telescope: 0.35, stall: 1.0, lighthouse: 2.2, mailbox: 0.3 };
   function makeDecor() {
     const P = MAP.P;
     const f = PM.decor('fountain'); place(f, 0, 10); f.traverse(o => { if (o.userData.water) dyn.waters.push(null); });

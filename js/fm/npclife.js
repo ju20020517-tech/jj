@@ -27,6 +27,7 @@
   const NEW_STAFF = [
     { id: 's_nurse1', name: '간호사 미소', role: 'nurse', loc: 'med_in', x: 2.55, z: 1.6, ry: 0, look: { species: 'sheep', top: 'dress', shirt: 0xffd6e4, shirt2: 0xffffff, hat: 'headband', hatColor: 0xffffff } },
     { id: 's_nurse2', name: '간호사 하늘', role: 'nurse', loc: 'med_in', x: 2.2, z: -0.8, ry: 0, look: { species: 'cat', top: 'dress', shirt: 0xcfe8ff, shirt2: 0xffffff, hat: 'headband', hatColor: 0xffffff, fur: 0xf4efe6 } },
+    { id: 's_pharm', name: '약사 선생님', role: 'pharmacist', loc: 'med_in', x: 8.35, z: 2.6, ry: -90 * R, look: { species: 'human', gender: 'F', lashes: true, hairStyle: 'bob', hair: 0x3a2418, top: 'apron', shirt: 0xffffff, shirt2: 0x2f9a5a, glasses: 'round', eyes: 'dot', mouth: 'smile' } },
     { id: 's_waiter', name: '웨이터 제이', role: 'waiter', loc: 'sky_in', x: 7.1, z: 5.0, ry: -40 * R, look: { species: 'dog', top: 'vest', shirt: 0x1a1a22, shirt2: 0xffffff } },
   ];
   // 얼굴이 벽/등 쪽을 보던 직원들 자리 보정 (카메라 · 손님 쪽을 보도록)
@@ -88,9 +89,12 @@
     s_stylist: { st: sp(5.2, -5.15, 0, 'stand'), inside: (x, z) => x > 3.9 && x < 6.5 && z < -4.7, out: (tx) => (tx < 5.2 ? [[3.6, -5.0]] : [[6.8, -5.0]]),
       spots: [sp(2.35, -4.6, -90, 'reach', null, '옷 정리 중', ['신상 원피스 들어왔어요~'], 1), sp(8.05, -4.6, 90, 'reach', null, '옷 정리 중', null, 1), sp(2.2, -2.2, 150, 'reach', null, '모자 진열', null, 1), sp(4.6, -5.2, 0, 'write', 'pen', '재고 기록')],
       serve: ['shop', 'tryon', 'mirror', 'fashion_war'], tray: null, lines: ['손님 너무 잘 어울려요! ✨', '그 색이 딱이에요~', '사이즈 하나 작은 걸로 드릴까요?', '이건 이번 시즌 신상이에요!'], near: [0, 10, -7, 0] },
-    s_doctor: { st: sp(-6.3, -0.45, 0, 'stand'), inside: (x, z) => z < 0.2, out: [[-4.0, -0.5], [-4.0, 1.2]],
-      spots: [sp(-5.9, -3.6, 180, 'write', 'pen', '진료 기록'), sp(-3.8, -0.95, 180, 'reach', 'pill', '약장 확인'), sp(-7.2, -0.45, 0, 'type', null, '처방전 입력')],
+    s_doctor: { st: sp(-7.6, -3.3, 90, 'stand'), inside: (x, z) => x < -3.1 && z < -2.2, out: [[-3.6, -1.9], [-3.6, 1.2]],
+      spots: [sp(-8.1, -4.5, -90, 'type', null, '진료 기록 입력'), sp(-6.0, -3.3, 180, 'write', 'pen', '진찰'), sp(-7.3, -6.0, 180, 'reach', 'pill', '약장 확인')],
       serve: ['hospital', 'wait', 'visit'], tray: 'thermometer', rounds: true, lines: ['상태 좀 볼게요~ 🩺', '많이 좋아졌네요!', '푹 쉬는 게 제일 좋은 약이에요', '오늘은 열이 내렸어요'] },
+    s_pharm: { st: sp(8.35, 2.6, -90, 'stand'), inside: (x, z) => x > 7.9 && z > 1.4 && z < 5.3, out: [[8.4, 5.6], [6.8, 5.6]],
+      spots: [sp(8.95, 2.0, 90, 'reach', 'pill', '약 꺼내는 중', ['감기약 여기 있어요~']), sp(8.95, 4.5, 90, 'reach', 'pill', '약 정리', null), sp(8.35, 3.5, -90, 'write', 'pen', '처방전 확인')],
+      tray: 'pill', lines: ['식후 30분에 드세요 💊', '이 약은 졸릴 수 있어요~', '물 많이 드시고 푹 쉬세요', '영양제도 하나 챙겨 드릴까요?'] },
     s_nurse1: { st: sp(2.55, 1.6, 0, 'type'), inside: (x, z) => z < 2.0, out: [[0.0, 1.2], [0.0, 3.7]],
       spots: [sp(3.6, 0.85, 0, 'reach', 'pill', '처치 카트 정리', ['주사기 소독 완료!']), sp(1.2, 1.55, 0, 'write', 'pen', '차트 정리'), sp(-2.3, 4.55, 90, 'reach', null, '세면대 정리', null, 1)],
       serve: ['wait', 'hospital', 'visit'], tray: 'thermometer', rounds: true, lines: ['체온 잴게요~ 🌡️', '곧 진료 들어가실게요!', '링거 거의 다 들어갔네요', '불편한 곳 있으면 부르세요 💗'] },
@@ -474,7 +478,7 @@
   }
   NL.admitMind = admitMind;
   function discharge(v, text) {
-    v.status.hospital = false; v.status.disease = null; v.status.injuryUntil = 0; v.status.mind = false; v.status.withdrawn = false;
+    v.status.hospital = false; v.status.disease = null; v.status.injuryUntil = 0; v.status.mind = false; v.status.withdrawn = false; if (v.status.hatOverride === 'headband') v.status.hatOverride = null; v.status.bandageUntil = null;
     Sim.freeUse(v); Sim.dressFor(v, null); v.act = null; v.pose = null; v.idleT = 1;
     const q = S().quests.find(x => x.type === 'hospital_care' && x.target === v.id && x.state === 'active');
     if (q && FM.Soc.finishQuest) FM.Soc.finishQuest(q, true, `${v.name}이(가) 퇴원했어요`);
@@ -644,7 +648,7 @@
   // =========================================================
   // 6. 직원과 대화 (미연시 창) — 인사 · 잡담 · 소문 · 대화로 주문/구매 · 팔기
   // =========================================================
-  const SHOP_OF = { barista: 'cafe', conv: 'conv', stylist: 'mall', grocer: 'mall', tea: 'tea', pocha: 'pocha', librarian: 'library', doctor: 'pharmacy', nurse: 'pharmacy' };
+  const SHOP_OF = { barista: 'cafe', conv: 'conv', stylist: 'mall', grocer: 'mall', tea: 'tea', pocha: 'pocha', librarian: 'library', pharmacist: 'pharmacy' };
   const FASHION = it => (it.tags || []).some(t => ['fashion', 'luxury', 'romance', 'plush'].includes(t)) || ['ticket', 'autoInterior', 'confess', 'propose', 'apology', 'special'].includes(it.special);
   function menuOf(s) {
     const key = SHOP_OF[s.role]; if (!key) return [];

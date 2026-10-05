@@ -694,6 +694,7 @@
       <div class="tt-new" id="ttPanel" hidden>
         <h3>🏝️ 새 섬 만들기</h3>
         <label class="tt-f"><span>내 이름</span><input id="stName" maxlength="8" value="나"></label>
+        <div class="tt-f"><span>성별</span><div class="tt-keys" id="ttSex"><button data-g="F" class="on">👩 여자</button><button data-g="M">👨 남자</button></div></div>
         <div class="tt-f"><span>내 모습</span><div class="tt-look"><button class="tt-mini" id="ttRoll">🎲 다른 모습</button><small>왼쪽에서 손 흔드는 게 나예요!</small></div></div>
         <div class="tt-f"><span>나의 성격</span><div class="tt-keys" id="ttKeys">${Object.entries(D.L1).map(([k, v], i) => `<button data-k="${k}" class="${i === 0 ? 'on' : ''}">${v.icon} ${v.name}</button>`).join('')}</div></div>
         <label class="tt-f"><span>처음 주민 수 <b id="ttCnt">30</b>명</span><input id="stCount" type="range" min="4" max="30" value="30"></label>
@@ -701,9 +702,11 @@
       </div>`;
     el.hidden = false;
     try { T3 = titleScene($('#titleCv')); } catch (e) { console.warn('title3d', e); T3 = null; }
-    let look = ISLE.normalizeLook(Object.assign(ISLE.randomLook(), { species: 'human' }));
+    let sex = 'F';
+    let look = ISLE.normalizeLook(Object.assign(ISLE.randomLook(sex), { species: 'human', gender: sex }));
     let key = Object.keys(D.L1)[0];
-    const roll = () => { look = ISLE.normalizeLook(Object.assign(ISLE.randomLook(), { species: 'human' })); if (T3) T3.setMe(look); };
+    const roll = () => { look = ISLE.normalizeLook(Object.assign(ISLE.randomLook(sex), { species: 'human', gender: sex })); if (T3) T3.setMe(look); };
+    $('#ttSex').querySelectorAll('[data-g]').forEach(b => b.onclick = () => { sex = b.dataset.g; $('#ttSex').querySelectorAll('[data-g]').forEach(x => x.classList.toggle('on', x === b)); roll(); });
     if (T3) T3.setMe(look);
     const openNew = () => { $('#ttMenu').hidden = true; $('#ttPanel').hidden = false; if (T3) T3.showMe(true); };
     $('#ttNew').onclick = openNew;
@@ -712,7 +715,7 @@
     $('#stCount').oninput = e => { $('#ttCnt').textContent = e.target.value; };
     $('#ttKeys').querySelectorAll('[data-k]').forEach(b => b.onclick = () => { key = b.dataset.k; $('#ttKeys').querySelectorAll('[data-k]').forEach(x => x.classList.toggle('on', x === b)); });
     const go = fresh => {
-      const opts = fresh ? { fresh: true, playerName: $('#stName').value.trim() || '나', playerLook: look, count: Math.max(4, Math.min(30, +$('#stCount').value || 12)), imported: [],
+      const opts = fresh ? { fresh: true, playerName: $('#stName').value.trim() || '나', playerLook: look, playerGender: sex, count: Math.max(4, Math.min(30, +$('#stCount').value || 12)), imported: [],
         playerKeys: { L1: key, L2: Sim.u.pick(Object.keys(D.L2)), L3: Sim.u.pick(Object.keys(D.L3)), L4: Sim.u.pick(Object.keys(D.L4)) } } : {};
       el.hidden = true; el.innerHTML = ''; $('#loading').hidden = false;
       if (T3) { T3.dispose(); T3 = null; }
