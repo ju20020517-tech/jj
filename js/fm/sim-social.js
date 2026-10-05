@@ -1962,6 +1962,11 @@
     // 고백의 꽃다발 — 플레이어와 주민 간의 직접 연애
     if (it.special === 'confess') return Soc.playerConfess(v);
     if (it.special === 'propose') return Soc.playerPropose(v, itemId);
+    // 심부름 물건을 '선물'로 건네도 심부름 완료로 처리
+    const qe = Soc.activeQuests().find(q => q.type === 'errand' && q.target === v.id && q.item === itemId);
+    if (qe) return Soc.playerChoose(v, 'qErrand:' + qe.id);
+    const qf = itemId === 'medicine_kid' && Soc.activeQuests().find(q => q.type === 'kid_fever' && q.target === v.id);
+    if (qf) return Soc.playerChoose(v, 'qFever:' + qf.id);
     if (!Soc.stageAtLeast(v.id, P, 'FRIEND') && !['apology_gift', 'apology_letter', 'special_gift', 'love_letter', 'poem_secret', 'medicine_kid'].includes(itemId)) return { text: L.say(v, 'giftAwkward', {}, true), options: Soc.talkOptions(v) };
     takeItem(itemId);
     // 퀘스트 연결 선물

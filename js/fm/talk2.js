@@ -726,7 +726,9 @@
         pc.went = true;
         Sim.scene({ title: '약속 장소로', actors: { A: v }, steps: [{ go: 'A', to: { place: pc.place }, max: 150 }, { pose: 'A', p: 'look', t: 90 }] });
       }
-      const near = p.loc === 'island' && Math.hypot(p.x - P0.x, p.z - P0.z) < 14 && st.time >= pc.at - 30 && st.time <= pc.until;
+      // 건물 안(카페 · 오락실 · 천문대 등)으로 들어가도 도착으로 인정
+      const atPlace = (p.loc === 'island' && Math.hypot(p.x - P0.x, p.z - P0.z) < 18) || (P0.interior && p.loc === P0.interior);
+      const near = atPlace && st.time >= pc.at - 30 && st.time <= pc.until;
       if (near && !pc.arrived) {
         pc.arrived = true;
         const q = st.quests.find(q => q.type === 'pact' && q.giver === v.id && q.state === 'active'); if (q) Soc.finishQuest(q, true, `${v.name}과(와)의 약속을 지켰어요! 친밀도·신뢰도 크게 상승`);
@@ -735,7 +737,7 @@
         if (isDate) { Soc.addRomance(v.id, P, 12, '데이트'); const r = rel(v.id, P); r.lastDate = day(); r.dates = (r.dates || 0) + 1; Soc.addBoredom && Soc.addBoredom(r, -25, '데이트'); }
         remember(v, isDate ? 'date' : 'promise', isDate ? `${P0.name}에서 데이트했어` : `${P0.name}에서 만나기로 한 약속을 지켜줬어`);
         if (v.sceneId) { const sc = Sim.scenes.find(s => s.id === v.sceneId); if (sc) Sim.endScene(sc, true); }
-        Sim.scene({ title: isDate ? '데이트' : '약속', actors: { A: v }, steps: [{ go: 'A', to: { x: p.x + 1, z: p.z + 1, loc: 'island' }, max: 15 }, { face: 'A', at: P }, { say: 'A', text: isDate ? sty(v, '와줬구나! 오늘 너무 설레') : sty(v, '진짜 왔네! 기다렸어!'), t: 3 }, { emote: 'A', e: isDate ? '💕' : '😆' }, isDate ? { fx: 'hearts', at: 'A' } : { wait: 0.3 }] });
+        Sim.scene({ title: isDate ? '데이트' : '약속', actors: { A: v }, steps: [{ go: 'A', to: { x: p.x + 1, z: p.z + 1, loc: p.loc }, max: 40 }, { face: 'A', at: P }, { say: 'A', text: isDate ? sty(v, '와줬구나! 오늘 너무 설레') : sty(v, '진짜 왔네! 기다렸어!'), t: 3 }, { emote: 'A', e: isDate ? '💕' : '😆' }, isDate ? { fx: 'hearts', at: 'A' } : { wait: 0.3 }] });
         st.pacts.splice(st.pacts.indexOf(pc), 1);
         continue;
       }

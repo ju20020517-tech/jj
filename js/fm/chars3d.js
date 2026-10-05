@@ -179,7 +179,7 @@
       c.body.rotation.set(0, 0, 0); c.body.position.set(0, 0, 0); c.legL.rotation.z = 0; c.legR.rotation.z = 0;
       const moving = !!e.moving;
       const spd = moving ? (e.run || e.state === 'RUN' ? 1.2 : 0.6 * Math.min(1.5, Math.max(0.6, (1 + ((e.stats && e.stats.speed) || 0) / 100)))) : 0;
-      ISLE.M.animate(c, dt * (moving ? Math.min(3, FM.Sim.get().speed) ** 0.3 : 1), spd);
+      ISLE.M.animate(c, dt * (moving ? Math.min(3.5, FM.Sim.get().speed) : 1), spd);   // 배속일 때도 발걸음이 이동 속도에 맞게
       const pose = moving ? null : (e.pose || null);
       if (pose !== m.lastPose) { m.poseT = 0; m.lastPose = pose; }
       m.poseT += dt;

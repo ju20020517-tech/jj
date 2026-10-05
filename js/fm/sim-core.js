@@ -1393,8 +1393,9 @@
   // 매 틱 주민 업데이트
   // ---------------------------------------------------------
   function updateVillager(v, dtR) {
+    // 장면이 제어하는 중: 장면의 'go' 단계가 걷는 동안에는 걷기 모션 유지 (미끄러지듯 이동하던 문제)
+    if (v.sceneId) { if (!v.route || !v.route.length) v.moving = false; return; }
     v.moving = false;
-    if (v.sceneId) return; // 장면이 제어
     // 동행 중: 움직임은 플레이어 쪽(main.js)에서 처리
     if (v.following && S.player.followers && S.player.followers.includes(v.id)) { v.route = null; if (!v.followUse) v.act = null; return; }
     // 플레이어와 대화 중: 그 자리에 가만히 서서 플레이어를 바라봄
