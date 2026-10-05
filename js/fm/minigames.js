@@ -576,16 +576,17 @@
       const r = oOpt.apply(this, arguments);
       try {
         const p = S().player, L = p.loc;
-        if (L === 'cafe_in') add(1.6, '☕ 라테아트 (손님 주문 그리기)', () => latte());
-        if (L === 'library_in') { add(1.6, '📚 도서관 퀴즈 (5문제)', quiz); if (isClubTime()) add(1.4, '📖 일요일 독서 모임 참여', bookClub); }
-        if (L === 'arcade_in') { add(1.5, '🕹️ 별똥별 캐처 — 주간 대회 도전 (10🪙)', () => { if (pay(10)) starCatch(); }); add(1.7, '🏆 주간 랭킹판 보기', board); }
-        if (L === 'obs_in') add(1.6, '🔭 별자리 잇기', () => stars((Object.keys(S().stars || {}).length) % CONST.length));
-        if (L === 'cathedral_in') add(1.6, '⛪ 웨딩 플래너', planner);
-        if (L === 'mall_in') add(1.6, '🛍️ 패션쇼 (주민 코디해 주기)', fashion);
-        if (L === 'club_in') add(1.6, '🎤 노래방 배틀', karaoke);
-        if (L === 'med_in') { add(1.6, '🏥 정기 검진 받기 (50🪙)', checkup); add(1.7, '🩺 간호 봉사 미니게임', nurse); }
-        if (L === 'workshop_in') add(1.6, '🔨 재료 조합 가구 만들기', workshop);
-        if (L === 'onsen_in') { add(1.6, '🏓 온천 탁구', pingpong); add(1.8, p.yukata ? '👕 원래 옷으로 갈아입기' : '👘 유카타 갈아입기', yukata); }
+        const nf = re => FM.G.nearFurn && FM.G.nearFurn(re);   // 관련 가구 가까이에서만
+        if (L === 'cafe_in' && nf(/pastry_counter|buffet/)) add(1.6, '☕ 라테아트 (손님 주문 그리기)', () => latte());
+        if (L === 'library_in') { if (nf(/circ_desk/)) add(1.6, '📚 도서관 퀴즈 (5문제)', quiz); if (isClubTime() && nf(/round_table_book|bistro_table|book_table_low/)) add(1.4, '📖 일요일 독서 모임 참여', bookClub); }
+        if (L === 'arcade_in') { if (nf(/retro_cab/)) add(1.5, '🕹️ 별똥별 캐처 — 주간 대회 도전 (10🪙)', () => { if (pay(10)) starCatch(); }); if (nf(/prize_counter/)) add(1.7, '🏆 주간 랭킹판 보기', board); }
+        if (L === 'obs_in' && nf(/telescope|scope|armillary/)) add(1.6, '🔭 별자리 잇기', () => stars((Object.keys(S().stars || {}).length) % CONST.length));
+        if (L === 'cathedral_in' && nf(/lectern|podium|altar/)) add(1.6, '⛪ 웨딩 플래너', planner);
+        if (L === 'mall_in' && nf(/dress_form|k15_rack|fitting|gold_mirror/)) add(1.6, '🛍️ 패션쇼 (주민 코디해 주기)', fashion);
+        if (L === 'club_in' && nf(/k14_mic|k14_stage/)) add(1.6, '🎤 노래방 배틀', karaoke);
+        if (L === 'med_in') { if (nf(/reception|doctor_desk/)) add(1.6, '🏥 정기 검진 받기 (50🪙)', checkup); if (nf(/nurse_station|treatment_cart/)) add(1.7, '🩺 간호 봉사 미니게임', nurse); }
+        if (L === 'workshop_in' && nf(/workbench/)) add(1.6, '🔨 재료 조합 가구 만들기', workshop);
+        if (L === 'onsen_in') { if (nf(/low_table|stage/)) add(1.6, '🏓 온천 탁구', pingpong); if (nf(/lockers/)) add(1.8, p.yukata ? '👕 원래 옷으로 갈아입기' : '👘 유카타 갈아입기', yukata); }
         if (L === 'island' && showerNow()) add(1.2, '🌠 유성우에 소원 빌기', wish);
         if (L === 'island' && Math.hypot(p.x - 102, p.z - 24) < 5) add(2.2, '🏆 오락실 주간 랭킹판', board);
       } catch (e) { console.error('minigame options', e); }

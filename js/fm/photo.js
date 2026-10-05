@@ -261,7 +261,6 @@
       try {
         const p = S().player;
         if (p.loc === 'photo_in') add(1.5, '📸 사진 찍기 (주민과 함께 · 표정 & 포즈)', () => Ph.open());
-        if (p.loc === 'home_p_in') add(2.6, `📖 사진 앨범 보기 (${(S().album || []).length}장)`, () => Ph.album());
         if (p.loc === 'island' && Math.hypot(p.x - FM.MAP.P.photo.door[0], p.z - FM.MAP.P.photo.door[1] - 0.6) < 4.5) add(2.0, '📸 추억 사진관 들어가서 사진 찍기', () => { FM.G && FM.G.enterInterior ? FM.G.enterInterior('photo_in') : null; setTimeout(() => Ph.open(), 600); });
       } catch (e) { console.error('photo options', e); }
       return r;

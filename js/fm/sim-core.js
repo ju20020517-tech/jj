@@ -346,7 +346,7 @@
     return { x, z, moved };
   }
   const boxAt = (iid, x, z) => roomBoxes(iid).find(b => inBox(b, x, z, 0.22));
-  Sim.roomPush = roomPush; Sim.roomBoxes = roomBoxes;
+  Sim.roomPush = roomPush; Sim.roomBoxes = roomBoxes; Sim.roomBoxAt = (iid, x, z) => boxAt(iid, x, z);
 
   // 한 틱 이동
   function moveAlong(v, dtR) {

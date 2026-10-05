@@ -140,7 +140,7 @@
   const talk = (id, opt) => `${nm(id)}에게 말을 걸고 ${opt} 선택하기`;
   function buyStep(k) {
     const sh = shopOf(k);
-    return { text: `${sh ? SHOP_LABEL[sh] + '에서 ' : ''}${item(k).icon} '${item(k).name}' 구하기${item(k).price ? ` (${item(k).price}🪙)` : ''}`, done: has(k), dest: sh ? { place: SHOP_PLACE[sh] } : null };
+    return { text: `${sh ? SHOP_LABEL[sh] + ' 직원에게 말 걸어 ' : ''}${item(k).icon} '${item(k).name}' 사기${item(k).price ? ` (${item(k).price}🪙)` : ''}`, done: has(k), dest: sh ? { place: SHOP_PLACE[sh] } : null };
   }
 
   // 단계 목록: [{text, done, dest}]

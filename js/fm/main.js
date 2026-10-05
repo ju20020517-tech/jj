@@ -361,7 +361,7 @@
       const { w, d } = Sim.interiorSize(p.loc);
       let qx = Math.max(-w / 2 + 0.35, Math.min(w / 2 - 0.35, nx)), qz = Math.max(-d / 2 + 0.35, Math.min(d / 2 - 0.2, nz));
       // 가구 통과 금지 (가구 안으로 들어가면 바깥으로 밀어내 미끄러지듯 비켜 감)
-      if (Sim.roomPush) { const o = Sim.roomPush(p.loc, qx, qz, 0.2); if (o.moved) { const w2 = Sim.roomPush(p.loc, p.x, p.z, 0.2); if (!w2.moved) { qx = o.x; qz = o.z; } } }
+      if (Sim.roomPush) { const skip = G.target && Sim.roomBoxAt ? Sim.roomBoxAt(p.loc, G.target.x, G.target.z) : null; const o = Sim.roomPush(p.loc, qx, qz, 0.2, skip); if (o.moved) { const w2 = Sim.roomPush(p.loc, p.x, p.z, 0.2, skip); if (!w2.moved) { qx = o.x; qz = o.z; } } }   // 걸어가는 목적지(앉을 자리)의 가구는 통과 허용
       p.x = qx; p.z = qz;
     }
     p.ry = Math.atan2(dx, dz);
@@ -434,6 +434,13 @@
   // ---------------------------------------------------------
   // 상호작용 (E / Space)
   // ---------------------------------------------------------
+  // 플레이어 근처(기본 2.2m)에 이 종류의 가구가 있는지
+  function nearFurn(re, r = 2.2) {
+    const p = Sim.get().player; if (p.loc === 'island') return false;
+    const room = Sim.get().rooms[p.loc] || FM.INTERIORS[p.loc]; if (!room || !room.furn) return false;
+    return room.furn.some(f => re.test(f.type) && Math.hypot(f.x - p.x, f.z - p.z) < r + Math.max(((FM.FURN[f.type] || {}).w || 0), ((FM.FURN[f.type] || {}).d || 0)) / 2);
+  }
+  G.nearFurn = nearFurn;
   function interactables() {
     const st = Sim.get(), p = st.player;
     const out = [];
@@ -477,19 +484,17 @@
       const dd = Sim.interiorDoor(p.loc);
       const dDoor = Math.hypot(dd.x - p.x, dd.z - p.z);
       if (dDoor < 1.5 && p.loc !== 'metro') add(dDoor, '🚪 밖으로 나가기', () => exitInterior());
-      const shop = { mall_in: 'mall', conv_in: 'conv', cafe_in: 'cafe', med_in: 'pharmacy', library_in: 'library', workshop_in: 'workshop', tea_in: 'tea' }[p.loc];
-      if (shop) add(2.5, '🛍️ 상점 이용하기', () => FM.UI.shop(shop));
-      if (p.loc === 'hall_in') add(2.5, '🏛️ 민원 창구 (별명 변경, 가계도, 이혼, 부지 하사, 집 증축)', () => FM.UI.cityHall());
-      if (p.loc === 'office_in') add(2.6, '💼 오피스 아르바이트 하기 (+코인)', () => FM.UI.partTime());
-      if (p.loc === 'library_in') add(2.8, '📖 시집 124페이지 펼쳐보기', () => { const r = Ev.readBookNote(); FM.UI.toast(r || '📖 아무 쪽지도 없어요.'); });
-      if (p.loc === 'tea_in') add(2.8, '📜 방명록 읽기', () => FM.UI.guestbook());
+      // 물건 구매는 직원에게 말을 걸어서만 (상점 버튼 없음) · 시설 활동은 관련 가구 가까이에서만
+      const nf = re => nearFurn(re);
+      if (p.loc === 'hall_in' && nf(/counter|number_machine/)) add(2.5, '🏛️ 민원 창구 (별명 변경, 가계도, 이혼, 부지 하사, 집 증축)', () => FM.UI.cityHall());
+      if (p.loc === 'office_in' && nf(/desk/)) add(2.6, '💼 오피스 아르바이트 하기 (+코인)', () => FM.UI.partTime());
+      if (p.loc === 'library_in' && nf(/bookcase/)) add(2.8, '📖 시집 124페이지 펼쳐보기', () => { const r = Ev.readBookNote(); FM.UI.toast(r || '📖 아무 쪽지도 없어요.'); });
+      if (p.loc === 'tea_in' && nf(/guestbook/)) add(2.8, '📜 방명록 읽기', () => FM.UI.guestbook());
       if (p.loc === 'cafe_in' && p.inv.truth_tea) add(1.2, "🫖 '진실의 홍차' 하사하기", () => { Soc.takeItem('truth_tea'); FM.UI.dialogList('🫖 진실만을 말하게 하는 홍차', Ev.truthTea()); });
       if (p.loc === 'home_p_in') {
-        add(2.9, '🛏️ 쉬기 (스태미나 회복)', () => { p.stamina = 100; FM.UI.toast('😴 푹 쉬었어요! 스태미나 100'); });
-        if (p.spouse || (p.chest && p.chest.length)) add(2.7, '🧺 신혼집 수납장 열기', () => FM.UI.chest());
-        add(3, '🏠 우리 집 꾸미기', () => FM.UI.openRoomEditor('home_p_in'));
+        if (nf(/bed/)) add(2.9, '🛏️ 쉬기 (스태미나 회복)', () => { p.stamina = 100; FM.UI.toast('😴 푹 쉬었어요! 스태미나 100'); });
+        if ((p.spouse || (p.chest && p.chest.length)) && nf(/storage_chest|chest/)) add(2.7, '🧺 신혼집 수납장 열기', () => FM.UI.chest());
       }
-      if (I.kind === 'room' && p.loc !== 'home_p_in') add(3, '🔭 이 방 관찰 화면 열기', () => G.observeInterior(p.loc));
     }
     FM.Play.options(add);
     out.sort((a, b) => a.dist - b.dist);
