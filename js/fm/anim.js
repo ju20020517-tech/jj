@@ -11,7 +11,7 @@
   const legs = (c, l, r) => { c.legL.rotation.x = l; c.legR.rotation.x = r; };
   // 엉덩이(몸통 아래 ≈ body 기준 0.11)를 좌석 높이(월드)에 맞춤. seatH 0 = 바닥에 앉기
   const HIP = 0.11, SHAPE_Y = 0.07;
-  const bodyYFor = (c, worldY) => (worldY / (c.rs || 1) - SHAPE_Y) / (c.hh || 1) - HIP;
+  const bodyYFor = (c, worldY) => (worldY / (c.rs || 1) - SHAPE_Y) / (c.hh || 1) - (c.hip != null ? c.hip : HIP);
   const sitBase = (c, t) => {
     const sh = c.seatH || 0;
     if (sh > 0) { legs(c, -1.3, -1.3); c.body.position.y = bodyYFor(c, sh + 0.01); c.body.position.z = 0.04; }
@@ -81,7 +81,7 @@
     lieBase(c);
     const bed = c.bed, rs = c.rs || 1, ww = c.ww || 1;
     if (bed) {
-      c.body.position.z = bed.headZ / (rs * ww) + 0.93;
+      c.body.position.z = bed.headZ / (rs * ww) + (c.headZ || 0.93);
       c.body.position.y = ((bed.top + 0.22 * rs) / rs - SHAPE_Y) / (c.hh || 1);
     } else c.body.position.y = 0.3;
     arms(c, 0, -0.08, 0, 0.08);
