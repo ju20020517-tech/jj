@@ -132,6 +132,14 @@
     nets.count = (nets.count || 0) + 1;
     g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
     g.setAttribute('normal', new THREE.BufferAttribute(N, 3));
+    // 면 방향이 SDF 기울기와 반대인 삼각형은 뒤집기 (뒷면이 보여 생기는 점 제거)
+    for (let t = 0; t < idx.length; t += 3) {
+      const a = idx[t], b = idx[t + 1], c = idx[t + 2];
+      const ux = P[b * 3] - P[a * 3], uy = P[b * 3 + 1] - P[a * 3 + 1], uz = P[b * 3 + 2] - P[a * 3 + 2], wx = P[c * 3] - P[a * 3], wy = P[c * 3 + 1] - P[a * 3 + 1], wz = P[c * 3 + 2] - P[a * 3 + 2];
+      const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+      const gx = N[a * 3] + N[b * 3] + N[c * 3], gy = N[a * 3 + 1] + N[b * 3 + 1] + N[c * 3 + 1], gz = N[a * 3 + 2] + N[b * 3 + 2] + N[c * 3 + 2];
+      if (nx * gx + ny * gy + nz * gz < 0) { idx[t + 1] = c; idx[t + 2] = b; }
+    }
     g.setIndex(idx);
     // 기울기가 0 인 곳만 면 노멀로 대체 (나머지는 SDF 기울기 그대로 → 매끈)
     const gN = N.slice();
@@ -174,15 +182,17 @@
   // 머리 (머리 로컬 좌표, 이후 HEAD_SCALE 배)
   // =========================================================
   const HEAD_SCALE = 0.86;
+  // Q판(치비) 얼굴형: 둥근 이마 · 통통한 볼 · 작은 턱 · 낮은 귀, 코 없음
   function headSDF(x, y, z) {
-    let d = sEll(x, y, z, 0, 0.03, -0.01, 0.44, 0.42, 0.42);
-    d = smin(d, sEll(x, y, z, 0, -0.12, 0.03, 0.41, 0.3, 0.37), 0.16);
-    d = smin(d, sEll(A(x), y, z, 0.43, -0.07, -0.03, 0.05, 0.085, 0.065), 0.035);
-    d = smin(d, sCone(x, y, z, 0, -0.09, 0.38, 0, -0.105, 0.43, 0.026, 0.016), 0.03);
+    let d = sEll(x, y, z, 0, 0.04, -0.02, 0.45, 0.44, 0.43);
+    d = smin(d, sEll(x, y, z, 0, -0.14, 0.05, 0.39, 0.27, 0.34), 0.14);
+    d = smin(d, sSph(A(x), y, z, 0.21, -0.2, 0.15, 0.15), 0.1);
+    d = smin(d, sSph(x, y, z, 0, -0.29, 0.11, 0.1), 0.08);
+    d = smin(d, sEll(A(x), y, z, 0.43, -0.12, -0.04, 0.045, 0.075, 0.06), 0.03);
     return d;
   }
   const FC = [0, -0.03, 0];
-  const NOSE_POL = 101, MOUTH_POL = 114;
+  const MOUTH_POL = 117;
   const FX = az => (az + 70) / 140, FY = pol => (pol - 40) / 100;
   function headGeo() {
     return sdfGeo('head', headSDF, [-0.53, -0.5, -0.5], [0.53, 0.5, 0.52], 0.0155, g => {
@@ -205,114 +215,104 @@
   const circle = (g, x, y, r) => { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
   function heart(g, x, y, s) { g.beginPath(); g.moveTo(x, y + s * 0.9); g.bezierCurveTo(x - s * 1.6, y - s * 0.2, x - s * 0.5, y - s * 1.3, x, y - s * 0.4); g.bezierCurveTo(x + s * 0.5, y - s * 1.3, x + s * 1.6, y - s * 0.2, x, y + s * 0.9); g.fill(); }
   function star(g, x, y, r) { g.beginPath(); for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * 0.45 : r, a = i / 10 * Math.PI * 2 - Math.PI / 2; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); }
-  const LID = '#2a1a16';
-  const EYE_AZ = 27, EYE_POL = 94;
-  // 동물의 숲 플레이어 눈: 세로로 긴 흰자 + 큰 홍채 + 두꺼운 윗 속눈썹 라인
+  const LID = '#3a1a1e';
+  const EYE_AZ = 25, EYE_POL = 100;
+  // Q판 눈: 큰 세로 타원 · 홍채 그라데이션(위는 진하게, 아래는 분홍 반사) · 굵은 윗 속눈썹 · 반짝이
   function drawEye(g, x, y, s, l, kind) {
-    const ic = l.eyeColor != null ? l.eyeColor : 0x4a2e22;
-    const arc = (up, lw = 9) => { g.strokeStyle = LID; g.lineWidth = lw; g.lineCap = 'round'; g.beginPath(); if (up) { g.moveTo(x - 26, y + 8); g.quadraticCurveTo(x, y - 26, x + 26, y + 8); } else { g.moveTo(x - 26, y - 2); g.quadraticCurveTo(x, y + 20, x + 26, y - 2); } g.stroke(); };
-    if (kind === 'happy') return arc(true, 9);
-    if (kind === 'closed') return arc(false, 8);
-    if (kind === 'x') { g.strokeStyle = LID; g.lineWidth = 8; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + s * 16, y - 16); g.lineTo(x - s * 12, y); g.lineTo(x + s * 16, y + 16); g.stroke(); return; }
-    if (kind === 'heart') { g.fillStyle = '#ff4f7b'; heart(g, x, y - 2, 24); g.fillStyle = '#fff'; circle(g, x - 8, y - 9, 5); return; }
-    let rx = 31, ry = 40, irx = 23, iry = 31, iy = 4;
-    if (kind === 'dot') { rx = 0; }
-    if (kind === 'sharp') { rx = 33; ry = 34; irx = 21; iry = 26; iy = 3; }
-    if (kind === 'shock') { irx = 9; iry = 11; iy = 0; }
-    if (kind === 'sparkle' || kind === 'star') { rx = 33; ry = 42; irx = 25; iry = 33; }
-    if (kind === 'dot') {   // 콩 눈 (까만 타원 + 하이라이트)
-      g.fillStyle = '#231612'; ellipse(g, x, y + 4, 12, 17); g.fillStyle = '#fff'; circle(g, x - 4, y - 3, 4.2); return;
+    const ic = l.eyeColor != null ? l.eyeColor : 0x6a3a2a;
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    const arc = (up, lw = 8) => { g.strokeStyle = LID; g.lineWidth = lw; g.beginPath(); if (up) { g.moveTo(x - 24, y + 6); g.quadraticCurveTo(x, y - 22, x + 24, y + 6); } else { g.moveTo(x - 24, y - 2); g.quadraticCurveTo(x, y + 16, x + 24, y - 2); } g.stroke(); };
+    if (kind === 'happy') return arc(true);
+    if (kind === 'closed') return arc(false);
+    if (kind === 'x') { g.strokeStyle = LID; g.lineWidth = 8; g.beginPath(); g.moveTo(x + s * 16, y - 15); g.lineTo(x - s * 13, y); g.lineTo(x + s * 16, y + 15); g.stroke(); return; }
+    if (kind === 'heart') { g.fillStyle = '#ff4f7b'; heart(g, x, y - 2, 22); g.fillStyle = '#fff'; circle(g, x - 7, y - 8, 4); return; }
+    if (kind === 'bean' || kind === 'dot') {   // 까만 콩 눈 + 큰 하이라이트
+      const r = kind === 'dot' ? 0.55 : 1;
+      g.fillStyle = '#1e1416'; ellipse(g, x, y, 36 * r, 44 * r);
+      g.fillStyle = '#fff'; ellipse(g, x - 11 * r, y - 15 * r, 13 * r, 15 * r, -0.3); circle(g, x + 13 * r, y + 14 * r, 6 * r); circle(g, x + 5 * r, y - 25 * r, 3.5 * r);
+      if (kind === 'bean') { g.strokeStyle = '#1e1416'; g.lineWidth = 4; g.beginPath(); g.moveTo(x + s * 22, y - 20); g.quadraticCurveTo(x + s * 30, y - 26, x + s * 34, y - 22); g.stroke(); }
+      return;
     }
-    const ix = -s * 2;
+    const W = 41, H = 58;
     g.save();
     const lidClip = (yo, yi, c) => { g.beginPath(); g.moveTo(x - s * 60, y + 70); g.lineTo(x + s * 60, y + 70); g.lineTo(x + s * 60, y + yo); g.quadraticCurveTo(x, y + c, x - s * 60, y + yi); g.closePath(); g.clip(); };
-    if (kind === 'sleepy') lidClip(-2, -2, -4);
-    if (kind === 'droopy' || kind === 'sad') lidClip(-3, -24, -22);
-    if (kind === 'sharp' || kind === 'glare') lidClip(-24, -3, -18);
-    if (kind === 'smug') lidClip(-8, -8, -10);
-    // 흰자 (위쪽은 눈꺼풀 그늘)
-    g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-    const sg = g.createLinearGradient(0, y - ry, 0, y + ry); sg.addColorStop(0, '#d9d2e0'); sg.addColorStop(0.35, '#ffffff'); sg.addColorStop(1, '#ffffff');
-    g.fillStyle = sg; g.fill(); g.clip();
+    if (kind === 'sleepy') lidClip(-6, -6, -8);
+    if (kind === 'droopy' || kind === 'sad') lidClip(-8, -36, -30);
+    if (kind === 'sharp' || kind === 'glare') lidClip(-36, -8, -25);
+    if (kind === 'smug') lidClip(-14, -14, -17);
+    g.beginPath(); g.ellipse(x, y, W, H, 0, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.clip();
     // 홍채
-    const cx = x + ix, cy = y + iy;
-    const grd = g.createRadialGradient(cx, cy + iry * 0.35, 2, cx, cy, iry);
-    grd.addColorStop(0, hex(shade(ic, 1.7))); grd.addColorStop(0.55, hex(shade(ic, 1.05))); grd.addColorStop(1, hex(shade(ic, 0.55)));
-    g.fillStyle = grd; ellipse(g, cx, cy, irx, iry);
-    g.strokeStyle = hex(shade(ic, 0.35)); g.lineWidth = 3; g.beginPath(); g.ellipse(cx, cy, irx, iry, 0, 0, Math.PI * 2); g.stroke();
-    g.fillStyle = hex(shade(ic, 0.25)); ellipse(g, cx, cy + 1, irx * 0.48, iry * 0.52);
-    // 윗눈꺼풀 그림자
-    g.fillStyle = 'rgba(60,30,40,0.22)'; ellipse(g, x, y - ry * 0.95, rx * 1.2, ry * 0.42);
-    // 하이라이트
+    const cx = x - s * 1.5, cy = y + 3, rx = W * 0.86, ry = H * 0.94;
+    const grd = g.createLinearGradient(0, cy - ry, 0, cy + ry);
+    grd.addColorStop(0, hex(shade(ic, 0.32))); grd.addColorStop(0.42, hex(shade(ic, 0.85))); grd.addColorStop(0.72, hex(shade(ic, 1.35))); grd.addColorStop(1, hex(mix(shade(ic, 1.5), 0xff8fb0, 0.55)));
+    g.fillStyle = grd; ellipse(g, cx, cy, rx, ry);
+    g.fillStyle = hex(shade(ic, 0.22)); ellipse(g, cx, cy - 4, rx * 0.38, ry * 0.42);
+    g.fillStyle = 'rgba(20,10,20,0.35)'; ellipse(g, cx, cy - ry * 0.85, rx * 1.1, ry * 0.32);
+    g.strokeStyle = hex(shade(ic, 0.3)); g.lineWidth = 2.5; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.stroke();
+    // 반짝이
     g.fillStyle = '#fff';
-    if (kind === 'star') star(g, cx - 6, cy - 9, 9); else ellipse(g, cx - 7, cy - 10, irx * 0.36, irx * 0.42, -0.4);
-    circle(g, cx + 7, cy + 11, irx * 0.15);
-    if (kind === 'sparkle') { circle(g, cx + 8, cy - 12, 3); }
+    if (kind === 'sparkle' || kind === 'star') { star(g, cx - 10, cy - 15, 15); circle(g, cx + 13, cy + 17, 5.5); circle(g, cx + 11, cy - 23, 3.5); }
+    else { ellipse(g, cx - 12, cy - 17, 12, 15, -0.35); circle(g, cx + 13, cy + 17, 5.5); circle(g, cx + 9, cy - 24, 3); }
     g.restore();
-    // 윗 속눈썹 라인 (두껍게, 바깥 끝은 살짝 길게)
-    g.strokeStyle = LID; g.fillStyle = LID; g.lineCap = 'round'; g.lineJoin = 'round';
-    g.lineWidth = 7.5;
+    // 윗 속눈썹 (굵게 + 바깥 꼬리)
+    g.strokeStyle = LID; g.fillStyle = LID; g.lineWidth = 11;
     g.beginPath();
-    if (kind === 'sleepy') { g.moveTo(x - rx, y - 2); g.quadraticCurveTo(x, y - 6, x + rx, y - 2); }
-    else if (kind === 'droopy' || kind === 'sad') { g.moveTo(x - s * rx * 0.9, y - 27); g.quadraticCurveTo(x, y - 30, x + s * rx * 1.02, y - 4); }
-    else if (kind === 'sharp' || kind === 'glare') { g.moveTo(x - s * rx * 1.0, y - 4); g.quadraticCurveTo(x, y - 24, x + s * rx * 1.04, y - 28); }
-    else if (kind === 'smug') { g.moveTo(x - rx, y - 8); g.quadraticCurveTo(x, y - 12, x + rx, y - 8); }
-    else g.ellipse(x, y, rx + 1.5, ry + 1.5, 0, Math.PI * 1.08, Math.PI * 1.92);
+    if (kind === 'sleepy') { g.moveTo(x - W, y - 5); g.quadraticCurveTo(x, y - 11, x + W, y - 5); }
+    else if (kind === 'droopy' || kind === 'sad') { g.moveTo(x - s * W * 0.95, y - 38); g.quadraticCurveTo(x, y - 42, x + s * W * 1.05, y - 10); }
+    else if (kind === 'sharp' || kind === 'glare') { g.moveTo(x - s * W, y - 10); g.quadraticCurveTo(x, y - 32, x + s * W * 1.08, y - 39); }
+    else if (kind === 'smug') { g.moveTo(x - W, y - 14); g.quadraticCurveTo(x, y - 19, x + W, y - 14); }
+    else { g.moveTo(x - s * W * 1.02, y - H * 0.28); g.quadraticCurveTo(x - s * W * 0.2, y - H * 1.18, x + s * W * 1.06, y - H * 0.42); }
     g.stroke();
-    if (!['sleepy', 'droopy', 'sad', 'sharp', 'glare', 'smug'].includes(kind)) {
-      // 바깥 꼬리
-      g.lineWidth = 6; g.beginPath(); g.moveTo(x + s * rx * 0.9, y - ry * 0.45); g.quadraticCurveTo(x + s * (rx + 6), y - ry * 0.5, x + s * (rx + 8), y - ry * 0.62); g.stroke();
-    }
-    if (l.lashes) { g.lineWidth = 4.5; for (const [a2, len] of [[1.82, 9], [1.92, 10]]) { const px = x + Math.cos(Math.PI * a2) * (rx + 1) * (s > 0 ? 1 : -1) * (s > 0 ? 1 : 1), py = y + Math.sin(Math.PI * a2) * (ry + 1); const qx = s > 0 ? x + Math.cos(Math.PI * a2) * (rx + 1) : x - Math.cos(Math.PI * a2) * (rx + 1); g.beginPath(); g.moveTo(qx, py); g.lineTo(qx + s * len * 0.8, py - len * 0.7); g.stroke(); } }
-    // 아랫 라인 (아주 연하게)
-    g.strokeStyle = 'rgba(90,50,40,0.28)'; g.lineWidth = 2.5; g.beginPath(); g.ellipse(x, y, rx, ry, 0, Math.PI * 0.2, Math.PI * 0.8); g.stroke();
-    if (l.mole && ((l.mole === 'L' && s < 0) || (l.mole === 'R' && s > 0))) { g.fillStyle = '#5a3426'; circle(g, x + s * 20, y + 40, 3.4); }
+    if (kind !== 'sleepy' && kind !== 'smug') { g.beginPath(); const tx = x + s * W * 1.02, ty = kind === 'sharp' || kind === 'glare' ? y - 39 : kind === 'droopy' || kind === 'sad' ? y - 10 : y - H * 0.42; g.moveTo(tx - s * 6, ty - 6); g.lineTo(tx + s * 16, ty - (kind === 'droopy' ? -3 : 9)); g.lineTo(tx - s * 3, ty + 7); g.closePath(); g.fill(); }
+    if (l.lashes) { g.lineWidth = 5; for (const [dx, dy] of [[0.7, -0.85], [0.9, -0.62]]) { g.beginPath(); g.moveTo(x + s * W * dx, y + H * dy); g.lineTo(x + s * (W * dx + 10), y + H * dy - 11); g.stroke(); } }
+    // 아래 속눈썹 점
+    g.strokeStyle = 'rgba(120,50,60,0.55)'; g.lineWidth = 3;
+    for (const k of [0.55, 0.8]) { g.beginPath(); g.moveTo(x + s * W * k, y + H * 0.88); g.lineTo(x + s * (W * k + 3), y + H * 0.88 + 6); g.stroke(); }
+    if (l.mole && ((l.mole === 'L' && s < 0) || (l.mole === 'R' && s > 0))) { g.fillStyle = '#5a3426'; circle(g, x + s * 22, y + 44, 3.2); }
   }
-  // 입 (동물의 숲 스타일 D 입 · 웃는 선 · 삐죽 등)
   function drawMouthAC(g, style, x, y) {
     const D = (w, h) => {
-      g.fillStyle = '#7a2632'; g.beginPath(); g.moveTo(x - w, y - h * 0.3); g.quadraticCurveTo(x, y - h * 0.42, x + w, y - h * 0.3); g.quadraticCurveTo(x + w * 0.9, y + h, x, y + h); g.quadraticCurveTo(x - w * 0.9, y + h, x - w, y - h * 0.3); g.fill();
-      g.save(); g.clip(); g.fillStyle = '#f07a8a'; ellipse(g, x, y + h * 0.95, w * 0.62, h * 0.5); g.restore();
-      g.strokeStyle = '#5a1a22'; g.lineWidth = 3; g.stroke();
+      g.fillStyle = '#9a2e3e'; g.beginPath(); g.moveTo(x - w, y - h * 0.25); g.quadraticCurveTo(x, y - h * 0.35, x + w, y - h * 0.25); g.quadraticCurveTo(x + w * 0.85, y + h, x, y + h); g.quadraticCurveTo(x - w * 0.85, y + h, x - w, y - h * 0.25); g.fill();
+      g.save(); g.clip(); g.fillStyle = '#ff8a9a'; ellipse(g, x, y + h * 0.95, w * 0.62, h * 0.5); g.restore();
     };
-    g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#6a2a26';
+    g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#7a3a36';
     switch (style) {
-      case 'grin': D(25, 22); break;
-      case 'open': D(20, 17); break;
-      case 'smile': g.lineWidth = 5.5; g.beginPath(); g.moveTo(x - 17, y - 2); g.quadraticCurveTo(x, y + 14, x + 17, y - 2); g.stroke(); break;
-      case 'w': g.lineWidth = 5; g.beginPath(); g.moveTo(x - 18, y - 2); g.quadraticCurveTo(x - 9, y + 10, x, y); g.quadraticCurveTo(x + 9, y + 10, x + 18, y - 2); g.stroke(); break;
-      case 'flat': g.lineWidth = 5; g.beginPath(); g.moveTo(x - 12, y + 2); g.lineTo(x + 12, y + 2); g.stroke(); break;
-      case 'pout': g.lineWidth = 5; g.beginPath(); g.moveTo(x - 13, y + 6); g.quadraticCurveTo(x, y - 6, x + 13, y + 6); g.stroke(); break;
-      case 'tooth': D(18, 18); g.fillStyle = '#fff'; g.fillRect(x - 7, y - 5, 14, 8); break;
+      case 'grin': D(15, 15); break;
+      case 'open': D(11, 11); break;
+      case 'smile': g.lineWidth = 4; g.beginPath(); g.moveTo(x - 10, y - 1); g.quadraticCurveTo(x, y + 8, x + 10, y - 1); g.stroke(); break;
+      case 'w': g.lineWidth = 4; g.beginPath(); g.moveTo(x - 12, y - 2); g.quadraticCurveTo(x - 6, y + 7, x, y); g.quadraticCurveTo(x + 6, y + 7, x + 12, y - 2); g.stroke(); break;
+      case 'flat': g.lineWidth = 4; g.beginPath(); g.moveTo(x - 7, y + 2); g.lineTo(x + 7, y + 2); g.stroke(); break;
+      case 'pout': g.lineWidth = 4; g.beginPath(); g.moveTo(x - 8, y + 4); g.quadraticCurveTo(x, y - 4, x + 8, y + 4); g.stroke(); break;
+      case 'tooth': D(12, 12); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x + 4, y - 3); g.lineTo(x + 9, y - 3); g.lineTo(x + 6.5, y + 3); g.fill(); break;
       case 'none': break;
-      default: M.drawMouth(g, style, x, y, 0.7);
+      default: M.drawMouth(g, style, x, y, 0.5);
     }
   }
   const fcache = new Map();
   function faceTexture(l, blink, small) {
-    const key = ['acf2', l.eyes, l.eyeKit, l.eyeColor, l.brows, l.mouth, l.blush, l.skin, l.hair, l.fx || '', l.lashes ? 1 : 0, l.mole || '', l.freckles ? 1 : 0, blink ? 1 : 0, small ? 1 : 0, l.nose || ''].join('|');
+    const key = ['qf', l.eyes, l.eyeKit, l.eyeColor, l.brows, l.mouth, l.blush, l.skin, l.hair, l.fx || '', l.lashes ? 1 : 0, l.mole || '', l.freckles ? 1 : 0, blink ? 1 : 0, small ? 1 : 0].join('|');
     if (fcache.has(key)) return fcache.get(key);
     if (fcache.size > 240) { const k0 = fcache.keys().next().value; fcache.get(k0).dispose(); fcache.delete(k0); }
     const cv = document.createElement('canvas'); cv.width = small ? CW / 2 : CW; cv.height = small ? CH / 2 : CH;
     const g = cv.getContext('2d'); if (small) g.scale(0.5, 0.5);
     g.fillStyle = hex(l.skin); g.fillRect(0, 0, CW, CH);
-    const noseC = l.nose != null ? l.nose : mix(l.skin, 0xff8a70, 0.28);
-    { const gr = g.createRadialGradient(X(0), Y(NOSE_POL), 0, X(0), Y(NOSE_POL), 22); gr.addColorStop(0, hex(noseC)); gr.addColorStop(0.5, hex(noseC)); gr.addColorStop(1, hex(noseC) + '00'); g.fillStyle = gr; ellipse(g, X(0), Y(NOSE_POL), 11, 12); }
-    if (l.blush !== 'none') { const bc = typeof l.blush === 'number' ? l.blush : 0xff8f8f; for (const az of [-40, 40]) { const x = X(az), y = Y(106); const gr = g.createRadialGradient(x, y, 0, x, y, 26); gr.addColorStop(0, hex(bc) + '80'); gr.addColorStop(0.6, hex(bc) + '40'); gr.addColorStop(1, hex(bc) + '00'); g.fillStyle = gr; ellipse(g, x, y, 28, 20); } }
-    if (l.freckles) { g.fillStyle = 'rgba(150,85,55,0.5)'; for (const [az, p] of [[-36, 100], [-42, 102], [-33, 104], [36, 100], [42, 102], [33, 104]]) circle(g, X(az), Y(p), 3); }
+    // 볼터치 (눈 바로 아래 분홍 타원)
+    if (l.blush !== 'none') { const bc = typeof l.blush === 'number' ? l.blush : 0xff8fa0; for (const az of [-30, 30]) { const x = X(az), y = Y(114); const gr = g.createRadialGradient(x, y, 0, x, y, 30); gr.addColorStop(0, hex(bc) + '90'); gr.addColorStop(0.55, hex(bc) + '45'); gr.addColorStop(1, hex(bc) + '00'); g.fillStyle = gr; ellipse(g, x, y, 32, 18); } }
+    if (l.freckles) { g.fillStyle = 'rgba(150,85,55,0.5)'; for (const [az, p] of [[-30, 108], [-36, 110], [-26, 112], [30, 108], [36, 110], [26, 112]]) circle(g, X(az), Y(p), 2.6); }
     const ex = [X(-EYE_AZ), X(EYE_AZ)], ey = Y(EYE_POL);
-    const browC = hex(shade(l.hair, l.hair < 0x404040 ? 1.25 : 0.82));
+    // 눈썹 (짧고 가늘게)
+    const browC = hex(shade(l.hair, l.hair < 0x404040 ? 1.3 : 0.78));
     g.strokeStyle = browC; g.fillStyle = browC; g.lineCap = 'round';
-    const by = Y(76);
+    const by = Y(78);
     for (const [i, x] of ex.entries()) {
       const s = i === 0 ? -1 : 1, b = l.brows || 'thin';
       if (b === 'none') continue;
-      g.lineWidth = b === 'thick' ? 9 : 5;
+      g.lineWidth = b === 'thick' ? 7 : 4;
       g.beginPath();
-      if (b === 'angry') { g.moveTo(x + s * 20, by - 9); g.lineTo(x - s * 18, by + 8); }
-      else if (b === 'worried') { g.moveTo(x + s * 20, by + 7); g.lineTo(x - s * 18, by - 8); }
-      else if (b === 'dots') { ellipse(g, x - s * 4, by, 9, 6); continue; }
-      else { g.moveTo(x - 15, by + 3); g.quadraticCurveTo(x, by - 5, x + 15, by + 3); }
+      if (b === 'angry') { g.moveTo(x + s * 16, by - 8); g.lineTo(x - s * 14, by + 6); }
+      else if (b === 'worried') { g.moveTo(x + s * 16, by + 6); g.lineTo(x - s * 14, by - 7); }
+      else if (b === 'dots') { ellipse(g, x - s * 3, by, 7, 5); continue; }
+      else { g.moveTo(x - 13, by + 2); g.quadraticCurveTo(x, by - 5, x + 13, by + 2); }
       g.stroke();
     }
     const map = { dot: l.eyeKit || 'round', round: 'round', sparkle: 'sparkle', star: 'star', happy: 'happy', closed: 'closed', sleepy: 'sleepy', smug: 'smug', wink: 'wink', sad: 'sad', shock: 'shock', heart: 'heart', x: 'x', glare: 'glare' };
@@ -335,14 +335,17 @@
   // =========================================================
   const azOf = (x, z) => Math.atan2(x, z) / D2R;
   function hairSDF(sp) {
-    const R = sp.r || [0.5, 0.47, 0.48];
-    const L = sp.L, k = sp.k || 0.035;
+    const R = sp.r || [0.53, 0.51, 0.51];
+    const L = sp.L, k = sp.k || 0.022;
+    if (!sp.gro && L.gro) sp.gro = L.gro;
     const dr = sp.drape;
     return (x, y, z) => {
       const az = azOf(x, z + 0.01);
-      let d = sEll(x, y, z, 0, 0.05, -0.02, R[0], R[1], R[2]);
+      let d = sEll(x, y, z, 0, 0.06, -0.02, R[0], R[1], R[2]);
       const pol = Math.acos(clamp((y - 0.02) / (hyp(x, y - 0.02, z) || 1), -1, 1)) / D2R;
       if (sp.bump) d -= sp.bump(az, y, pol);
+      // 가닥 사이 홈 (앞머리 덩어리가 갈라져 보이게)
+      if (sp.gro) { const f = ((az * sp.gro[0] / 360 + (sp.gro[1] || 0)) % 1 + 1) % 1; d += 0.016 * Math.pow(A(f * 2 - 1), 10) * sstep(25, 55, pol) * (A(az) < 110 ? 1 : 0.4); }
       d = smax(d, (pol - L(az)) * D2R * 0.45, k);
       if (dr) {
         const yEnd = typeof dr.y === 'function' ? dr.y(az) : dr.y;
@@ -358,14 +361,21 @@
         d = smin(d, e, 0.06);
       }
       if (sp.part != null) d = smax(d, -sCone(x, y, z, Math.sin(sp.part * D2R) * 0.22, 0.6, 0.32, Math.sin(sp.part * D2R) * 0.04, 0.55, -0.12, 0.014, 0.008), 0.012);
+      // 얼굴 옆으로 내려오는 뾰족한 옆머리
+      if (sp.locks) for (const [laz, el0, yEnd, r, out] of sp.locks) for (const sg of (sp.oneSide ? [1] : [-1, 1])) {
+        const p0 = surf(sg * laz, el0, 0.05), x1 = p0[0] * (out || 1.08), z1 = p0[2] * 0.85 + 0.02;
+        d = smin(d, sCone(x, y, z, p0[0], p0[1], p0[2], x1, yEnd, z1, r, 0.012), 0.05);
+      }
+      // 바보털
+      if (sp.ahoge) { d = smin(d, sCone(x, y, z, 0.02, 0.55, 0.08, 0.06, 0.74, 0.14, 0.035, 0.016), 0.03); d = smin(d, sCone(x, y, z, 0.06, 0.74, 0.14, 0.16, 0.76, 0.24, 0.016, 0.006), 0.02); }
       if (sp.extra) for (const [fn, kk] of sp.extra) d = smin(d, fn(x, y, z), kk);
       return d;
     };
   }
-  const prof = (bang, side, back, bw = 52) => a => {
+  const prof = (bang, side, back, bw = 52) => { const fn = a => {
     const x = A(a);
     return x < bw ? bang(a) : x < 105 ? lerp(bang(Math.sign(a) * bw), side, sstep(bw, bw + 22, x)) : lerp(side, back, sstep(105, 150, x));
-  };
+  }; fn.gro = bang.gro; return fn; };
   const scal = (base, amp, n) => a => base + amp * A(Math.sin(a * D2R * n));
   const sph = (cx, cy, cz, r) => (x, y, z) => sSph(x, y, z, cx, cy, cz, r);
   const ell = (cx, cy, cz, rx, ry, rz) => (x, y, z) => sEll(x, y, z, cx, cy, cz, rx, ry, rz);
@@ -376,39 +386,42 @@
   const spikeAt = (az, el, len, r, tilt = 0) => cone(surf(az, el, 0.0), surf(az, el + tilt, len), r, 0.012);
   const polOf = (x, y, z) => Math.acos(clamp((y - 0.05) / (hyp(x, y - 0.05, z) || 1), -1, 1)) / D2R;
 
+  // 뾰족한 가닥 앞머리: n 가닥, 가닥 끝이 아래로 뾰족하게 (amp 만큼 길어짐)
+  const spikes = (base, amp, n, phase = 0, sharp = 1.25) => { const fn = a => { const f = ((a * n / 360 + phase) % 1 + 1) % 1; return base + amp * Math.pow(1 - A(f * 2 - 1), sharp); }; fn.gro = [n, phase]; return fn; };
+  const sweep = (fn, k) => { const f2 = a => fn(a) + clamp(a + 50, 0, 100) * k; f2.gro = fn.gro; return f2; };
   const HAIR = {
     // ---------------- 여자 ----------------
-    bobbang: { L: prof(scal(70, 4, 6), 102, 108), drape: { y: a => -0.34 - (A(a) > 120 ? 0.04 : 0), t: 0.075, fw: 54, curl: 0.05 } },
-    longbang: { L: prof(scal(69, 3, 7), 104, 108), drape: { y: -0.8, t: 0.08, fw: 50, flare: 0.06 } },
-    longwave: { L: prof(a => 60 + clamp(a + 55, 0, 110) * 0.2, 104, 108, 56), part: -24, drape: { y: -0.74, t: 0.085, fw: 48, wave: [13, 0.022], flare: 0.08 } },
-    hime: { L: prof(() => 71, 102, 108, 50), drape: { y: a => A(a) < 80 ? -0.24 : -0.82, t: 0.08, fw: 50 } },
-    sidelong: { L: prof(a => 56 + clamp(a + 50, 0, 100) * 0.26, 104, 108, 56), part: -30, drape: { y: -0.66, t: 0.08, fw: 50, curl: -0.08 } },
-    pony: { L: prof(a => 50 + A(a) * 0.12, 100, 110), extra: [[sph(0, 0.36, -0.42, 0.08), 0.03], [cone([0, 0.34, -0.48], [0, 0.0, -0.66], 0.1, 0.11), 0.04], [cone([0, 0.0, -0.66], [0, -0.42, -0.6], 0.11, 0.035), 0.05]] },
-    twintail: { L: prof(a => 64 + A(Math.sin(a * D2R * 6)) * 4 + (a > 0 ? 6 : 0), 104, 110), extra: [[mirror(cone([0.4, 0.02, -0.18], [0.62, -0.22, -0.26], 0.085, 0.05)), 0.04]] },
-    bun: { L: prof(a => 54 + A(Math.sin(a * D2R * 4)) * 5, 100, 108), extra: [[sph(0, 0.55, -0.12, 0.16), 0.05]] },
-    braids: { L: prof(scal(68, 4, 6), 104, 110), part: 0, extra: [[mirror(chain([[0.42, -0.1, -0.06], [0.44, -0.2, -0.02], [0.45, -0.3, 0.01], [0.46, -0.4, 0.03], [0.46, -0.5, 0.05], [0.46, -0.6, 0.06]], 0.07, 0.045)), 0.03]] },
-    pixie: { L: prof(a => 62 + clamp(a + 50, 0, 100) * 0.14 + A(Math.sin(a * D2R * 7)) * 3, 98, 108, 56) },
-    curlybob: { L: prof(scal(68, 5, 6), 102, 108), drape: { y: -0.3, t: 0.08, fw: 54 }, extra: [[(x, y, z) => { const az = azOf(x, z); if (A(az) < 50) return 1; return sTorY(x, y, z * 1.0 + 0.03, 0, -0.31, 0, 0.47, 0.085) - 0.012 * Math.sin(az * D2R * 12); }, 0.05]] },
-    curtainmid: { L: prof(a => 50 + Math.min(A(a), 42) * 0.78, 104, 110, 50), part: 0, drape: { y: -0.5, t: 0.08, fw: 46, curl: -0.04 } },
-    odango: { L: prof(scal(68, 4, 6), 102, 108), extra: [[mirror(sph(0.3, 0.47, -0.04, 0.14)), 0.04]] },
-    lowbun: { L: prof(a => 52 + A(a) * 0.2, 100, 110), part: -22, extra: [[ell(0, -0.16, -0.48, 0.16, 0.14, 0.13), 0.06]] },
-    halfup: { L: prof(scal(69, 3, 7), 104, 108), drape: { y: -0.74, t: 0.08, fw: 50 }, extra: [[sph(0, 0.16, -0.52, 0.09), 0.04]] },
+    bobbang: { L: prof(spikes(66, 12, 14), 104, 110), locks: [[60, 30, -0.3, 0.07]], drape: { y: a => -0.32 - (A(a) > 120 ? 0.05 : 0), t: 0.08, fw: 56, curl: 0.06 } },
+    longbang: { L: prof(spikes(64, 13, 12), 104, 108), locks: [[58, 30, -0.42, 0.075], [72, 26, -0.55, 0.08]], drape: { y: -0.82, t: 0.08, fw: 54, flare: 0.06 }, ahoge: true },
+    longwave: { L: prof(sweep(spikes(56, 13, 9, 0.2), 0.16), 104, 108, 56), part: -26, locks: [[60, 26, -0.5, 0.08, 1.12]], drape: { y: -0.74, t: 0.085, fw: 50, wave: [13, 0.024], flare: 0.08 } },
+    hime: { L: prof(spikes(70, 6, 22, 0, 1), 102, 108, 50), drape: { y: a => A(a) < 80 ? -0.24 : -0.84, t: 0.08, fw: 52 } },
+    sidelong: { L: prof(sweep(spikes(52, 13, 11), 0.28), 104, 108, 58), part: -32, locks: [[64, 28, -0.48, 0.075]], drape: { y: -0.66, t: 0.08, fw: 52, curl: -0.08 } },
+    pony: { L: prof(spikes(56, 15, 11, 0.5), 100, 110), locks: [[58, 28, -0.24, 0.05]], extra: [[sph(0, 0.38, -0.44, 0.08), 0.03], [cone([0, 0.36, -0.5], [0, 0.02, -0.7], 0.1, 0.12), 0.04], [cone([0, 0.02, -0.7], [0, -0.44, -0.62], 0.12, 0.02), 0.05]], ahoge: true },
+    twintail: { L: prof(spikes(64, 13, 12), 104, 110), locks: [[60, 28, -0.22, 0.05]], extra: [[mirror(cone([0.42, 0.06, -0.18], [0.66, -0.12, -0.26], 0.09, 0.08)), 0.04], [mirror(cone([0.66, -0.12, -0.26], [0.6, -0.62, -0.2], 0.08, 0.015)), 0.05]] },
+    bun: { L: prof(spikes(56, 13, 9, 0.5), 100, 108), locks: [[60, 28, -0.3, 0.04]], extra: [[sph(0, 0.58, -0.12, 0.16), 0.05]] },
+    braids: { L: prof(spikes(66, 11, 12), 104, 110), part: 0, extra: [[mirror(chain([[0.44, -0.1, -0.06], [0.46, -0.2, -0.02], [0.47, -0.3, 0.01], [0.48, -0.4, 0.03], [0.48, -0.5, 0.05], [0.48, -0.6, 0.06]], 0.07, 0.045)), 0.03]] },
+    pixie: { L: prof(sweep(spikes(62, 13, 12), 0.12), 98, 108, 56), locks: [[66, 26, -0.16, 0.05]], ahoge: true },
+    curlybob: { L: prof(spikes(66, 11, 11), 102, 108), drape: { y: -0.3, t: 0.08, fw: 54 }, extra: [[(x, y, z) => { const az = azOf(x, z); if (A(az) < 50) return 1; return sTorY(x, y, z + 0.03, 0, -0.31, 0, 0.5, 0.09) - 0.014 * Math.sin(az * D2R * 12); }, 0.05]] },
+    curtainmid: { L: prof(a => 50 + Math.min(A(a), 42) * 0.7 + (A(a) > 20 ? 6 * Math.pow(1 - A(((A(a) * 6 / 360) % 1) * 2 - 1), 1.6) : 0), 104, 110, 50), part: 0, locks: [[54, 28, -0.4, 0.07]], drape: { y: -0.5, t: 0.08, fw: 48, curl: -0.05 } },
+    odango: { L: prof(spikes(66, 12, 12), 102, 108), locks: [[60, 28, -0.26, 0.05]], extra: [[mirror(sph(0.31, 0.5, -0.04, 0.14)), 0.04]] },
+    lowbun: { L: prof(sweep(spikes(52, 11, 9), 0.18), 100, 110), part: -24, locks: [[62, 28, -0.3, 0.045]], extra: [[ell(0, -0.16, -0.5, 0.16, 0.14, 0.13), 0.06]] },
+    halfup: { L: prof(spikes(64, 13, 12), 104, 108), locks: [[58, 28, -0.45, 0.075]], drape: { y: -0.76, t: 0.08, fw: 54 }, extra: [[sph(0, 0.18, -0.54, 0.09), 0.04]] },
     // ---------------- 남자 ----------------
-    boyshort: { L: prof(a => 64 + A(Math.sin(a * D2R * 5)) * 5 + clamp(a, -30, 30) * 0.12, 96, 108, 56) },
-    spiky: { L: prof(a => 68 + A(Math.sin(a * D2R * 6)) * 5, 98, 110), extra: [[spikeAt(0, 64, 0.2, 0.09, 12), 0.04], [spikeAt(-35, 58, 0.18, 0.08, 8), 0.04], [spikeAt(35, 58, 0.18, 0.08, 8), 0.04], [spikeAt(-80, 46, 0.16, 0.08, 4), 0.04], [spikeAt(80, 46, 0.16, 0.08, 4), 0.04], [spikeAt(-130, 40, 0.16, 0.09, 0), 0.04], [spikeAt(130, 40, 0.16, 0.09, 0), 0.04], [spikeAt(180, 50, 0.16, 0.09, -6), 0.04], [spikeAt(-160, 70, 0.14, 0.08, 0), 0.04], [spikeAt(160, 70, 0.14, 0.08, 0), 0.04]] },
-    sideswept: { L: prof(a => 58 + clamp(a + 50, 0, 100) * 0.22, 98, 110, 56), part: -40, extra: [[spikeAt(60, 12, 0.08, 0.05, -10), 0.03]] },
-    centerpart: { L: prof(a => 52 + Math.min(A(a), 36) * 0.8, 100, 112, 52), part: 0 },
-    shaggy: { L: prof(a => 74 + A(Math.sin(a * D2R * 6)) * 6, 112, 118), drape: { y: a => -0.22 + A(Math.sin(a * D2R * 7)) * 0.06, t: 0.07, fw: 58 }, extra: [[spikeAt(150, -20, 0.12, 0.07, -10), 0.04], [spikeAt(-150, -20, 0.12, 0.07, -10), 0.04], [spikeAt(180, -26, 0.12, 0.07, -10), 0.04]] },
-    buzz: { r: [0.462, 0.442, 0.452], L: prof(() => 50, 94, 108), k: 0.02 },
-    slick: { L: prof(() => 44, 96, 110), extra: [[ell(0, 0.4, 0.18, 0.26, 0.13, 0.2), 0.12]] },
-    curlyshort: { r: [0.52, 0.5, 0.5], L: prof(a => 60 + A(Math.sin(a * D2R * 7)) * 6, 100, 112), bump: (az, y, pol) => 0.022 * Math.pow(A(Math.sin(az * D2R * 7) * Math.sin(pol * D2R * 8)), 0.6) },
-    manbun: { L: prof(a => 48 + A(a) * 0.15, 98, 108), part: 24, extra: [[sph(0, 0.4, -0.38, 0.1), 0.04]] },
-    bowl: { r: [0.52, 0.49, 0.5], L: prof(() => 73, 100, 112) },
-    wavyshort: { L: prof(scal(64, 9, 4), 100, 112), bump: (az, y) => Math.sin(az * D2R * 9) * 0.012 * clamp(y + 0.2, 0, 1) },
-    mohawk: { r: [0.458, 0.44, 0.45], L: prof(() => 48, 92, 104), extra: [[ell(0, 0.47, -0.02, 0.07, 0.14, 0.42), 0.06]] },
-    tiedlong: { L: prof(a => 60 + clamp(a + 40, 0, 80) * 0.18, 104, 112, 56), part: -24, extra: [[cone([0, -0.16, -0.47], [0, -0.62, -0.46], 0.08, 0.05), 0.05]] },
-    cloud: { r: [0.58, 0.54, 0.56], L: prof(a => 56 + A(Math.sin(a * D2R * 6)) * 6, 106, 116), bump: (az, y, pol) => 0.035 * Math.pow(A(Math.sin(az * D2R * 6) * Math.sin(pol * D2R * 7)), 0.5) },
-    grandpa: { L: () => 0, extra: [[(x, y, z) => { if (A(azOf(x, z)) < 70) return 1; return sEll(A(x), y, z, 0.38, -0.02, -0.14, 0.12, 0.13, 0.28); }, 0.05], [ell(0, 0.0, -0.4, 0.3, 0.13, 0.12), 0.05]] },
+    boyshort: { L: prof(spikes(64, 14, 11, 0.1), 96, 108, 56), locks: [[70, 22, -0.1, 0.05]], ahoge: true },
+    spiky: { L: prof(spikes(66, 15, 11), 100, 112), extra: [[spikeAt(0, 64, 0.24, 0.1, 18), 0.04], [spikeAt(-38, 58, 0.22, 0.09, 14), 0.04], [spikeAt(38, 58, 0.22, 0.09, 14), 0.04], [spikeAt(-82, 44, 0.2, 0.09, 6), 0.04], [spikeAt(82, 44, 0.2, 0.09, 6), 0.04], [spikeAt(-130, 38, 0.18, 0.1, 0), 0.04], [spikeAt(130, 38, 0.18, 0.1, 0), 0.04], [spikeAt(180, 46, 0.18, 0.1, -6), 0.04], [spikeAt(-160, 70, 0.16, 0.09, 4), 0.04], [spikeAt(160, 70, 0.16, 0.09, 4), 0.04]] },
+    sideswept: { L: prof(a => 58 + clamp(a + 40, 0, 90) * 0.42 + 6 * Math.pow(1 - A(((((a + 180) * 7 / 360) % 1) * 2 - 1)), 1.7), 98, 110, 60), part: -42, locks: [[66, 24, -0.18, 0.05]] },
+    centerpart: { L: prof(a => 52 + Math.min(A(a), 36) * 0.9 + 5 * Math.pow(1 - A((((A(a) * 7 / 360) % 1) * 2 - 1)), 1.7), 100, 112, 52), part: 0, locks: [[62, 24, -0.22, 0.06]] },
+    shaggy: { L: prof(spikes(70, 15, 14), 112, 118), drape: { y: a => -0.24 + Math.pow(1 - A(((((a + 180) * 9 / 360) % 1) * 2 - 1)), 2) * -0.1, t: 0.07, fw: 60 }, extra: [[spikeAt(150, -18, 0.14, 0.07, -10), 0.04], [spikeAt(-150, -18, 0.14, 0.07, -10), 0.04], [spikeAt(180, -24, 0.14, 0.07, -10), 0.04], [spikeAt(-60, 60, 0.16, 0.08, 10), 0.04], [spikeAt(40, 66, 0.16, 0.08, 10), 0.04], [spikeAt(140, 56, 0.15, 0.08, 6), 0.04]], ahoge: true },
+    buzz: { r: [0.47, 0.455, 0.455], L: prof(() => 50, 94, 108), k: 0.02 },
+    slick: { L: prof(a => 46 + 4 * Math.pow(1 - A((((a + 180) * 6 / 360) % 1) * 2 - 1), 1.5), 96, 110), part: -36, extra: [[ell(-0.04, 0.44, 0.18, 0.3, 0.15, 0.22), 0.12], [spikeAt(30, 30, 0.1, 0.05, -20), 0.03]] },
+    curlyshort: { r: [0.55, 0.53, 0.53], L: prof(spikes(64, 11, 14), 100, 112), bump: (az, y, pol) => 0.024 * Math.pow(A(Math.sin(az * D2R * 7) * Math.sin(pol * D2R * 8)), 0.6) },
+    manbun: { L: prof(sweep(spikes(48, 11, 9), 0.1), 98, 108), part: 24, extra: [[sph(0, 0.42, -0.4, 0.1), 0.04]] },
+    bowl: { r: [0.55, 0.52, 0.53], L: prof(spikes(70, 12, 16), 100, 112) },
+    wavyshort: { L: prof(spikes(62, 15, 9, 0.25), 100, 112), bump: (az, y) => Math.sin(az * D2R * 9) * 0.014 * clamp(y + 0.2, 0, 1), locks: [[66, 24, -0.2, 0.06]] },
+    mohawk: { r: [0.47, 0.45, 0.455], L: prof(() => 48, 92, 104), extra: [[ell(0, 0.5, -0.02, 0.07, 0.16, 0.44), 0.06]] },
+    tiedlong: { L: prof(sweep(spikes(58, 13, 11), 0.16), 104, 112, 56), part: -24, locks: [[64, 26, -0.3, 0.06]], extra: [[cone([0, -0.16, -0.5], [0, -0.64, -0.48], 0.08, 0.02), 0.05]] },
+    cloud: { r: [0.6, 0.56, 0.58], L: prof(a => 56 + A(Math.sin(a * D2R * 6)) * 6, 106, 116), bump: (az, y, pol) => 0.035 * Math.pow(A(Math.sin(az * D2R * 6) * Math.sin(pol * D2R * 7)), 0.5) },
+    grandpa: { L: () => 0, extra: [[(x, y, z) => { if (A(azOf(x, z)) < 70) return 1; return sEll(A(x), y, z, 0.4, -0.04, -0.14, 0.12, 0.13, 0.28); }, 0.05], [ell(0, -0.02, -0.42, 0.3, 0.13, 0.12), 0.05]] },
   };
   const HAIR_NAMES = {
     bobbang: '일자 단발', longbang: '긴 생머리', longwave: '긴 웨이브', hime: '히메컷', sidelong: '옆가르마 롱', pony: '포니테일', twintail: '양갈래', bun: '똥머리', braids: '양 땋은 머리',
@@ -418,8 +431,9 @@
   };
   Object.assign(OPT.hairStyle, HAIR_NAMES);
   const LEGACY = { short: 'boyshort', bob: 'bobbang', long: 'longbang', ponytail: 'pony', pigtails: 'twintail', twinbun: 'odango', afro: 'cloud', curly: 'curlyshort', sidepart: 'sideswept' };
-  function hairGeo(style) {
-    const sp = HAIR[style];
+  function hairGeo(style, hatOn) {
+    const sp = hatOn && HAIR[style].ahoge ? Object.assign({}, HAIR[style], { ahoge: false }) : HAIR[style];
+    if (sp !== HAIR[style]) style += ':nohg';
     const lowest = sp.drape ? -0.92 : sp.extra ? -0.8 : -0.5;
     return sdfGeo('hair:' + style, hairSDF(sp), [-0.72, lowest, -0.78], [0.72, 0.75, 0.62], 0.017, g => {
       const n = g.attributes.normal, p = g.attributes.position, c = g.attributes.color.array, uv = new Float32Array(n.count * 2);
@@ -554,7 +568,7 @@
   Object.assign(OPT.bottom, { jeans: '청바지', longskirt: '롱스커트', pleats: '플리츠', cargo: '카고 팬츠', wide: '와이드 팬츠' });
   Object.assign(OPT.acc, { earring: '귀걸이', choker: '초커', tote: '에코백', camera: '목걸이 카메라', neckphones: '목 헤드폰', mustache: '콧수염', crossbag: '크로스백', pendant: '펜던트' });
   Object.assign(OPT.hat, { flowercrown: '꽃 화관', tiara: '티아라', bandana: '반다나', captain: '선장 모자', fedora: '페도라', hibiscus: '히비스커스', knit: '니트 비니', boater: '보터햇' });
-  const HS = [1, 1, 1]; HS.yaw = EYE_AZ * D2R * 0.92; HS.th = 95 * D2R;
+  const HS = [1, 1, 1]; HS.yaw = EYE_AZ * D2R * 0.95; HS.th = 100 * D2R;
 
   function build(lookIn) {
     let l = ISLE.normalizeLook(lookIn);
@@ -654,7 +668,7 @@
     head.add(face);
     PART = 'hair';
     const hs = HAIR[l.hairStyle] ? l.hairStyle : LEGACY[l.hairStyle] || 'boyshort';
-    const hair = tag(new THREE.Mesh(hairGeo(hs), soften(new THREE.MeshLambertMaterial({ color: lin(l.hair), vertexColors: true, side: THREE.DoubleSide, map: window.__NOMAP ? null : grayTex('hair') }), 0.3)));
+    const hair = tag(new THREE.Mesh(hairGeo(hs, l.hat !== 'none' && !['flower', 'bow', 'flowercrown', 'hibiscus', 'tiara', 'headband', 'halo', 'horns'].includes(l.hat)), soften(new THREE.MeshLambertMaterial({ color: lin(l.hair), vertexColors: true, side: THREE.DoubleSide, map: window.__NOMAP ? null : grayTex('hair') }), 0.3)));
     if (l.hairFlip) hair.scale.x = -1;
     if (l.hat !== 'none' && !['flower', 'bow', 'flowercrown', 'hibiscus', 'tiara', 'headband', 'halo', 'horns', 'bandana'].includes(l.hat)) hair.scale.set(hair.scale.x * 0.97, 0.94, 0.97);
     head.add(hair);
