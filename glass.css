@@ -200,3 +200,50 @@ select, input[type=text], input[type=search], input[type=number], textarea { bac
 .mg .opt.on { background: rgba(240, 225, 255, .95) !important; border-color: #b69cff !important; }
 .mg .pill { background: rgba(255, 255, 255, .8) !important; }
 .mg td { border-bottom-color: rgba(190, 170, 220, .35) !important; }
+
+/* ===== 폰 앱 큰 카드 (P1) ===== */
+.pa { display: flex; flex-direction: column; gap: 10px; padding-top: 2px; color: var(--g-ink); }
+.pa-seg { display: flex; gap: 5px; background: rgba(255, 255, 255, .6); border-radius: 16px; padding: 4px; }
+.pa-seg button { flex: 1; border: 0; background: transparent; border-radius: 12px; padding: 7px 0; font-size: 13px; color: var(--g-mut); }
+.pa-seg button.on { background: #fff; color: var(--g-ink); box-shadow: 0 2px 6px rgba(120, 80, 160, .18); }
+.pa-card { position: relative; border-radius: 30px; background: #fff; padding: 18px; text-align: center; box-shadow: 0 10px 24px rgba(120, 80, 160, .18); }
+.pa-empty { padding: 26px 18px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.pa-ring { position: relative; display: inline-block; padding: 4px; border-radius: 50%; background: linear-gradient(135deg, #ff9ac8, #7ad8f0); }
+.pa-ring img, .pa-ring .face { display: block; border-radius: 50%; background: #fff; }
+.pa-bal { position: absolute; top: -2px; right: -2px; font-style: normal; width: 30px; height: 30px; border-radius: 50%; background: #ff5a8a; color: #fff; font-size: 18px; line-height: 30px; box-shadow: 0 3px 8px rgba(255, 60, 120, .4); }
+.pa-name { font-size: 26px; margin-top: 8px; }
+.pa-sub { font-family: 'Gowun Dodum', sans-serif; font-size: 12.5px; color: var(--g-mut); line-height: 1.45; margin-top: 2px; }
+.pa-rel { margin: 10px 0 2px; font-size: 13px; color: #e85a9a; }
+.pa-h { letter-spacing: 1px; } .pa-h i { font-style: normal; color: #e8d0e0; }
+.pa-acts { display: flex; gap: 8px; margin-top: 12px; }
+.pa-acts button { flex: 1; border: 0; padding: 10px 0; border-radius: 16px; background: #f4eefc; font-size: 14px; color: var(--g-ink); }
+.pa-acts button.on { background: linear-gradient(135deg, #ff9ac8, #b69cff); color: #fff; }
+.pa-nav { position: absolute; top: 72px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(240, 232, 252, .9); font-size: 22px; line-height: 28px; color: #9a7ad0; z-index: 2; }
+.pa-nav.l { left: 10px; } .pa-nav.r { right: 10px; }
+.pa-dots { display: flex; justify-content: center; gap: 6px; }
+.pa-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(180, 160, 210, .5); }
+.pa-dots i.on { width: 22px; border-radius: 4px; background: #b69cff; }
+.pa-strip { display: flex; justify-content: center; gap: 6px; }
+.pa-mini { position: relative; border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; color: var(--g-ink); }
+.pa-mini img, .pa-mini .face { border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(120, 80, 160, .15); }
+.pa-mini em { position: absolute; top: -2px; right: 2px; font-style: normal; background: #ff5a8a; color: #fff; border-radius: 50%; width: 16px; height: 16px; font-size: 11px; line-height: 16px; }
+.pa-qcard, .pa-ncard { text-align: left; }
+.pa-tag { display: inline-block; border-radius: 999px; padding: 3px 10px; font-size: 12px; color: #fff; background: linear-gradient(135deg, #ff9ac8, #b69cff); }
+.pa-giver { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; font-size: 12px; color: var(--g-mut); vertical-align: middle; }
+.pa-giver img { border-radius: 50%; }
+.pa-qt { font-size: 20px; margin: 10px 0 4px; line-height: 1.35; }
+.pa-bar { height: 10px; border-radius: 6px; background: #f0e8fa; margin: 12px 0 6px; overflow: hidden; }
+.pa-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff9ac8, #b69cff); border-radius: 6px; }
+.pa-h4 { font-size: 15px; margin: 4px 2px 0; }
+.pa-todo { display: flex; gap: 10px; align-items: center; width: 100%; border: 0; text-align: left; padding: 10px 12px; border-radius: 18px; background: #fff; box-shadow: 0 4px 10px rgba(120, 80, 160, .1); font-size: 14px; color: var(--g-ink); font-family: inherit; }
+.pa-todo small { color: var(--g-mut); }
+.pa-todo .ck { width: 22px; height: 22px; border-radius: 8px; border: 2px solid #c8b4f0; flex: none; }
+.pa-ncard { padding: 0; overflow: hidden; }
+.pa-ncard .pa-nav { top: 60px; }
+.pa-hero { height: 150px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.pa-hero.grad { background: linear-gradient(135deg, #ffd0e6, #d8ccff 55%, #c8f0ff); }
+.pa-hero img { border-radius: 50%; background: #fff; box-shadow: 0 4px 10px rgba(120, 80, 160, .2); }
+.pa-nbody { padding: 14px; }
+.pa-foot { display: flex; gap: 8px; margin-top: 2px; }
+.pa-foot button, .pa-back { flex: 1; border: 1.5px dashed rgba(180, 160, 220, .7); background: rgba(255, 255, 255, .5); border-radius: 16px; padding: 8px 0; font-size: 13px; color: var(--g-mut); }
+.pa-back { width: 100%; margin: 2px 0 8px; }
