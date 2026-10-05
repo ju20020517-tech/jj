@@ -222,50 +222,51 @@
   //  calm 가는 아몬드 · big 큰 반짝 · ring 동그라미 · flat 감은 선 · smile 눈웃음 · tired 다크서클 · sanpaku 삼백안 · heavy 무심 · dreamy 위를 보는
   // 예전 Q판 큰 눈 + 사용자가 그려 준 수정: 바깥쪽 흰자 · 굵은 윗선 · 짧고 굵은 아랫선 · 선명한 홍채
   const ICON_EYES = { happy: 1, smile: 1, closed: 1, flat: 1, x: 1, heart: 1, dot: 1, bean: 1, shock: 1 };
+  // 사용자가 그려 준 눈 그대로:
+  //  흰자(세로 타원) · 안쪽으로 치우친 동그란 단색 홍채 + 흰 하이라이트 하나 · 바깥쪽에 흰자
+  //  굵은 윗선(바깥 끝 속눈썹 두 가닥) · 홍채 아래 짧고 굵은 아랫선 · 바로 밑 분홍 볼
+  //  sharp: 바깥이 올라간 윗선 + 아래 작은 속눈썹 / droopy: 바깥으로 처진 윗선 / dreamy·sleepy: 일자 윗선이 홍채 위를 덮음
   function drawEyeQ(g, x, y, s, l, kind) {
-    const ic = l.eyeColor != null ? l.eyeColor : 0x6a3a2a, LIDC = '#1e1214';
+    const ic = l.eyeColor != null ? l.eyeColor : 0x6a3a2a, INK = '#141012';
     g.lineCap = 'round'; g.lineJoin = 'round';
-    const W = 38, H = 52;
-    const droop = kind === 'droopy' || kind === 'sad' || kind === 'tired', sharp = kind === 'sharp' || kind === 'glare' || kind === 'sanpaku';
-    const lowLid = kind === 'sleepy' || kind === 'heavy', smug = kind === 'smug' || kind === 'calm';
+    const W = 41, H = 52;
+    const sharp = kind === 'sharp' || kind === 'glare' || kind === 'sanpaku';
+    const droop = kind === 'droopy' || kind === 'sad' || kind === 'tired';
+    const flat = kind === 'dreamy' || kind === 'sleepy' || kind === 'heavy' || kind === 'smug' || kind === 'calm';
+    const flatY = kind === 'dreamy' ? -H * 0.22 : kind === 'smug' || kind === 'calm' ? -H * 0.3 : -H * 0.05;
+    const ir = kind === 'sanpaku' ? 18 : 26, cx = x - s * 9, cy = y + 5;
+    // 흰자 + 홍채 (윗선 아래만 보이게 잘라냄)
     g.save();
-    const lidClip = (yo, yi, c) => { g.beginPath(); g.moveTo(x - s * 60, y + 70); g.lineTo(x + s * 60, y + 70); g.lineTo(x + s * 60, y + yo); g.quadraticCurveTo(x, y + c, x - s * 60, y + yi); g.closePath(); g.clip(); };
-    if (lowLid) lidClip(-14, -14, -16);
-    if (droop) lidClip(-10, -34, -28);
-    if (sharp) lidClip(-34, -10, -24);
-    if (smug) lidClip(-14, -14, -17);
+    g.beginPath();
+    if (flat) g.rect(x - 80, y + flatY, 160, 120);
+    else if (sharp) { g.moveTo(x - s * 70, y - 4); g.lineTo(x + s * 70, y - 36); g.lineTo(x + s * 70, y + 90); g.lineTo(x - s * 70, y + 90); }
+    else if (droop) { g.moveTo(x - s * 70, y - 34); g.lineTo(x + s * 70, y - 6); g.lineTo(x + s * 70, y + 90); g.lineTo(x - s * 70, y + 90); }
+    else g.rect(x - 80, y - 90, 160, 200);
+    g.closePath(); g.clip();
     g.beginPath(); g.ellipse(x, y, W, H, 0, 0, Math.PI * 2); g.fillStyle = '#fff'; g.fill(); g.clip();
-    // 홍채: 안쪽으로 치우쳐서 바깥쪽에 흰자가 보이게
-    const sc = kind === 'sanpaku' ? 0.62 : 1;
-    const rx = W * 0.7 * sc, ry = H * 0.84 * sc, cx = x - s * W * 0.18, cy = y + (kind === 'dreamy' ? -6 : 5);
-    const grd = g.createLinearGradient(0, cy - ry, 0, cy + ry);
-    grd.addColorStop(0, hex(shade(ic, 0.55))); grd.addColorStop(0.45, hex(shade(ic, 1.0))); grd.addColorStop(1, hex(shade(ic, 1.45)));
-    g.fillStyle = grd; ellipse(g, cx, cy, rx, ry);
-    g.fillStyle = hex(shade(ic, 0.25)); ellipse(g, cx, cy, rx * 0.4, ry * 0.42);
-    g.strokeStyle = hex(shade(ic, 0.35)); g.lineWidth = 2.5; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.stroke();
-    g.fillStyle = 'rgba(20,10,20,0.25)'; ellipse(g, x, y - H * 0.9, W * 1.2, H * 0.3);
-    // 하이라이트 (큰 거 하나 + 작은 거 하나)
+    g.fillStyle = hex(ic); ellipse(g, cx, cy, ir, ir * 1.12);
+    g.strokeStyle = hex(shade(ic, 0.62)); g.lineWidth = 3; g.beginPath(); g.ellipse(cx, cy, ir, ir * 1.12, 0, 0, Math.PI * 2); g.stroke();
     g.fillStyle = '#fff';
-    if (kind === 'sparkle' || kind === 'star') star(g, cx - rx * 0.3, cy - ry * 0.35, 11);
-    else ellipse(g, cx - rx * 0.32, cy - ry * 0.36, rx * 0.3, ry * 0.26, -0.3);
-    circle(g, cx + rx * 0.35, cy + ry * 0.45, rx * 0.12);
-    if (kind === 'ring') { g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 2.5; g.beginPath(); g.ellipse(cx, cy, rx * 0.62, ry * 0.62, 0, 0, Math.PI * 2); g.stroke(); }
+    if (kind === 'sparkle' || kind === 'star') star(g, cx - 7, cy - 10, 9);
+    else circle(g, cx - 7, cy - 10, ir * 0.3);
     g.restore();
-    // 윗 눈꺼풀 굵은 선 + 바깥 꼬리
-    g.strokeStyle = LIDC; g.fillStyle = LIDC; g.lineWidth = 12;
+    // 윗선
+    g.strokeStyle = INK; g.fillStyle = INK; g.lineWidth = 11;
     g.beginPath();
     let tx, ty;
-    if (lowLid) { g.moveTo(x - W, y - 13); g.quadraticCurveTo(x, y - 20, x + W, y - 13); tx = x + s * W; ty = y - 13; }
-    else if (droop) { g.moveTo(x - s * W * 0.95, y - 36); g.quadraticCurveTo(x, y - 40, x + s * W * 1.05, y - 12); tx = x + s * W * 1.05; ty = y - 12; }
-    else if (sharp) { g.moveTo(x - s * W, y - 12); g.quadraticCurveTo(x, y - 32, x + s * W * 1.08, y - 37); tx = x + s * W * 1.08; ty = y - 37; }
-    else if (smug) { g.moveTo(x - W, y - 14); g.quadraticCurveTo(x, y - 19, x + W, y - 14); tx = x + s * W; ty = y - 14; }
-    else { g.moveTo(x - s * W * 1.0, y - H * 0.3); g.quadraticCurveTo(x - s * W * 0.15, y - H * 1.16, x + s * W * 1.05, y - H * 0.42); tx = x + s * W * 1.05; ty = y - H * 0.42; }
+    if (flat) { g.moveTo(x - W * 1.15, y + flatY); g.lineTo(x + W * 1.15, y + flatY); tx = x + s * W * 1.15; ty = y + flatY; }
+    else if (sharp) { g.moveTo(x - s * W * 1.0, y - 2); g.quadraticCurveTo(x, y - 22, x + s * W * 1.15, y - 34); tx = x + s * W * 1.15; ty = y - 34; }
+    else if (droop) { g.moveTo(x - s * W * 1.0, y - 32); g.quadraticCurveTo(x + s * W * 0.2, y - 36, x + s * W * 1.2, y - 4); tx = x + s * W * 1.2; ty = y - 4; }
+    else { g.moveTo(x - s * W * 1.0, y - H * 0.2); g.quadraticCurveTo(x - s * W * 0.1, y - H * 1.2, x + s * W * 1.1, y - H * 0.35); tx = x + s * W * 1.1; ty = y - H * 0.35; }
     g.stroke();
-    g.beginPath(); g.moveTo(tx - s * 6, ty - 6); g.lineTo(tx + s * 15, ty - (droop ? -4 : 9)); g.lineTo(tx - s * 3, ty + 7); g.closePath(); g.fill();
-    if (l.lashes || kind === 'lash') { g.lineWidth = 5; for (const [dx, dy] of [[0.62, -0.92], [0.86, -0.7]]) { if (lowLid || smug || droop) break; g.beginPath(); g.moveTo(x + s * W * dx, y + H * dy); g.lineTo(x + s * (W * dx + 10), y + H * dy - 11); g.stroke(); } }
-    // 짧고 굵은 아랫선 (홍채 아래)
-    g.lineWidth = 7; g.beginPath(); g.moveTo(cx - rx * 0.75, y + H * 0.92); g.quadraticCurveTo(cx, y + H * 1.02, cx + rx * 0.75, y + H * 0.9); g.stroke();
-    if (kind === 'tired') { g.strokeStyle = 'rgba(110,70,110,0.5)'; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 18, y + H + 10); g.quadraticCurveTo(x, y + H + 16, x + 18, y + H + 10); g.stroke(); }
+    // 바깥 끝 속눈썹 두 가닥
+    g.lineWidth = 5;
+    if (flat) { for (const k of [-0.5, 0, 0.5]) { const px = x + k * W * 1.4; g.beginPath(); g.moveTo(px, y + flatY - 4); g.lineTo(px + s * 3, y + flatY - 13); g.stroke(); } }
+    else for (const [dx, dy] of [[2, -6], [8, 2]]) { g.beginPath(); g.moveTo(tx - s * 6 + s * dx * 0.3, ty + dy * 0.5); g.lineTo(tx + s * (8 + dx), ty + dy - 10); g.stroke(); }
+    // 아랫선 / 아래 속눈썹
+    if (sharp) { g.lineWidth = 3.5; for (const k of [-0.4, 0, 0.4]) { const px = cx + k * ir * 1.4; g.beginPath(); g.moveTo(px, y + H * 0.95); g.lineTo(px + s * 2, y + H * 0.95 + 7); g.stroke(); } }
+    else if (!flat) { g.lineWidth = 8; g.beginPath(); g.moveTo(cx - ir * 0.95, y + H * 0.9); g.quadraticCurveTo(cx, y + H * 1.0, cx + ir * 0.95, y + H * 0.9); g.stroke(); }
+    if (kind === 'tired') { g.strokeStyle = 'rgba(110,70,110,0.5)'; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 16, y + H + 10); g.quadraticCurveTo(x, y + H + 15, x + 16, y + H + 10); g.stroke(); }
     if (l.mole && ((l.mole === 'L' && s < 0) || (l.mole === 'R' && s > 0))) { g.fillStyle = '#5a3426'; circle(g, x + s * 24, y + 46, 3.2); }
   }
   function drawEye(g, x, y, s, l, kind) {
@@ -369,7 +370,7 @@
     const g = cv.getContext('2d'); if (small) g.scale(0.5, 0.5);
     g.fillStyle = hex(l.skin); g.fillRect(0, 0, CW, CH);
     // 볼터치 (눈 바로 아래 분홍 타원)
-    if (l.blush !== 'none') { const bc = typeof l.blush === 'number' ? l.blush : 0xff8fa0; for (const az of [-EYE_AZ - 2, EYE_AZ + 2]) { const x = X(az), y = Y(116); const gr = g.createRadialGradient(x, y, 0, x, y, 32); gr.addColorStop(0, hex(bc) + 'b0'); gr.addColorStop(0.6, hex(bc) + '60'); gr.addColorStop(1, hex(bc) + '00'); g.fillStyle = gr; ellipse(g, x, y, 34, 17); } }
+    if (l.blush !== 'none') { const bc = 0xff8080; for (const az of [-EYE_AZ, EYE_AZ]) { const x = X(az), y = Y(114); const gr = g.createRadialGradient(x, y, 0, x, y, 28); gr.addColorStop(0, hex(bc) + 'c8'); gr.addColorStop(0.7, hex(bc) + 'a0'); gr.addColorStop(1, hex(bc) + '00'); g.fillStyle = gr; ellipse(g, x, y, 28, 13); } }
     if (l.freckles) { g.fillStyle = 'rgba(150,85,55,0.5)'; for (const [az, p] of [[-30, 108], [-36, 110], [-26, 112], [30, 108], [36, 110], [26, 112]]) circle(g, X(az), Y(p), 2.6); }
     const ex = [X(-EYE_AZ), X(EYE_AZ)], ey = Y(EYE_POL);
     // 눈썹 (짧고 가늘게)
@@ -496,6 +497,11 @@
     curlyshort: { r: [0.55, 0.53, 0.53], L: prof(spikes(64, 11, 14), 100, 112), bump: (az, y, pol) => 0.024 * Math.pow(A(Math.sin(az * D2R * 7) * Math.sin(pol * D2R * 8)), 0.6) },
     manbun: { L: prof(sweep(spikes(48, 11, 9), 0.1), 98, 108), part: 24, extra: [[sph(0, 0.42, -0.4, 0.1), 0.04]] },
     bowl: { r: [0.55, 0.52, 0.53], L: prof(spikes(70, 12, 16), 100, 112) },
+    // 사용자 스케치: 시우 커튼뱅 · 유진 보송 앞머리 · 태오 사선 덮수룩 · 강선장 옆으로 쓸어내린 앞머리
+    curtain: { L: prof(a => 46 + Math.min(A(a), 46) * 1.0 + 4 * Math.pow(1 - A((((A(a) * 9 / 360) % 1) * 2 - 1)), 1.2), 102, 112, 54), part: 0, gro: [12, 0], locks: [[56, 24, -0.2, 0.06], [70, 20, -0.24, 0.06]] },
+    fluffy: { r: [0.55, 0.53, 0.53], L: prof(sweep(spikes(66, 22, 11, 0.3, 0.8), 0.2), 100, 112, 60), locks: [[64, 22, -0.18, 0.06]] },
+    messyfringe: { L: prof(sweep(spikes(66, 20, 14, 0.1, 0.8), 0.22), 112, 118, 60), drape: { y: a => -0.26 + Math.pow(1 - A(((((a + 180) * 9 / 360) % 1) * 2 - 1)), 2) * -0.1, t: 0.07, fw: 62 }, extra: [[spikeAt(-75, 30, 0.16, 0.07, -20), 0.04], [spikeAt(80, 20, 0.16, 0.07, -24), 0.04], [spikeAt(150, -18, 0.14, 0.07, -10), 0.04], [spikeAt(-150, -18, 0.14, 0.07, -10), 0.04], [spikeAt(-120, 50, 0.15, 0.08, 8), 0.04]] },
+    sweptfringe: { L: prof(sweep(spikes(60, 14, 12, 0, 0.8), 0.36), 100, 110, 64), part: -48, locks: [[68, 22, -0.16, 0.05]] },
     wavyshort: { L: prof(spikes(62, 15, 9, 0.25), 100, 112), bump: (az, y) => Math.sin(az * D2R * 9) * 0.014 * clamp(y + 0.2, 0, 1), locks: [[66, 24, -0.2, 0.06]] },
     mohawk: { r: [0.47, 0.45, 0.455], L: prof(() => 48, 92, 104), extra: [[ell(0, 0.5, -0.02, 0.07, 0.16, 0.44), 0.06]] },
     tiedlong: { L: prof(sweep(spikes(58, 13, 11), 0.16), 104, 112, 56), part: -24, locks: [[64, 26, -0.3, 0.06]], extra: [[cone([0, -0.16, -0.5], [0, -0.64, -0.48], 0.08, 0.02), 0.05]] },
@@ -504,7 +510,7 @@
   };
   const HAIR_NAMES = {
     bobbang: '일자 단발', longbang: '긴 생머리', longwave: '긴 웨이브', hime: '히메컷', sidelong: '옆가르마 롱', pony: '포니테일', twintail: '양갈래', bun: '똥머리', braids: '양 땋은 머리',
-    pixie: '숏컷', lowtwin: '낮은 양갈래', sidepony: '옆 포니테일', curlybob: '뽀글 단발', curtainmid: '커튼뱅 중단발', odango: '양쪽 똥머리', lowbun: '쪽머리', halfup: '반묶음',
+    pixie: '숏컷', curtain: '커튼뱅', fluffy: '보송 앞머리', messyfringe: '사선 덮수룩', sweptfringe: '쓸어내린 앞머리', lowtwin: '낮은 양갈래', sidepony: '옆 포니테일', curlybob: '뽀글 단발', curtainmid: '커튼뱅 중단발', odango: '양쪽 똥머리', lowbun: '쪽머리', halfup: '반묶음',
     boyshort: '기본 숏', spiky: '삐죽 머리', sideswept: '옆으로 넘긴 머리', centerpart: '5:5 가르마', shaggy: '덥수룩 미디엄', buzz: '버즈컷', slick: '올백', curlyshort: '곱슬 숏',
     manbun: '맨번', bowl: '바가지 머리', wavyshort: '웨이브 숏', mohawk: '모히칸', tiedlong: '묶은 장발', cloud: '뭉게 파마', grandpa: '할아버지 머리',
   };
