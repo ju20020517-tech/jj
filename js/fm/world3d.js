@@ -316,7 +316,7 @@
     const quarter = Math.abs(Math.round(ang / (Math.PI / 2))) % 2 === 1;
     const pp = quarter ? Object.assign({}, p, { bld: Object.assign({}, p.bld, { w: p.bld.d, d: p.bld.w }) }) : p;
     const st = FM.Sim.get();
-    const ext = p.plot || p.id === 'home_p' ? ((st && st.plots.ext && st.plots.ext[p.id]) || (p.id === 'home_p' ? 'chalet' : (p.plot && p.plot.ext) || Object.keys(PM.VILLA_THEMES)[(+p.id.slice(5) || 0) % 8])) : null;
+    const ext = p.plot || p.id === 'home_p' ? ((st && st.plots.ext && st.plots.ext[p.id]) || (p.id === 'home_p' ? 'cottage' : (p.plot && p.plot.ext) || Object.keys(PM.VILLA_THEMES)[(+p.id.slice(5) || 0) % 8])) : null;
     const g = PM.building(pp, ext);
     const y = Math.min(T.height(p.x - p.bld.w / 2, p.z), T.height(p.x + p.bld.w / 2, p.z), T.height(p.x, p.z - p.bld.d / 2), T.height(p.x, p.z + p.bld.d / 2), T.height(p.x, p.z));
     g.position.set(p.x, y - 0.05, p.z);

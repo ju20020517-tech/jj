@@ -81,12 +81,12 @@
     { id: 'villa5', size: 'large', x: -62, z: -3, doorSide: -1 }, { id: 'villa6', size: 'large', x: -82, z: -3, doorSide: -1 },
     { id: 'villa7', size: 'large', x: -102, z: -3, doorSide: -1 }, { id: 'villa8', size: 'large', x: -120, z: -3, doorSide: -1 },
     // 해변 코티지 마을 (동쪽 바닷가 골목) · 남쪽 해안 주택가 · 서쪽 해변 타운하우스 — 주민 30명 + 아이들이 자라서 독립할 집
-    { id: 'villa9', size: 'small', x: 58, z: 69, doorSide: 1, ext: 'cottage', area: '해변 코티지' }, { id: 'villa10', size: 'small', x: 70, z: 69, doorSide: 1, ext: 'beach', area: '해변 코티지' },
-    { id: 'villa11', size: 'small', x: 82, z: 69, doorSide: 1, ext: 'cottage', area: '해변 코티지' }, { id: 'villa12', size: 'small', x: 64, z: 81, doorSide: -1, ext: 'beach', area: '해변 코티지' },
-    { id: 'villa13', size: 'small', x: 76, z: 81, doorSide: -1, ext: 'cottage', area: '해변 코티지' },
-    { id: 'villa14', size: 'large', x: -79, z: 78, doorSide: -1, ext: 'euro', area: '바닷가 타운하우스' }, { id: 'villa15', size: 'large', x: -65, z: 78, doorSide: -1, ext: 'tudor', area: '바닷가 타운하우스' },
-    { id: 'villa16', size: 'large', x: -26, z: 77, doorSide: -1, ext: 'euro', area: '해안 주택가' }, { id: 'villa17', size: 'small', x: -12, z: 77, doorSide: -1, ext: 'tudor', area: '해안 주택가' },
-    { id: 'villa18', size: 'small', x: 14, z: 77, doorSide: -1, ext: 'beach', area: '해안 주택가' }, { id: 'villa19', size: 'small', x: 24, z: 77, doorSide: -1, ext: 'cottage', area: '해안 주택가' },
+    { id: 'villa9', size: 'small', x: 58, z: 69, doorSide: 1, ext: 'med_oia', area: '해변 코티지' }, { id: 'villa10', size: 'small', x: 70, z: 69, doorSide: 1, ext: 'med_capri', area: '해변 코티지' },
+    { id: 'villa11', size: 'small', x: 82, z: 69, doorSide: 1, ext: 'med_cave', area: '해변 코티지' }, { id: 'villa12', size: 'small', x: 64, z: 81, doorSide: 1, ext: 'med_mykonos', area: '해변 코티지' },
+    { id: 'villa13', size: 'small', x: 76, z: 81, doorSide: 1, ext: 'med_lavfield', area: '해변 코티지' },
+    { id: 'villa14', size: 'large', x: -79, z: 78, doorSide: 1, ext: 'med_bell', area: '바닷가 타운하우스' }, { id: 'villa15', size: 'large', x: -65, z: 78, doorSide: 1, ext: 'med_pergola', area: '바닷가 타운하우스' },
+    { id: 'villa16', size: 'large', x: -26, z: 77, doorSide: 1, ext: 'med_amalfi', area: '해안 주택가' }, { id: 'villa17', size: 'small', x: -12, z: 77, doorSide: 1, ext: 'med_rose', area: '해안 주택가' },
+    { id: 'villa18', size: 'small', x: 14, z: 77, doorSide: 1, ext: 'med_azure', area: '해안 주택가' }, { id: 'villa19', size: 'small', x: 24, z: 77, doorSide: 1, ext: 'med_sunset', area: '해안 주택가' },
   ];
   for (const pl of PLOTS) {
     const dz = pl.size === 'small' ? 4.6 : 5.6;
@@ -224,7 +224,7 @@
     // 남쪽
     s_n: [0, 48], s_metro: [14, 46], s_off: [-12, 56], s_hall: [-44, 64], s_med: [36, 71], s_mid: [0, 70], s_deck: [0, 84], s_beach: [-30, 84], s_beachw: [-58, 84],
     s_pocha: [40, 78], s_ferry: [52, 92], s_light: [66, 92], s_hallE: [-20, 70], s_fw: [44.5, 92], s_hw: [-56.5, 64],
-    s_bar: [22, 84], s_pier: [-76, 85.2], n_onsen: [-30, -80], c_photo: [-28, 10], e_nw: [36, -2], e_photo: [36, -10], e_matS: [62, -2], e_off: [114, -1], e_x: [101, -2], e_x2: [101, -28], e_matE: [80, -28], e_club2: [110, -28], s_busk: [-14, 60], w_busk: [-30, 63], w_farm: [-108, -62], e_matsuri: [96, 28], e_matIn: [62, -9], s_volley: [-17, 86], s_camp: [-54, 87.5], s_cot0: [47.5, 75.2], s_cot1: [64, 75.2], s_cot2: [80, 75.2], s_hbeach: [-72, 72.5], s_cen: [0, 75],
+    s_bar: [22, 84], s_pier: [-76, 85.2], n_onsen: [-30, -80], c_photo: [-28, 10], e_nw: [36, -2], v12f: [64, 87], v13f: [76, 87], v14f: [-79, 85.5], v15f: [-65, 85.5], v16f: [-26, 85.5], v17f: [-12, 84.6], v18f: [14, 84.6], v19f: [24, 84.6], v12w: [58, 87], e_photo: [36, -10], e_matS: [62, -2], e_off: [114, -1], e_x: [101, -2], e_x2: [101, -28], e_matE: [80, -28], e_club2: [110, -28], s_busk: [-14, 60], w_busk: [-30, 63], w_farm: [-108, -62], e_matsuri: [96, 28], e_matIn: [62, -9], s_volley: [-17, 86], s_camp: [-54, 87.5], s_cot0: [47.5, 75.2], s_cot1: [64, 75.2], s_cot2: [80, 75.2], s_hbeach: [-72, 72.5], s_cen: [0, 75],
   };
   const E = [
     // 중앙 십자
@@ -248,7 +248,7 @@
     ['c_s', 's_n'], ['s_n', 's_metro'], ['s_n', 's_off'], ['s_n', 's_mid'], ['s_off', 's_hallE'], ['s_hallE', 's_hall'], ['s_hallE', 's_mid'], ['s_mid', 's_med'], ['s_mid', 's_deck'],
     ['s_deck', 's_beach'], ['s_beach', 's_beachw'], ['s_deck', 's_pocha'], ['s_pocha', 's_fw'], ['s_fw', 's_ferry'], ['s_ferry', 's_light'], ['s_metro', 's_mid'], ['s_hall', 's_hw'], ['s_hw', 's_beachw'],
     ['s_deck', 's_bar'], ['s_beachw', 's_pier'], ['s_pier', 's_camp'], ['n_w', 'n_onsen'], ['n_onsen', 'n_g'], ['c_plw', 'c_photo'], ['c_photo', 'c_w'], ['s_off', 's_busk'], ['s_busk', 'w_busk'], ['w_busk', 's_hall'], ['s_busk', 's_hallE'], ['g_w', 'w_farm'], ['e_ar', 'e_matsuri'], ['e_matsuri', 'e_arc'], ['c_ne1', 'e_nw'], ['e_nw', 'e_metro'], ['e_nw', 'e_photo'], ['e_nw', 'e_matS'], ['e_matS', 'e_mw'], ['e_matS', 'e_matIn'], ['e_matS', 'e_sky'], ['e_sky', 'e_x'], ['e_x', 'e_off'], ['e_x', 'e_x2'], ['e_x2', 'e_club2'], ['e_x2', 'e_matE'], ['s_bar', 's_pocha'], ['s_deck', 's_volley'], ['s_volley', 's_beach'], ['s_beachw', 's_camp'], ['s_camp', 's_beach'],
-    ['e_md', 's_cot0'], ['s_pocha', 's_cot0'], ['s_cot0', 's_cot1'], ['s_cot1', 's_cot2'], ['w_flea', 's_hbeach'], ['s_hbeach', 's_hw'], ['s_mid', 's_cen'], ['s_cen', 's_deck'],
+    ['e_md', 's_cot0'], ['v12f', 'v12w'], ['v12w', 's_ferry'], ['v12f', 'v13f'], ['v12f', 's_light'], ['v14f', 's_pier'], ['v15f', 's_beachw'], ['v16f', 's_beach'], ['v17f', 's_volley'], ['v17f', 's_deck'], ['v18f', 's_deck'], ['v18f', 's_bar'], ['v19f', 's_bar'], ['s_pocha', 's_cot0'], ['s_cot0', 's_cot1'], ['s_cot1', 's_cot2'], ['w_flea', 's_hbeach'], ['s_hbeach', 's_hw'], ['s_mid', 's_cen'], ['s_cen', 's_deck'],
   ];
 
   // 각 장소가 속한 지하철 구역(가장 가까운 역)
