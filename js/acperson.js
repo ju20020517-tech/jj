@@ -216,7 +216,7 @@
   function heart(g, x, y, s) { g.beginPath(); g.moveTo(x, y + s * 0.9); g.bezierCurveTo(x - s * 1.6, y - s * 0.2, x - s * 0.5, y - s * 1.3, x, y - s * 0.4); g.bezierCurveTo(x + s * 0.5, y - s * 1.3, x + s * 1.6, y - s * 0.2, x, y + s * 0.9); g.fill(); }
   function star(g, x, y, r) { g.beginPath(); for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * 0.45 : r, a = i / 10 * Math.PI * 2 - Math.PI / 2; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); }
   const LID = '#3a1a1e';
-  const EYE_AZ = 22, EYE_POL = 100;
+  const EYE_AZ = 23, EYE_POL = 101, EYE_SCALE = 1.45;
   // 눈 종류 (참고 시트의 눈 모양들): 성격마다 다르게
   //  round 동글 · lash 속눈썹 · bean 콩눈 · dot 점눈 · sleepy 반쯤 감은 · droopy 처진 · sharp 올라간(고양이)
   //  calm 가는 아몬드 · big 큰 반짝 · ring 동그라미 · flat 감은 선 · smile 눈웃음 · tired 다크서클 · sanpaku 삼백안 · heavy 무심 · dreamy 위를 보는
@@ -333,9 +333,11 @@
     const kind = map[l.eyes] || l.eyeKit || 'round';
     ex.forEach((x, i) => {
       const s = i === 0 ? -1 : 1;
-      if (blink && !['happy', 'smile', 'closed', 'flat'].includes(kind)) return drawEye(g, x, ey, s, l, 'closed');
-      if (kind === 'wink') return drawEye(g, x, ey, s, l, i === 1 ? 'happy' : (l.eyeKit || 'round'));
-      drawEye(g, x, ey, s, l, kind);
+      g.save(); g.translate(x, ey); g.scale(EYE_SCALE, EYE_SCALE); g.translate(-x, -ey);
+      if (blink && !['happy', 'smile', 'closed', 'flat'].includes(kind)) drawEye(g, x, ey, s, l, 'closed');
+      else if (kind === 'wink') drawEye(g, x, ey, s, l, i === 1 ? 'happy' : (l.eyeKit || 'round'));
+      else drawEye(g, x, ey, s, l, kind);
+      g.restore();
     });
     drawMouthAC(g, l.mouth || 'smile', X(0), Y(MOUTH_POL));
     if (l.fx) M.drawFx(g, CW, CH, l.fx, ex, ey);
@@ -707,7 +709,7 @@
     if (EXTRA_HATS[hatK]) EXTRA_HATS[hatK](head, l);
     else if (l.hat !== 'none') { const hg = new THREE.Group(); hg.scale.setScalar(1.08); hg.position.y = 0.02; M.buildHat(hg, l, [1.04, 1.04, 1.04]); fixLegacy(hg); head.add(hg); }
     PART = 'glasses';
-    if (l.glasses !== 'none') { const gg = new THREE.Group(); M.buildGlasses(gg, l, HS); fixLegacy(gg); gg.scale.set(1.08, 1.06, 1.06); head.add(gg); }
+    if (l.glasses !== 'none') buildGlasses(head, l);
     PART = 'acc';
     buildAccs(body, head, l);
     PART = null;
@@ -726,6 +728,57 @@
       hip: 0.2, headZ: 0.95, faceFn: faceTexture, person: true, hairStyle: hs,
     };
   }
+  // 안경: 눈 위치(얼굴 표면)에 맞춘 큰 알 + 얇은 테 + 귀까지 이어지는 다리
+  function eyeSpot(sx) {
+    const az = sx * EYE_AZ * D2R, pol = EYE_POL * D2R;
+    const dir = V(Math.sin(az) * Math.sin(pol), Math.cos(pol), Math.cos(az) * Math.sin(pol));
+    let r = 0.8; for (let i = 0; i < 60; i++) { const p = dir.clone().multiplyScalar(r).add(V(FC[0], FC[1], FC[2])); const d = headSDF(p.x, p.y, p.z); r -= d; if (A(d) < 1e-4) break; }
+    const p = dir.clone().multiplyScalar(r).add(V(FC[0], FC[1], FC[2])), h = 0.004;
+    const n = V(headSDF(p.x + h, p.y, p.z) - headSDF(p.x - h, p.y, p.z), headSDF(p.x, p.y + h, p.z) - headSDF(p.x, p.y - h, p.z), headSDF(p.x, p.y, p.z + h) - headSDF(p.x, p.y, p.z - h)).normalize();
+    return { p, n };
+  }
+  function glassShape(kind, R) {
+    const sh = new THREE.Shape();
+    if (kind === 'square') { const w = R * 1.12, h = R * 0.86, c = R * 0.38; sh.moveTo(-w + c, -h); sh.lineTo(w - c, -h); sh.quadraticCurveTo(w, -h, w, -h + c); sh.lineTo(w, h - c); sh.quadraticCurveTo(w, h, w - c, h); sh.lineTo(-w + c, h); sh.quadraticCurveTo(-w, h, -w, h - c); sh.lineTo(-w, -h + c); sh.quadraticCurveTo(-w, -h, -w + c, -h); }
+    else if (kind === 'heart') { const k = R * 0.065; sh.moveTo(0, -12 * k); sh.bezierCurveTo(-18 * k, -2 * k, -16 * k, 12 * k, -8 * k, 13 * k); sh.bezierCurveTo(-3 * k, 14 * k, 0, 10 * k, 0, 8 * k); sh.bezierCurveTo(0, 10 * k, 3 * k, 14 * k, 8 * k, 13 * k); sh.bezierCurveTo(16 * k, 12 * k, 18 * k, -2 * k, 0, -12 * k); }
+    else if (kind === 'sun') sh.absellipse(0, 0, R * 1.12, R * 0.92, 0, Math.PI * 2);
+    else sh.absellipse(0, 0, R, R * 0.96, 0, Math.PI * 2);
+    return sh;
+  }
+  function buildGlasses(head, l) {
+    PART = 'glasses';
+    const kind = l.glasses, R = 0.115, g = new THREE.Group();
+    const fc = kind === 'heart' ? 0xff5d8a : (l.glassesColor != null ? l.glassesColor : 0x3a2a24);
+    const frame = matL(fc, { vertexColors: true });
+    const lensM = new THREE.MeshPhongMaterial({ color: kind === 'sun' ? 0x0e1016 : kind === 'heart' ? 0xff8fb1 : 0xeaf6ff, transparent: true, opacity: kind === 'sun' ? 0.97 : kind === 'heart' ? 0.5 : 0.12, shininess: 90, depthWrite: false });
+    const glintM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: kind === 'sun' ? 0.5 : 0.7, depthWrite: false });
+    const sh = glassShape(kind, R);
+    const rimGeo = geo('qgRim' + kind, () => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(sh.getSpacedPoints(48).map(p => V(p.x, p.y, 0)), true), 64, kind === 'sun' ? 0.014 : 0.0095, 8, true));
+    const lensGeo = geo('qgLens' + kind, () => new THREE.ShapeGeometry(sh, 24));
+    const ends = [];
+    for (const sx of [-1, 1]) {
+      const { p, n } = eyeSpot(sx);
+      const side = new THREE.Group();
+      side.position.copy(p.clone().add(n.clone().multiplyScalar(0.045)));
+      side.lookAt(side.position.clone().add(V(n.x * 0.6, n.y * 0.3, Math.max(0.6, n.z))));
+      side.add(plainMesh(rimGeo, frame)); side.add(plainMesh(lensGeo, lensM, 0, 0, -0.003));
+      const gl = plainMesh(geo('qgGl', () => new THREE.PlaneGeometry(0.02, 0.075)), glintM, -0.04, 0.035, 0.002); gl.rotation.z = -0.65; side.add(gl);
+      const gl2 = plainMesh(geo('qgGl2', () => new THREE.PlaneGeometry(0.012, 0.035)), glintM, -0.012, 0.055, 0.002); gl2.rotation.z = -0.65; side.add(gl2);
+      g.add(side);
+      side.updateMatrix();
+      ends.push({ inner: V(-sx * R * (kind === 'square' || kind === 'sun' ? 1.12 : 1), 0.01, 0).applyMatrix4(side.matrix), outer: V(sx * R * (kind === 'square' || kind === 'sun' ? 1.12 : 1), 0.02, 0).applyMatrix4(side.matrix) });
+    }
+    // 코다리 (살짝 올라간 아치)
+    const a = ends[0].inner, b = ends[1].inner, mid = a.clone().add(b).multiplyScalar(0.5).add(V(0, 0.025, 0.02));
+    g.add(plainMesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(a, mid, b), 12, 0.009, 6), frame));
+    // 다리: 바깥 끝 → 귀 위
+    for (const [i, sx] of [-1, 1].entries()) {
+      const o = ends[i].outer, ear = V(sx * 0.43, -0.07, -0.12), m2 = o.clone().lerp(ear, 0.5).add(V(sx * 0.03, 0.01, 0));
+      g.add(plainMesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(o, m2, ear), 12, 0.008, 6), frame));
+    }
+    head.add(g);
+  }
+  const plainMesh = (gm, m, x = 0, y = 0, z = 0) => { const o = new THREE.Mesh(plain(gm), m); o.position.set(x, y, z); o.userData.part = 'glasses'; return o; };
   // 예전 빌더(모자 · 안경)가 만든 재질도 같은 색 공간으로
   function fixLegacy(g) { g.traverse(o => { if (o.isMesh && o.material && o.material.color && !o.material.userData.lin) { const m = o.material.clone(); m.color.convertSRGBToLinear(); m.userData.lin = true; o.material = m; } }); }
   function addTies(head, hs, l) {
