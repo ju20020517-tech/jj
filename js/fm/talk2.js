@@ -817,7 +817,7 @@
     const beats = [{ emo: 'A', e: '💓' }, { say: 'A', text: pLine }, { emo: 'B', e: ok ? '😳' : '😮' }, { say: 'B', text: String(res.text || '').replace(/ 💕$/, '') }];
     if (ok) beats.push({ fx: 'hearts', at: 'B' }, { emo: 'B', e: '❤️' }, { pose: 'A', p: 'cheer' }, { pose: 'B', p: 'cute' });
     else beats.push({ fx: 'brokenHeart', at: 'A' }, { emo: 'A', e: '💔' }, { pose: 'A', p: 'cry' });
-    setTimeout(() => { try { Cut.play({ theme: 'confess', title: '💌 고백 씬', place: null, cast: { A: p, B: v }, beats, outcome: ok ? 'happy' : 'sad', key: [P, v.id].sort().join('|') }); } catch (e) { console.error('confess cut', e); } }, 60);
+    setTimeout(() => { try { Cut.play({ theme: 'confess', title: '💌 고백 씬', place: null, venue: p.loc === 'island' ? { loc: 'island', x: p.x, z: p.z } : { loc: p.loc }, cast: { A: p, B: v }, beats, outcome: ok ? 'happy' : 'sad', key: [P, v.id].sort().join('|') }); } catch (e) { console.error('confess cut', e); } }, 60);
     return { text: res.text, close: true, options: [] };
   }
   function babyTalk(v) {

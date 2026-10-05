@@ -34,7 +34,7 @@
     { id: 's_clerk2', name: '편의점 알바', role: 'conv', loc: 'conv_in', x: 1.8, z: 0.4, ry: Math.PI, look: { species: 'hamster', top: 'vest', shirt: 0x7ad0a0 } },
     { id: 's_tea', name: '차관 주인장', role: 'tea', loc: 'tea_in', x: 0, z: -2.9, ry: 0, look: { species: 'koala', top: 'sweater', shirt: 0x6a4028 } },
     { id: 's_teacher', name: '선생님', role: 'teacher', loc: 'school_in', x: 0, z: -2.4, ry: Math.PI, look: { species: 'deer', top: 'sweater', shirt: 0x5fb070, glasses: 'round' } },
-    { id: 's_librarian', name: '사서', role: 'librarian', loc: 'library_in', x: -5, z: 3, ry: Math.PI, look: { species: 'mouse', top: 'vest', shirt: 0x8a5a3b, glasses: 'round' } },
+    { id: 's_librarian', name: '사서', role: 'librarian', loc: 'library_in', x: -5, z: 3, ry: Math.PI, look: { species: 'human', gender: 'M', skin: 0xffd2b4, hair: 0x3a2418, hairStyle: 'sideswept', eyeKit: 'calm', eyeColor: 0x4a3020, eyes: 'dot', brows: 'thin', mouth: 'smile', blush: 0xff9a88, top: 'knitvest', vest: 0x7a4a2a, shirt: 0xf4efe4, shirt2: 0xf4efe4, pattern: 'plain', bottom: 'pants', pants: 0x4a3a30, shoes: 0x2a1a14, shoeType: 'loafer', sole: 0xffffff, glasses: 'square', glassesColor: 0x5a3a24, acc: 'bowtie', accColor: 0x8a2a2a, hat: 'none', height: 1, width: 1 } },
     { id: 's_captain', name: '페리 선장', role: 'captain', loc: 'island', x: 55, z: 92, ry: 0, look: { species: 'duck', top: 'vest', shirt: 0x2f4b6e, hat: 'cap', hatColor: 0xffffff } },
     { id: 's_pocha', name: '포장마차 이모', role: 'pocha', loc: 'island', x: 40, z: 78, ry: Math.PI, look: { species: 'pig', top: 'apron', shirt: 0xff6f61 } },
   ];

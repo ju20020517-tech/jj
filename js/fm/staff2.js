@@ -21,7 +21,7 @@
       lines: ['이번 주 랭킹 1등은 누가 될까~? 🏆', '인형뽑기 집게 오늘 세게 해 놨어요!', '볼링 레인 3번 비었어요~', '경품 교환은 여기서!'] },
     { id: 's_onsen', name: '온천 여주인 유키', role: 'onsen', loc: 'onsen_in', x: -3.0, z: 3.4, ry: 0, look: L('lamb', 'dress', 0x3a4a8a, { shirt2: 0xffffff, acc: 'bowtie', accColor: 0xd83a3a }),
       lines: ['어서 오세요~ 따뜻하게 쉬다 가세요 ♨️', '목욕 후엔 커피 우유죠!', '유카타 빌려 드려요~', '탁구대 비었답니다 🏓'] },
-    { id: 's_astro', name: '천문학자 별님', role: 'astro', loc: 'obs_in', x: 1.9, z: -0.6, ry: 0, look: L('owl', 'sweater', 0x2a3a6a, { shirt2: 0xffd84a, glasses: 'round' }),
+    { id: 's_astro', name: '천문학자 별님', role: 'astro', loc: 'obs_in', x: 1.9, z: -0.6, ry: 0, look: { species: 'human', gender: 'F', skin: 0xffdcc4, hair: 0x2a2440, hairStyle: 'hime', eyeKit: 'calm', eyeColor: 0x6a5ad8, lashes: true, eyes: 'dot', brows: 'thin', mouth: 'smile', blush: 0xff9a88, top: 'cardigan', shirt: 0x2a3a6a, shirt2: 0xffd84a, pattern: 'star', bottom: 'longskirt', pants: 0x1f2a4a, shoes: 0x3a2a24, shoeType: 'loafer', sole: 0xffffff, glasses: 'round', glassesColor: 0xd8b040, hat: 'none', acc: 'none', height: 1, width: 1 },
       lines: ['오늘 밤은 북두칠성이 잘 보여요 🔭', '4일마다 유성우가 와요. 소원 준비하세요!', '별자리 도감, 몇 개 모았어요?', '저 빛은 수백 년 전에 출발한 거래요'] },
     { id: 's_priest', name: '성당 신부님', role: 'priest', loc: 'cathedral_in', x: 0, z: -7.0, ry: 0, look: L('sheep', 'sweater', 0xf4f4f0, { shirt2: 0xd8b040, acc: 'necklace', accColor: 0xd8b040 }),
       lines: ['평화가 함께하길 🕊️', '결혼식 준비는 웨딩 플래너와 상의하세요', '오늘도 좋은 하루 되세요', '종소리가 맑네요'] },
