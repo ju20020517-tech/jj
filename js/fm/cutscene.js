@@ -193,7 +193,7 @@
   function teaser(c) {
     const el = $('#cutTeaser'); if (!el) return;
     const vs = Object.values(c.cast).slice(0, 3);
-    el.innerHTML = `<span class="ct-tag">🎬 드라마</span>${vs.map(v => FM.Face.img(v, 30)).join('')}<span class="ct-t">${esc(THEME[c.theme].titles[0])} — 보러 가기</span>`;
+    el.innerHTML = `<span class="ct-tag">👀 장면</span>${vs.map(v => FM.Face.img(v, 30)).join('')}<span class="ct-t">${esc(THEME[c.theme].titles[0])} — 보러가기</span>`;
     el.hidden = false; el.classList.remove('in'); void el.offsetWidth; el.classList.add('in');
     clearTimeout(el._t); el._t = setTimeout(() => { el.hidden = true; }, 7000);
     el.onclick = () => { el.hidden = true; if (!playing) Cut.playNext(); };
@@ -761,7 +761,7 @@
   FM.UI.init = function () {
     origInit();
     const hb = $('.hud-btns');
-    if (hb && !$('#btnCut')) { const b = document.createElement('button'); b.id = 'btnCut'; b.title = '드라마 다시 보기'; b.textContent = '🎬'; hb.insertBefore(b, hb.firstChild); b.onclick = () => { if (queue.length) Cut.playNext(); else FM.UI.toast('🎬 아직 새 드라마가 없어요. 고백 · 이별 · 결혼 같은 사건이 생기면 여기에 쌓여요!'); }; }
+    if (hb && !$('#btnCut')) { const b = document.createElement('button'); b.id = 'btnCut'; b.title = '장면 다시 보기'; b.textContent = '🎬'; hb.insertBefore(b, hb.firstChild); b.onclick = () => { if (queue.length) Cut.playNext(); else FM.UI.toast('🎬 아직 새 드라마가 없어요. 고백 · 이별 · 결혼 같은 사건이 생기면 여기에 쌓여요!'); }; }
     if (!$('#cutTeaser')) { const d = document.createElement('div'); d.id = 'cutTeaser'; d.hidden = true; $('#hud').appendChild(d); }
     FM.bus.on('majorScene', sc => { try { const c = Cut.fromScene(sc); if (c) enqueue(c, c.force); } catch (e) { console.error('cut', e); } });
     FM.bus.on('log', e => { try { const c = Cut.fromLog(e); if (c) enqueue(c, c.force); } catch (er) { console.error('cutlog', er); } });

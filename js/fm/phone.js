@@ -21,7 +21,7 @@
     ['rel', '🕸️', '관계도', 'linear-gradient(135deg,#e8dcff,#b69cff)', () => FM.Drama && FM.Drama.openMap()],
     ['album', '📸', '앨범', 'linear-gradient(135deg,#ffe0f0,#ffb0d8)', () => FM.Photo && FM.Photo.album ? FM.Photo.album() : UI.toast('앨범이 아직 없어요')],
     ['tv', '📺', '뉴스', 'linear-gradient(135deg,#ffe0c8,#ffb07a)', () => click('#btnNews'), 'btnNews'],
-    ['drama', '🎬', '드라마', 'linear-gradient(135deg,#ffd0d8,#ff7a9a)', () => click('#btnCut'), 'btnCut'],
+    ['drama', '🎬', '장면', 'linear-gradient(135deg,#ffd0d8,#ff7a9a)', () => click('#btnCut'), 'btnCut'],
     ['home', '🏠', '우리 집', 'linear-gradient(135deg,#fff0d8,#ffc890)', () => click('#btnHome')],
     ['observe', '🏢', '관찰', 'linear-gradient(135deg,#d8e8ff,#9ab8f0)', () => click('#btnObserve')],
     ['god', '✨', '신의 툴', 'linear-gradient(135deg,#fff6c8,#ffe070)', 'god'],

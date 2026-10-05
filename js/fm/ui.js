@@ -144,9 +144,9 @@
     if (sc) {
       bannerScene = sc;
       const actors = /♥/.test(sc.title) ? '' : Object.values(sc.actors).filter(a => !a.staff).map(a => a.name).slice(0, 2).join(' & ');
-      b.innerHTML = `<b>${esc(sc.title)}</b> <span>${esc(J(actors))}</span> <button id="bnGo">👀 보러 가기</button> <button id="bnX">✕</button>`;
+      b.innerHTML = `<b>${esc(sc.title)}</b> <span>${esc(J(actors))}</span> <button id="bnGo">👀 장면 보러가기</button> <button id="bnX">✕</button>`;
       b.hidden = false;
-      $('#bnGo').onclick = () => { const a = Object.values(sc.actors)[0]; if (a) UI.goTo(a, true); };
+      $('#bnGo').onclick = () => { b.hidden = true; let c = null; try { c = FM.Cut && FM.Cut.fromScene && FM.Cut.fromScene(sc); } catch (e) { c = null; } if (c && FM.Cut.play) FM.Cut.play(c); else { const a = Object.values(sc.actors)[0]; if (a) UI.goTo(a, true); } };
       $('#bnX').onclick = () => { b.hidden = true; };
       if (st().speed > 1) { st().speed = 1; UI.toast('⏯️ 중요한 장면이라 속도를 1배로 바꿨어요'); }
     } else if (ended && bannerScene === ended) { b.hidden = true; bannerScene = null; }
@@ -1354,12 +1354,22 @@
     const qplace = qd && (qd.place || (qd.villager && (FM.Guide.whereIs(Sim.byId(qd.villager)) || {}).place));
     let html = '';
     if (q && qd) html += `<h5>⭐ 퀘스트 목적지</h5><div class="map-chips"><button data-q="1">⭐ ${esc(J(FM.Guide.nextStep(q).text).slice(0, 34))}</button></div>`;
-    for (const [dk, arr] of Object.entries(groups)) {
-      const d = MAP.DISTRICTS[dk];
-      html += `<h5><i style="background:${d.color}"></i>${esc(d.name)}</h5><div class="map-chips">${arr.map(p => `<button data-p="${p.id}" class="${mapSel && mapSel.id === p.id ? 'on' : ''}">${placeIcon(p)} ${esc(FM.Guide.shortName(p).slice(0, 14))}${qplace === p.id ? ' <span class="q">⭐</span>' : ''}</button>`).join('')}</div>`;
+    // 방위별 탭: 중앙 · 북 · 동 · 서 · 남 · 주민 (장소 좌표로 나눔)
+    const REG = [['all', '🧭 전체'], ['c', '⛲ 중앙'], ['n', '⬆️ 북쪽'], ['e', '➡️ 동쪽'], ['w', '⬅️ 서쪽'], ['s', '⬇️ 남쪽'], ['v', '👥 주민']];
+    const regOf = p => Math.hypot(p.x, p.z) < 34 ? 'c' : Math.abs(p.x) > Math.abs(p.z) * 0.9 ? (p.x > 0 ? 'e' : 'w') : (p.z < 0 ? 'n' : 's');
+    const RNAME = { c: '⛲ 중앙 광장 일대', n: '⬆️ 북쪽 — 언덕 · 성당 · 온천 · 천문대', e: '➡️ 동쪽 — 번화가 · 마츠리 · 업무 지구', w: '⬅️ 서쪽 — 주택가 · 공원 · 학교 · 도서관', s: '⬇️ 남쪽 — 해변 · 병원 · 부두' };
+    const RCOL = { c: '#ffb86a', n: '#b69cff', e: '#ff8ac0', w: '#7ad89a', s: '#6ac8f0' };
+    const all = []; for (const arr of Object.values(groups)) for (const p of arr) if (!all.includes(p)) all.push(p);
+    const tab = UI._mapTab || 'all';
+    html += `<div class="map-reg">${REG.map(([k, n]) => `<button data-reg="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+    if (tab !== 'v') for (const r of ['c', 'n', 'e', 'w', 's']) {
+      if (tab !== 'all' && tab !== r) continue;
+      const arr = all.filter(p => regOf(p) === r); if (!arr.length) continue;
+      html += `<h5><i style="background:${RCOL[r]}"></i>${RNAME[r]} <small style="color:var(--muted)">${arr.length}곳</small></h5><div class="map-chips">${arr.map(p => `<button data-p="${p.id}" class="${mapSel && mapSel.id === p.id ? 'on' : ''}">${placeIcon(p)} ${esc(FM.Guide.shortName(p).slice(0, 14))}${qplace === p.id ? ' <span class="q">⭐</span>' : ''}</button>`).join('')}</div>`;
     }
-    html += `<h5>👥 주민에게 가기</h5><div class="map-chips">${s2.villagers.map(v => `<button data-v="${v.id}" class="${mapSel && mapSel.id === v.id ? 'on' : ''}">${icon(v)} ${esc(v.name)}${v.balloon ? ' <span class="q">!</span>' : ''}</button>`).join('')}</div>`;
+    if (tab === 'v' || tab === 'all') html += `<h5>👥 주민에게 가기</h5><div class="map-chips">${s2.villagers.map(v => `<button data-v="${v.id}" class="${mapSel && mapSel.id === v.id ? 'on' : ''}">${icon(v)} ${esc(v.name)}${v.balloon ? ' <span class="q">!</span>' : ''}</button>`).join('')}</div>`;
     list.innerHTML = html;
+    list.querySelectorAll('[data-reg]').forEach(b => b.onclick = () => { UI._mapTab = b.dataset.reg; paintMapSide(); });
     list.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { mapSel = { type: 'place', id: b.dataset.p }; drawMap(); paintMapSide(); });
     list.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { mapSel = { type: 'v', id: b.dataset.v }; drawMap(); paintMapSide(); });
     const qb = list.querySelector('[data-q]'); if (qb) qb.onclick = () => { mapSel = qd.villager ? { type: 'v', id: qd.villager } : { type: 'place', id: qd.place }; drawMap(); paintMapSide(); };
