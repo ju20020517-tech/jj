@@ -570,7 +570,8 @@
       L1: pick(Object.keys(D.L1)), L2: pick(Object.keys(D.L2)), L3: pick(Object.keys(D.L3)), L4: pick(Object.keys(D.L4)),
     };
     let look = o.look || (window.ISLE && ISLE.randomLook ? ISLE.randomLook() : { species: 'cat' });
-    if (!o.look && window.ISLE && ISLE.withSpecies) {
+    if (!o.look && window.ISLE && ISLE.HUMAN_ONLY) styleByPersonality(look, keys);
+    else if (!o.look && window.ISLE && ISLE.withSpecies) {
       // 이미 섬에 많은 종은 피해서 다양하게
       const count = {}; for (const v of (S ? S.villagers : [])) count[v.look && v.look.species] = (count[v.look && v.look.species] || 0) + 1;
       // 아직 없는(가장 적은) 종을 우선 → 섬에 같은 종이 겹치지 않게
@@ -675,11 +676,12 @@
     const n = opts.count || D.START_VILLAGERS;
     const imported = opts.imported || [];
     for (const c of imported) { if (S.villagers.length >= n) break; moveIn(makeVillager(c), true); }
-    // 기획서의 예시 조합 3종(패턴 A/B/C)은 섬에 꼭 한 명씩 등장
-    for (const ex of D.COMBO_EXAMPLES) {
+    // 고정 주민 30명 (cast30.js) — 정해진 순서대로 입주
+    for (const c of (window.ISLE && ISLE.CAST) || []) {
       if (S.villagers.length >= n) break;
-      if (S.villagers.some(v => ex.keys.every((k, i) => [v.keys.L1, v.keys.L2, v.keys.L3, v.keys.L4][i] === k))) continue;
-      moveIn(makeVillager({ keys: { L1: ex.keys[0], L2: ex.keys[1], L3: ex.keys[2], L4: ex.keys[3] } }), true);
+      const v = makeVillager({ id: c.id, name: c.name, keys: Object.assign({}, c.keys), look: JSON.parse(JSON.stringify(c.look)), phrase: c.phrase });
+      v.castId = c.id; v.gender = c.gender; v.age = c.age; v.concept = c.concept; v.castJob = c.job; v.signature = c.signature;
+      moveIn(v, true);
     }
     while (S.villagers.length < n) moveIn(makeVillager(), true);
     // 첫날 아침: 모두 자기 방에서 시작

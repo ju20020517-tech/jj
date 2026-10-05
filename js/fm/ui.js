@@ -37,7 +37,7 @@
             <select id="stLook"><option value="rand">🎲 무작위 사람</option>${chars.map(c => `<option value="${c.id}" ${me && me.id === c.id ? 'selected' : ''}>${icon(c)} ${esc(c.name || '이름 없음')}</option>`).join('')}</select></label>
           <label class="field">나의 메인 성격 (자녀 유전에 사용)
             <select id="stKey">${Object.entries(D.L1).map(([k, v]) => `<option value="${k}">${v.icon} ${v.name}</option>`).join('')}</select></label>
-          <label class="field">처음 입주할 주민 수 <input id="stCount" type="number" min="4" max="30" value="12"></label>
+          <label class="field">처음 입주할 주민 수 <input id="stCount" type="number" min="4" max="30" value="30"></label>
           ${chars.length ? `<div class="field">🎨 캐릭터 만들기에서 만든 주민 데려오기<div class="chk-list">${chars.filter(c => !me || c.id !== me.id).map(c => `<label><input type="checkbox" class="stImp" value="${c.id}" ${cr.invited.includes(c.id) ? 'checked' : ''}> ${icon(c)} ${esc(c.name || '이름 없음')}</label>`).join('')}</div></div>` : '<p class="note">💡 <a href="creator.html">캐릭터 만들기</a>에서 만든 주민을 섬으로 데려올 수 있어요.</p>'}
           <button class="btn big" id="stNew">🏝️ 섬으로 출발!</button>
         </details>

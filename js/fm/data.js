@@ -7,10 +7,12 @@
   'use strict';
   const FM = (window.FM = window.FM || {});
   const D = (FM.D = {});
+  // 친구모아 아일랜드는 사람만 사는 섬 (예전 저장의 동물 외형도 사람으로 그림)
+  if (window.ISLE) window.ISLE.HUMAN_ONLY = true;
 
   D.SAVE_KEY = 'friendmoa-island-v1';
   D.MAX_APT = 20;          // 5층 × 4호실
-  D.START_VILLAGERS = 10;
+  D.START_VILLAGERS = 30;
 
   // =========================================================
   // 1. 성격 키워드 조합 모듈 (4-Layer System)

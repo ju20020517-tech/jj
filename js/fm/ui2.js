@@ -696,7 +696,7 @@
         <label class="tt-f"><span>내 이름</span><input id="stName" maxlength="8" value="나"></label>
         <div class="tt-f"><span>내 모습</span><div class="tt-look"><button class="tt-mini" id="ttRoll">🎲 다른 모습</button><small>왼쪽에서 손 흔드는 게 나예요!</small></div></div>
         <div class="tt-f"><span>나의 성격</span><div class="tt-keys" id="ttKeys">${Object.entries(D.L1).map(([k, v], i) => `<button data-k="${k}" class="${i === 0 ? 'on' : ''}">${v.icon} ${v.name}</button>`).join('')}</div></div>
-        <label class="tt-f"><span>처음 주민 수 <b id="ttCnt">12</b>명</span><input id="stCount" type="range" min="4" max="30" value="12"></label>
+        <label class="tt-f"><span>처음 주민 수 <b id="ttCnt">30</b>명</span><input id="stCount" type="range" min="4" max="30" value="30"></label>
         <div class="tt-row"><button class="tt-btn ghost" id="ttBack">← 뒤로</button><button class="tt-btn main" id="stNew">🏝️ 섬으로 출발!</button></div>
       </div>`;
     el.hidden = false;

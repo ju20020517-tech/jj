@@ -8,14 +8,20 @@
 (() => {
   'use strict';
   const ISLE = window.ISLE, M = ISLE.M;
-  const { mat, geo, sphere, box, capsule, lathe, roundCone, soften } = M.h;
+  const { geo, sphere, box, capsule, lathe, roundCone, soften } = M.h;
   const D2R = Math.PI / 180;
   const shade = M.shade;
   const hex = n => '#' + (n >>> 0).toString(16).padStart(6, '0').slice(-6);
   const mix = (a, b, t) => [16, 8, 0].reduce((o, s) => o | (Math.round(((a >> s) & 255) + (((b >> s) & 255) - ((a >> s) & 255)) * t) << s), 0);
+  // 캐릭터 색은 sRGB → 선형으로 바꿔 써서 물 빠지지 않고 선명하게
+  const lin = c => new THREE.Color(c).convertSRGBToLinear();
+  const mcache = new Map();
+  const matL = (c, o = {}) => { const k = c + JSON.stringify(o); if (!mcache.has(k)) mcache.set(k, soften(new THREE.MeshLambertMaterial(Object.assign({ color: lin(c) }, o)), 0.25)); return mcache.get(k); };
+  const mat = (c, o) => matL(c, Object.assign({ vertexColors: true }, o || {}));
+  const srgb = t => { if (THREE.sRGBEncoding) t.encoding = THREE.sRGBEncoding; t.needsUpdate = true; return t; };
   let PART = null;
   const tag = o => { if (PART) o.userData.part = PART; return o; };
-  const mesh = (...a) => tag(M.h.mesh(...a));
+  const mesh = (g, ...a) => tag(M.h.mesh(plain(g), ...a));
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const OPT = ISLE.CHAR_OPT;
   const A = Math.abs, hyp = Math.hypot, clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -89,12 +95,16 @@
       P.push(min[0] + (i + sx / n) * cell, min[1] + (j + sy / n) * cell, min[2] + (k + sz / n) * cell);
     }
     const idx = [];
-    const quad = (a, b, c, d, dx, dy, dz) => {
-      if (a < 0 || b < 0 || c < 0 || d < 0) return;
+    const tri = (a, b, c, dx, dy, dz) => {
       const ax = P[a * 3], ay = P[a * 3 + 1], az = P[a * 3 + 2];
       const ux = P[b * 3] - ax, uy = P[b * 3 + 1] - ay, uz = P[b * 3 + 2] - az, wx = P[c * 3] - ax, wy = P[c * 3 + 1] - ay, wz = P[c * 3 + 2] - az;
-      const nxx = uy * wz - uz * wy, nyy = uz * wx - ux * wz, nzz = ux * wy - uy * wx;
-      if (nxx * dx + nyy * dy + nzz * dz >= 0) idx.push(a, b, c, a, c, d); else idx.push(a, c, b, a, d, c);
+      const cx2 = uy * wz - uz * wy, cy2 = uz * wx - ux * wz, cz2 = ux * wy - uy * wx;
+      if (cx2 * cx2 + cy2 * cy2 + cz2 * cz2 < 1e-14) return;
+      if (cx2 * dx + cy2 * dy + cz2 * dz >= 0) idx.push(a, b, c); else idx.push(a, c, b);
+    };
+    const quad = (a, b, c, d, dx, dy, dz) => {
+      if (a < 0 || b < 0 || c < 0 || d < 0) return;
+      tri(a, b, c, dx, dy, dz); tri(a, c, d, dx, dy, dz);
     };
     for (let k = 0; k < NZ; k++) for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
       const ins = v[gi(i, j, k)] < 0, s = ins ? 1 : -1;
@@ -123,19 +133,42 @@
     g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
     g.setAttribute('normal', new THREE.BufferAttribute(N, 3));
     g.setIndex(idx);
-    // 기울기가 애매한 곳(합집합 경계)은 면 노멀로 보정 → 검은 점 방지
+    // 기울기가 0 인 곳만 면 노멀로 대체 (나머지는 SDF 기울기 그대로 → 매끈)
     const gN = N.slice();
     g.computeVertexNormals();
     const fn = g.attributes.normal;
     for (let i = 0; i < fn.count; i++) {
-      const ax = gN[i * 3], ay = gN[i * 3 + 1], az = gN[i * 3 + 2], bx = fn.getX(i), by = fn.getY(i), bz = fn.getZ(i);
-      const dot = ax * bx + ay * by + az * bz, gl = hyp(ax, ay, az);
-      if (gl > 0.5 && dot > 0.2) { const nx2 = ax * 0.75 + bx * 0.25, ny2 = ay * 0.75 + by * 0.25, nz2 = az * 0.75 + bz * 0.25, nl = hyp(nx2, ny2, nz2) || 1; fn.setXYZ(i, nx2 / nl, ny2 / nl, nz2 / nl); }
+      const ax = gN[i * 3], ay = gN[i * 3 + 1], az = gN[i * 3 + 2];
+      if (hyp(ax, ay, az) > 0.5 && ax * fn.getX(i) + ay * fn.getY(i) + az * fn.getZ(i) > -0.2) fn.setXYZ(i, ax, ay, az);
+      const L2 = hyp(fn.getX(i), fn.getY(i), fn.getZ(i));
+      if (!(L2 > 0.3)) { const px = g.attributes.position.getX(i), py = g.attributes.position.getY(i), pz = g.attributes.position.getZ(i), pl = hyp(px, py, pz) || 1; fn.setXYZ(i, px / pl, py / pl, pz / pl); }
+      else fn.setXYZ(i, fn.getX(i) / L2, fn.getY(i) / L2, fn.getZ(i) / L2);
     }
     g.computeBoundingSphere();
     return g;
   }
-  const sdfGeo = (key, f, min, max, cell, post) => geo('sdf:' + key, () => { const g = nets(f, min, max, cell); if (post) post(g); return g; });
+  // SDF 앰비언트 오클루전 → 접히는 곳 · 겨드랑이 · 머리 밑이 자연스럽게 어두워짐
+  function bakeAO(g, f, step) {
+    const p = g.attributes.position, n = g.attributes.normal, c = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i), nx = n.getX(i), ny = n.getY(i), nz = n.getZ(i);
+      let occ = 0, w = 1;
+      for (let k = 1; k <= 5; k++) { const h = step * k; occ += (h - f(x + nx * h, y + ny * h, z + nz * h)) * w; w *= 0.6; }
+      const ao = clamp(1 - Math.max(0, occ) * 2.4 / step / 5, 0.62, 1);
+      c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = ao;
+    }
+    // 이웃 평균 두 번 → 얼룩 없는 부드러운 그늘
+    const ix = g.index.array;
+    for (let pass = 0; pass < 2; pass++) {
+      const sum = new Float32Array(p.count), cnt = new Float32Array(p.count);
+      for (let t = 0; t < ix.length; t += 3) for (let e = 0; e < 3; e++) { const a = ix[t + e]; for (let f2 = 0; f2 < 3; f2++) { sum[a] += c[ix[t + f2] * 3]; cnt[a]++; } }
+      for (let i = 0; i < p.count; i++) if (cnt[i]) c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = sum[i] / cnt[i];
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  }
+  const sdfGeo = (key, f, min, max, cell, post, aoStep) => geo('sdf:' + key, () => { const g = nets(f, min, max, cell); bakeAO(g, f, aoStep || cell * 1.6); if (window.__NOAO) g.attributes.color.array.fill(1); if (post) post(g); return g; });
+  // 일반 지오메트리에도 흰 버텍스 컬러 (vertexColors 재질 공용)
+  const plain = g => { if (!g.attributes.color) { const c = new Float32Array(g.attributes.position.count * 3).fill(1); g.setAttribute('color', new THREE.BufferAttribute(c, 3)); } return g; };
 
   // =========================================================
   // 머리 (머리 로컬 좌표, 이후 HEAD_SCALE 배)
@@ -145,10 +178,11 @@
     let d = sEll(x, y, z, 0, 0.03, -0.01, 0.44, 0.42, 0.42);
     d = smin(d, sEll(x, y, z, 0, -0.12, 0.03, 0.41, 0.3, 0.37), 0.16);
     d = smin(d, sEll(A(x), y, z, 0.43, -0.07, -0.03, 0.05, 0.085, 0.065), 0.035);
-    d = smin(d, sCone(x, y, z, 0, -0.055, 0.38, 0, -0.085, 0.445, 0.034, 0.02), 0.03);
+    d = smin(d, sCone(x, y, z, 0, -0.09, 0.38, 0, -0.105, 0.43, 0.026, 0.016), 0.03);
     return d;
   }
   const FC = [0, -0.03, 0];
+  const NOSE_POL = 101, MOUTH_POL = 114;
   const FX = az => (az + 70) / 140, FY = pol => (pol - 40) / 100;
   function headGeo() {
     return sdfGeo('head', headSDF, [-0.53, -0.5, -0.5], [0.53, 0.5, 0.52], 0.0155, g => {
@@ -171,45 +205,88 @@
   const circle = (g, x, y, r) => { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); };
   function heart(g, x, y, s) { g.beginPath(); g.moveTo(x, y + s * 0.9); g.bezierCurveTo(x - s * 1.6, y - s * 0.2, x - s * 0.5, y - s * 1.3, x, y - s * 0.4); g.bezierCurveTo(x + s * 0.5, y - s * 1.3, x + s * 1.6, y - s * 0.2, x, y + s * 0.9); g.fill(); }
   function star(g, x, y, r) { g.beginPath(); for (let i = 0; i < 10; i++) { const rr = i % 2 ? r * 0.45 : r, a = i / 10 * Math.PI * 2 - Math.PI / 2; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); }
-  const LID = '#3a2420';
-  const EYE_AZ = 25, EYE_POL = 93;
+  const LID = '#2a1a16';
+  const EYE_AZ = 27, EYE_POL = 94;
+  // 동물의 숲 플레이어 눈: 세로로 긴 흰자 + 큰 홍채 + 두꺼운 윗 속눈썹 라인
   function drawEye(g, x, y, s, l, kind) {
-    const ic = l.eyeColor != null ? l.eyeColor : 0x3a2a20;
-    const arc = (up, lw = 10) => { g.strokeStyle = LID; g.lineWidth = lw; g.lineCap = 'round'; g.beginPath(); if (up) { g.moveTo(x - 28, y + 10); g.quadraticCurveTo(x, y - 28, x + 28, y + 10); } else { g.moveTo(x - 28, y - 4); g.quadraticCurveTo(x, y + 22, x + 28, y - 4); } g.stroke(); };
-    if (kind === 'happy') return arc(true, 10);
-    if (kind === 'closed') return arc(false, 9);
-    if (kind === 'x') { g.strokeStyle = LID; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + s * 18, y - 18); g.lineTo(x - s * 13, y); g.lineTo(x + s * 18, y + 18); g.stroke(); return; }
-    if (kind === 'heart') { g.fillStyle = '#ff4f7b'; heart(g, x, y - 2, 26); g.fillStyle = '#fff'; circle(g, x - 8, y - 10, 5); return; }
-    let rx = 34, ry = 42, irx = 25, iry = 33, iy = 4, ix = -s * 3;
-    if (kind === 'dot') { rx = 27; ry = 33; irx = 18; iry = 24; }
-    if (kind === 'sharp') { rx = 36; ry = 33; irx = 22; iry = 27; iy = 3; }
-    if (kind === 'shock') { irx = 11; iry = 13; iy = 0; ix = 0; }
-    if (kind === 'sparkle' || kind === 'star') { rx = 36; ry = 45; irx = 27; iry = 35; }
+    const ic = l.eyeColor != null ? l.eyeColor : 0x4a2e22;
+    const arc = (up, lw = 9) => { g.strokeStyle = LID; g.lineWidth = lw; g.lineCap = 'round'; g.beginPath(); if (up) { g.moveTo(x - 26, y + 8); g.quadraticCurveTo(x, y - 26, x + 26, y + 8); } else { g.moveTo(x - 26, y - 2); g.quadraticCurveTo(x, y + 20, x + 26, y - 2); } g.stroke(); };
+    if (kind === 'happy') return arc(true, 9);
+    if (kind === 'closed') return arc(false, 8);
+    if (kind === 'x') { g.strokeStyle = LID; g.lineWidth = 8; g.lineCap = 'round'; g.beginPath(); g.moveTo(x + s * 16, y - 16); g.lineTo(x - s * 12, y); g.lineTo(x + s * 16, y + 16); g.stroke(); return; }
+    if (kind === 'heart') { g.fillStyle = '#ff4f7b'; heart(g, x, y - 2, 24); g.fillStyle = '#fff'; circle(g, x - 8, y - 9, 5); return; }
+    let rx = 31, ry = 40, irx = 23, iry = 31, iy = 4;
+    if (kind === 'dot') { rx = 0; }
+    if (kind === 'sharp') { rx = 33; ry = 34; irx = 21; iry = 26; iy = 3; }
+    if (kind === 'shock') { irx = 9; iry = 11; iy = 0; }
+    if (kind === 'sparkle' || kind === 'star') { rx = 33; ry = 42; irx = 25; iry = 33; }
+    if (kind === 'dot') {   // 콩 눈 (까만 타원 + 하이라이트)
+      g.fillStyle = '#231612'; ellipse(g, x, y + 4, 12, 17); g.fillStyle = '#fff'; circle(g, x - 4, y - 3, 4.2); return;
+    }
+    const ix = -s * 2;
     g.save();
-    const lidClip = (yo, yi, c) => { g.beginPath(); g.moveTo(x - s * 70, y + 80); g.lineTo(x + s * 70, y + 80); g.lineTo(x + s * 70, y + yo); g.quadraticCurveTo(x, y + c, x - s * 70, y + yi); g.closePath(); g.clip(); };
-    if (kind === 'sleepy') lidClip(-1, -1, -5);
-    if (kind === 'droopy' || kind === 'sad') lidClip(-4, -28, -26);
-    if (kind === 'sharp' || kind === 'glare') lidClip(-28, -4, -22);
-    if (kind === 'smug') lidClip(-10, -10, -13);
-    g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); g.fillStyle = '#ffffff'; g.fill(); g.clip();
-    const grd = g.createLinearGradient(0, y + iy - iry, 0, y + iy + iry);
-    grd.addColorStop(0, hex(shade(ic, 0.5))); grd.addColorStop(0.6, hex(ic)); grd.addColorStop(1, hex(shade(ic, 1.45)));
-    g.fillStyle = grd; ellipse(g, x + ix, y + iy, irx, iry);
-    g.fillStyle = hex(shade(ic, 0.32)); ellipse(g, x + ix, y + iy + 2, irx * 0.46, iry * 0.48);
+    const lidClip = (yo, yi, c) => { g.beginPath(); g.moveTo(x - s * 60, y + 70); g.lineTo(x + s * 60, y + 70); g.lineTo(x + s * 60, y + yo); g.quadraticCurveTo(x, y + c, x - s * 60, y + yi); g.closePath(); g.clip(); };
+    if (kind === 'sleepy') lidClip(-2, -2, -4);
+    if (kind === 'droopy' || kind === 'sad') lidClip(-3, -24, -22);
+    if (kind === 'sharp' || kind === 'glare') lidClip(-24, -3, -18);
+    if (kind === 'smug') lidClip(-8, -8, -10);
+    // 흰자 (위쪽은 눈꺼풀 그늘)
+    g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    const sg = g.createLinearGradient(0, y - ry, 0, y + ry); sg.addColorStop(0, '#d9d2e0'); sg.addColorStop(0.35, '#ffffff'); sg.addColorStop(1, '#ffffff');
+    g.fillStyle = sg; g.fill(); g.clip();
+    // 홍채
+    const cx = x + ix, cy = y + iy;
+    const grd = g.createRadialGradient(cx, cy + iry * 0.35, 2, cx, cy, iry);
+    grd.addColorStop(0, hex(shade(ic, 1.7))); grd.addColorStop(0.55, hex(shade(ic, 1.05))); grd.addColorStop(1, hex(shade(ic, 0.55)));
+    g.fillStyle = grd; ellipse(g, cx, cy, irx, iry);
+    g.strokeStyle = hex(shade(ic, 0.35)); g.lineWidth = 3; g.beginPath(); g.ellipse(cx, cy, irx, iry, 0, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = hex(shade(ic, 0.25)); ellipse(g, cx, cy + 1, irx * 0.48, iry * 0.52);
+    // 윗눈꺼풀 그림자
+    g.fillStyle = 'rgba(60,30,40,0.22)'; ellipse(g, x, y - ry * 0.95, rx * 1.2, ry * 0.42);
+    // 하이라이트
     g.fillStyle = '#fff';
-    if (kind === 'star') star(g, x + ix - 7, y + iy - 10, 10); else circle(g, x + ix - 7, y + iy - 10, irx * 0.34);
-    circle(g, x + ix + 8, y + iy + 12, irx * 0.13);
+    if (kind === 'star') star(g, cx - 6, cy - 9, 9); else ellipse(g, cx - 7, cy - 10, irx * 0.36, irx * 0.42, -0.4);
+    circle(g, cx + 7, cy + 11, irx * 0.15);
+    if (kind === 'sparkle') { circle(g, cx + 8, cy - 12, 3); }
     g.restore();
-    g.strokeStyle = LID; g.lineCap = 'round'; g.lineWidth = 7.5;
+    // 윗 속눈썹 라인 (두껍게, 바깥 끝은 살짝 길게)
+    g.strokeStyle = LID; g.fillStyle = LID; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.lineWidth = 7.5;
     g.beginPath();
-    if (kind === 'sleepy') { g.moveTo(x - rx * 0.96, y - 1); g.quadraticCurveTo(x, y - 7, x + rx * 0.96, y - 1); }
-    else if (kind === 'droopy' || kind === 'sad') { g.moveTo(x - s * rx * 0.9, y - 31); g.quadraticCurveTo(x, y - 33, x + s * rx * 0.96, y - 5); }
-    else if (kind === 'sharp' || kind === 'glare') { g.moveTo(x - s * rx * 0.96, y - 5); g.quadraticCurveTo(x, y - 27, x + s * rx * 0.96, y - 31); }
-    else if (kind === 'smug') { g.moveTo(x - rx * 0.97, y - 11); g.quadraticCurveTo(x, y - 16, x + rx * 0.97, y - 11); }
-    else { g.moveTo(x - rx * 0.9, y - ry * 0.38); g.quadraticCurveTo(x, y - ry * 1.16, x + rx * 0.9, y - ry * 0.38); }
+    if (kind === 'sleepy') { g.moveTo(x - rx, y - 2); g.quadraticCurveTo(x, y - 6, x + rx, y - 2); }
+    else if (kind === 'droopy' || kind === 'sad') { g.moveTo(x - s * rx * 0.9, y - 27); g.quadraticCurveTo(x, y - 30, x + s * rx * 1.02, y - 4); }
+    else if (kind === 'sharp' || kind === 'glare') { g.moveTo(x - s * rx * 1.0, y - 4); g.quadraticCurveTo(x, y - 24, x + s * rx * 1.04, y - 28); }
+    else if (kind === 'smug') { g.moveTo(x - rx, y - 8); g.quadraticCurveTo(x, y - 12, x + rx, y - 8); }
+    else g.ellipse(x, y, rx + 1.5, ry + 1.5, 0, Math.PI * 1.08, Math.PI * 1.92);
     g.stroke();
-    if (l.lashes) { g.lineWidth = 5; for (const [dx, dy, ex, ey] of [[0.86, -0.5, 8, -6], [0.97, -0.2, 9, -2]]) { g.beginPath(); g.moveTo(x + s * rx * dx, y + ry * dy); g.lineTo(x + s * (rx * dx + ex), y + ry * dy + ey); g.stroke(); } }
-    if (l.mole && ((l.mole === 'L' && s < 0) || (l.mole === 'R' && s > 0))) { g.fillStyle = '#5a3426'; circle(g, x + s * 24, y + 42, 3.6); }
+    if (!['sleepy', 'droopy', 'sad', 'sharp', 'glare', 'smug'].includes(kind)) {
+      // 바깥 꼬리
+      g.lineWidth = 6; g.beginPath(); g.moveTo(x + s * rx * 0.9, y - ry * 0.45); g.quadraticCurveTo(x + s * (rx + 6), y - ry * 0.5, x + s * (rx + 8), y - ry * 0.62); g.stroke();
+    }
+    if (l.lashes) { g.lineWidth = 4.5; for (const [a2, len] of [[1.82, 9], [1.92, 10]]) { const px = x + Math.cos(Math.PI * a2) * (rx + 1) * (s > 0 ? 1 : -1) * (s > 0 ? 1 : 1), py = y + Math.sin(Math.PI * a2) * (ry + 1); const qx = s > 0 ? x + Math.cos(Math.PI * a2) * (rx + 1) : x - Math.cos(Math.PI * a2) * (rx + 1); g.beginPath(); g.moveTo(qx, py); g.lineTo(qx + s * len * 0.8, py - len * 0.7); g.stroke(); } }
+    // 아랫 라인 (아주 연하게)
+    g.strokeStyle = 'rgba(90,50,40,0.28)'; g.lineWidth = 2.5; g.beginPath(); g.ellipse(x, y, rx, ry, 0, Math.PI * 0.2, Math.PI * 0.8); g.stroke();
+    if (l.mole && ((l.mole === 'L' && s < 0) || (l.mole === 'R' && s > 0))) { g.fillStyle = '#5a3426'; circle(g, x + s * 20, y + 40, 3.4); }
+  }
+  // 입 (동물의 숲 스타일 D 입 · 웃는 선 · 삐죽 등)
+  function drawMouthAC(g, style, x, y) {
+    const D = (w, h) => {
+      g.fillStyle = '#7a2632'; g.beginPath(); g.moveTo(x - w, y - h * 0.3); g.quadraticCurveTo(x, y - h * 0.42, x + w, y - h * 0.3); g.quadraticCurveTo(x + w * 0.9, y + h, x, y + h); g.quadraticCurveTo(x - w * 0.9, y + h, x - w, y - h * 0.3); g.fill();
+      g.save(); g.clip(); g.fillStyle = '#f07a8a'; ellipse(g, x, y + h * 0.95, w * 0.62, h * 0.5); g.restore();
+      g.strokeStyle = '#5a1a22'; g.lineWidth = 3; g.stroke();
+    };
+    g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#6a2a26';
+    switch (style) {
+      case 'grin': D(25, 22); break;
+      case 'open': D(20, 17); break;
+      case 'smile': g.lineWidth = 5.5; g.beginPath(); g.moveTo(x - 17, y - 2); g.quadraticCurveTo(x, y + 14, x + 17, y - 2); g.stroke(); break;
+      case 'w': g.lineWidth = 5; g.beginPath(); g.moveTo(x - 18, y - 2); g.quadraticCurveTo(x - 9, y + 10, x, y); g.quadraticCurveTo(x + 9, y + 10, x + 18, y - 2); g.stroke(); break;
+      case 'flat': g.lineWidth = 5; g.beginPath(); g.moveTo(x - 12, y + 2); g.lineTo(x + 12, y + 2); g.stroke(); break;
+      case 'pout': g.lineWidth = 5; g.beginPath(); g.moveTo(x - 13, y + 6); g.quadraticCurveTo(x, y - 6, x + 13, y + 6); g.stroke(); break;
+      case 'tooth': D(18, 18); g.fillStyle = '#fff'; g.fillRect(x - 7, y - 5, 14, 8); break;
+      case 'none': break;
+      default: M.drawMouth(g, style, x, y, 0.7);
+    }
   }
   const fcache = new Map();
   function faceTexture(l, blink, small) {
@@ -219,23 +296,23 @@
     const cv = document.createElement('canvas'); cv.width = small ? CW / 2 : CW; cv.height = small ? CH / 2 : CH;
     const g = cv.getContext('2d'); if (small) g.scale(0.5, 0.5);
     g.fillStyle = hex(l.skin); g.fillRect(0, 0, CW, CH);
-    const noseC = l.nose != null ? l.nose : mix(l.skin, 0xff7f5a, 0.42);
-    { const gr = g.createRadialGradient(X(0), Y(100), 0, X(0), Y(100), 24); gr.addColorStop(0, hex(noseC)); gr.addColorStop(0.65, hex(noseC)); gr.addColorStop(1, hex(noseC) + '00'); g.fillStyle = gr; ellipse(g, X(0), Y(100.5), 24, 24); }
-    if (l.blush !== 'none') { const bc = typeof l.blush === 'number' ? l.blush : 0xff9a88; for (const az of [-40, 40]) { const x = X(az), y = Y(105); const gr = g.createRadialGradient(x, y, 0, x, y, 28); gr.addColorStop(0, hex(bc) + '55'); gr.addColorStop(1, hex(bc) + '00'); g.fillStyle = gr; ellipse(g, x, y, 30, 22); } }
+    const noseC = l.nose != null ? l.nose : mix(l.skin, 0xff8a70, 0.28);
+    { const gr = g.createRadialGradient(X(0), Y(NOSE_POL), 0, X(0), Y(NOSE_POL), 22); gr.addColorStop(0, hex(noseC)); gr.addColorStop(0.5, hex(noseC)); gr.addColorStop(1, hex(noseC) + '00'); g.fillStyle = gr; ellipse(g, X(0), Y(NOSE_POL), 11, 12); }
+    if (l.blush !== 'none') { const bc = typeof l.blush === 'number' ? l.blush : 0xff8f8f; for (const az of [-40, 40]) { const x = X(az), y = Y(106); const gr = g.createRadialGradient(x, y, 0, x, y, 26); gr.addColorStop(0, hex(bc) + '80'); gr.addColorStop(0.6, hex(bc) + '40'); gr.addColorStop(1, hex(bc) + '00'); g.fillStyle = gr; ellipse(g, x, y, 28, 20); } }
     if (l.freckles) { g.fillStyle = 'rgba(150,85,55,0.5)'; for (const [az, p] of [[-36, 100], [-42, 102], [-33, 104], [36, 100], [42, 102], [33, 104]]) circle(g, X(az), Y(p), 3); }
     const ex = [X(-EYE_AZ), X(EYE_AZ)], ey = Y(EYE_POL);
     const browC = hex(shade(l.hair, l.hair < 0x404040 ? 1.25 : 0.82));
     g.strokeStyle = browC; g.fillStyle = browC; g.lineCap = 'round';
-    const by = Y(75);
+    const by = Y(76);
     for (const [i, x] of ex.entries()) {
       const s = i === 0 ? -1 : 1, b = l.brows || 'thin';
       if (b === 'none') continue;
-      g.lineWidth = b === 'thick' ? 10 : 6;
+      g.lineWidth = b === 'thick' ? 9 : 5;
       g.beginPath();
       if (b === 'angry') { g.moveTo(x + s * 20, by - 9); g.lineTo(x - s * 18, by + 8); }
       else if (b === 'worried') { g.moveTo(x + s * 20, by + 7); g.lineTo(x - s * 18, by - 8); }
       else if (b === 'dots') { ellipse(g, x - s * 4, by, 9, 6); continue; }
-      else { g.moveTo(x - 18, by + 4); g.quadraticCurveTo(x, by - 6, x + 18, by + 4); }
+      else { g.moveTo(x - 15, by + 3); g.quadraticCurveTo(x, by - 5, x + 15, by + 3); }
       g.stroke();
     }
     const map = { dot: l.eyeKit || 'round', round: 'round', sparkle: 'sparkle', star: 'star', happy: 'happy', closed: 'closed', sleepy: 'sleepy', smug: 'smug', wink: 'wink', sad: 'sad', shock: 'shock', heart: 'heart', x: 'x', glare: 'glare' };
@@ -246,9 +323,9 @@
       if (kind === 'wink') return drawEye(g, x, ey, s, l, i === 1 ? 'happy' : (l.eyeKit || 'round'));
       drawEye(g, x, ey, s, l, kind);
     });
-    M.drawMouth(g, l.mouth || 'smile', X(0), Y(113), 0.9);
+    drawMouthAC(g, l.mouth || 'smile', X(0), Y(MOUTH_POL));
     if (l.fx) M.drawFx(g, CW, CH, l.fx, ex, ey);
-    const t = new THREE.CanvasTexture(cv); t.anisotropy = 4;
+    const t = srgb(new THREE.CanvasTexture(cv)); t.anisotropy = 4;
     fcache.set(key, t);
     return t;
   }
@@ -264,8 +341,8 @@
     return (x, y, z) => {
       const az = azOf(x, z + 0.01);
       let d = sEll(x, y, z, 0, 0.05, -0.02, R[0], R[1], R[2]);
-      if (sp.bump) d -= sp.bump(az, y);
       const pol = Math.acos(clamp((y - 0.02) / (hyp(x, y - 0.02, z) || 1), -1, 1)) / D2R;
+      if (sp.bump) d -= sp.bump(az, y, pol);
       d = smax(d, (pol - L(az)) * D2R * 0.45, k);
       if (dr) {
         const yEnd = typeof dr.y === 'function' ? dr.y(az) : dr.y;
@@ -311,7 +388,7 @@
     bun: { L: prof(a => 54 + A(Math.sin(a * D2R * 4)) * 5, 100, 108), extra: [[sph(0, 0.55, -0.12, 0.16), 0.05]] },
     braids: { L: prof(scal(68, 4, 6), 104, 110), part: 0, extra: [[mirror(chain([[0.42, -0.1, -0.06], [0.44, -0.2, -0.02], [0.45, -0.3, 0.01], [0.46, -0.4, 0.03], [0.46, -0.5, 0.05], [0.46, -0.6, 0.06]], 0.07, 0.045)), 0.03]] },
     pixie: { L: prof(a => 62 + clamp(a + 50, 0, 100) * 0.14 + A(Math.sin(a * D2R * 7)) * 3, 98, 108, 56) },
-    curlybob: { L: prof(scal(68, 5, 6), 102, 108), drape: { y: -0.3, t: 0.08, fw: 54 }, extra: [[(x, y, z) => { const az = azOf(x, z); if (A(az) < 55) return 1; const a = Math.round(az / 24) * 24 * D2R; return sSph(x, y, z, Math.sin(a) * 0.5, -0.32, Math.cos(a) * 0.48 - 0.03, 0.1); }, 0.04]] },
+    curlybob: { L: prof(scal(68, 5, 6), 102, 108), drape: { y: -0.3, t: 0.08, fw: 54 }, extra: [[(x, y, z) => { const az = azOf(x, z); if (A(az) < 50) return 1; return sTorY(x, y, z * 1.0 + 0.03, 0, -0.31, 0, 0.47, 0.085) - 0.012 * Math.sin(az * D2R * 12); }, 0.05]] },
     curtainmid: { L: prof(a => 50 + Math.min(A(a), 42) * 0.78, 104, 110, 50), part: 0, drape: { y: -0.5, t: 0.08, fw: 46, curl: -0.04 } },
     odango: { L: prof(scal(68, 4, 6), 102, 108), extra: [[mirror(sph(0.3, 0.47, -0.04, 0.14)), 0.04]] },
     lowbun: { L: prof(a => 52 + A(a) * 0.2, 100, 110), part: -22, extra: [[ell(0, -0.16, -0.48, 0.16, 0.14, 0.13), 0.06]] },
@@ -324,13 +401,13 @@
     shaggy: { L: prof(a => 74 + A(Math.sin(a * D2R * 6)) * 6, 112, 118), drape: { y: a => -0.22 + A(Math.sin(a * D2R * 7)) * 0.06, t: 0.07, fw: 58 }, extra: [[spikeAt(150, -20, 0.12, 0.07, -10), 0.04], [spikeAt(-150, -20, 0.12, 0.07, -10), 0.04], [spikeAt(180, -26, 0.12, 0.07, -10), 0.04]] },
     buzz: { r: [0.462, 0.442, 0.452], L: prof(() => 50, 94, 108), k: 0.02 },
     slick: { L: prof(() => 44, 96, 110), extra: [[ell(0, 0.4, 0.18, 0.26, 0.13, 0.2), 0.12]] },
-    curlyshort: { L: prof(() => 58, 98, 110), extra: [[(x, y, z) => { const az = azOf(x, z), pol = polOf(x, y, z); if (pol > 104 || (A(az) < 52 && pol > 62)) return 1; const a = Math.round(az / 30) * 30, p = Math.round(pol / 22) * 22; const q = surf(a + (p % 44 ? 15 : 0), 90 - p, 0.05); return sSph(x, y, z, q[0], q[1], q[2], 0.085); }, 0.03]] },
+    curlyshort: { r: [0.52, 0.5, 0.5], L: prof(a => 60 + A(Math.sin(a * D2R * 7)) * 6, 100, 112), bump: (az, y, pol) => 0.022 * Math.pow(A(Math.sin(az * D2R * 7) * Math.sin(pol * D2R * 8)), 0.6) },
     manbun: { L: prof(a => 48 + A(a) * 0.15, 98, 108), part: 24, extra: [[sph(0, 0.4, -0.38, 0.1), 0.04]] },
     bowl: { r: [0.52, 0.49, 0.5], L: prof(() => 73, 100, 112) },
     wavyshort: { L: prof(scal(64, 9, 4), 100, 112), bump: (az, y) => Math.sin(az * D2R * 9) * 0.012 * clamp(y + 0.2, 0, 1) },
     mohawk: { r: [0.458, 0.44, 0.45], L: prof(() => 48, 92, 104), extra: [[ell(0, 0.47, -0.02, 0.07, 0.14, 0.42), 0.06]] },
     tiedlong: { L: prof(a => 60 + clamp(a + 40, 0, 80) * 0.18, 104, 112, 56), part: -24, extra: [[cone([0, -0.16, -0.47], [0, -0.62, -0.46], 0.08, 0.05), 0.05]] },
-    cloud: { L: prof(() => 54, 102, 112), extra: [[(x, y, z) => { const az = azOf(x, z), pol = polOf(x, y, z); if (pol > 112 || (A(az) < 50 && pol > 60)) return 1; const a = Math.round(az / 34) * 34, p = Math.round(pol / 26) * 26; const q = surf(a + (p % 52 ? 17 : 0), 90 - p, 0.08); return sSph(x, y, z, q[0], q[1], q[2], 0.12); }, 0.04]] },
+    cloud: { r: [0.58, 0.54, 0.56], L: prof(a => 56 + A(Math.sin(a * D2R * 6)) * 6, 106, 116), bump: (az, y, pol) => 0.035 * Math.pow(A(Math.sin(az * D2R * 6) * Math.sin(pol * D2R * 7)), 0.5) },
     grandpa: { L: () => 0, extra: [[(x, y, z) => { if (A(azOf(x, z)) < 70) return 1; return sEll(A(x), y, z, 0.38, -0.02, -0.14, 0.12, 0.13, 0.28); }, 0.05], [ell(0, 0.0, -0.4, 0.3, 0.13, 0.12), 0.05]] },
   };
   const HAIR_NAMES = {
@@ -345,9 +422,16 @@
     const sp = HAIR[style];
     const lowest = sp.drape ? -0.92 : sp.extra ? -0.8 : -0.5;
     return sdfGeo('hair:' + style, hairSDF(sp), [-0.72, lowest, -0.78], [0.72, 0.75, 0.62], 0.017, g => {
-      const n = g.attributes.normal, p = g.attributes.position, c = new Float32Array(n.count * 3);
-      for (let i = 0; i < n.count; i++) { const ny = n.getY(i), band = Math.exp(-Math.pow((ny - 0.62) / 0.16, 2)) * (p.getZ(i) > -0.1 ? 1 : 0.5); const k = 0.94 + band * 0.18 - (ny < -0.2 ? 0.07 : 0); c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = k; }
-      g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+      const n = g.attributes.normal, p = g.attributes.position, c = g.attributes.color.array, uv = new Float32Array(n.count * 2);
+      for (let i = 0; i < n.count; i++) {
+        const ny = n.getY(i), band = Math.exp(-Math.pow((ny - 0.6) / 0.13, 2)) * (p.getZ(i) > -0.15 ? 1 : 0.45);
+        const k = (0.97 + band * 0.32 - (ny < -0.2 ? 0.06 : 0)) * c[i * 3];
+        c[i * 3] = c[i * 3 + 1] = c[i * 3 + 2] = k;
+        // 머릿결 UV: 방위각(가로) × 정수리에서 내려오는 거리(세로)
+        uv[i * 2] = (Math.atan2(p.getX(i), p.getZ(i)) / (Math.PI * 2) + 0.5) * 6;
+        uv[i * 2 + 1] = Math.acos(clamp((p.getY(i) - 0.05) / (hyp(p.getX(i), p.getY(i) - 0.05, p.getZ(i)) || 1), -1, 1)) * 1.2 + Math.max(0, -p.getY(i)) * 2;
+      }
+      g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     });
   }
 
@@ -419,9 +503,35 @@
   const shellGeo = kind => sdfGeo('shell:' + kind, shellSDF(kind), [-0.32, 0.05, -0.28], [0.32, 0.66, 0.28], 0.011);
   const bottomGeo = kind => sdfGeo('bottom:' + kind, bottomSDF(kind), [-0.32, -0.1, -0.3], [0.32, 0.34, 0.3], 0.012, cylUV(-0.05, 0.32));
 
-  function clothMat(l, color, accent) {
-    if (!l.pattern || l.pattern === 'plain') return mat(color);
-    return soften(new THREE.MeshLambertMaterial({ map: M.patternTex(l.pattern, color, accent) }));
+  // 회색조 결 텍스처 (색은 재질 color 로 곱함)
+  const texC = new Map();
+  function grayTex(kind) {
+    if (texC.has(kind)) return texC.get(kind);
+    const N = 128, c = document.createElement('canvas'); c.width = c.height = N; const g = c.getContext('2d');
+    const rnd = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+    g.fillStyle = '#fff'; g.fillRect(0, 0, N, N);
+    if (kind === 'hair') {
+      for (let x = 0; x < N; x++) { const v = 0.9 + rnd() * 0.1; g.fillStyle = `rgba(${v * 255 | 0},${v * 255 | 0},${v * 255 | 0},1)`; g.fillRect(x, 0, 1, N); }
+      for (let i = 0; i < 60; i++) { const x = rnd() * N; g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(x, 0, 1, N); }
+      for (let i = 0; i < 24; i++) { const x = rnd() * N; g.fillStyle = 'rgba(60,40,30,0.14)'; g.fillRect(x, 0, 1.5, N); }
+    } else if (kind === 'knit') {
+      for (let x = 0; x < N; x += 8) { const gr = g.createLinearGradient(x, 0, x + 8, 0); gr.addColorStop(0, '#d8d8d8'); gr.addColorStop(0.5, '#ffffff'); gr.addColorStop(1, '#d8d8d8'); g.fillStyle = gr; g.fillRect(x, 0, 8, N); }
+      g.strokeStyle = 'rgba(0,0,0,0.06)'; for (let y = 0; y < N; y += 6) for (let x = 0; x < N; x += 8) { g.beginPath(); g.moveTo(x, y); g.lineTo(x + 4, y + 4); g.lineTo(x + 8, y); g.stroke(); }
+    } else if (kind === 'denim') {
+      for (let i = -N; i < N * 2; i += 4) { g.strokeStyle = `rgba(0,0,30,${0.08 + rnd() * 0.08})`; g.lineWidth = 1.5; g.beginPath(); g.moveTo(i, 0); g.lineTo(i + N, N); g.stroke(); }
+      for (let i = 0; i < 300; i++) { g.fillStyle = 'rgba(255,255,255,0.12)'; g.fillRect(rnd() * N, rnd() * N, 1, 2); }
+    } else {
+      for (let i = 0; i < 1400; i++) { const v = rnd(); g.fillStyle = `rgba(0,0,0,${v * 0.05})`; g.fillRect(rnd() * N, rnd() * N, 1, 1); }
+      g.strokeStyle = 'rgba(0,0,0,0.03)'; for (let y = 0; y < N; y += 3) { g.beginPath(); g.moveTo(0, y); g.lineTo(N, y); g.stroke(); }
+    }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+    if (kind !== 'hair') t.repeat.set(8, 5);
+    texC.set(kind, t); return t;
+  }
+  const FABRIC = { sweater: 'knit', cardigan: 'knit', puffer: 'cotton', jeans: 'denim', pinafore: 'denim' };
+  function clothMat(l, color, accent, fab) {
+    if (l.pattern && l.pattern !== 'plain') return soften(new THREE.MeshLambertMaterial({ map: srgb(M.patternTex(l.pattern, color, accent)), vertexColors: true }), 0.25);
+    return matL(color, { vertexColors: true, map: grayTex(fab || 'cotton') });
   }
   function jerseyMat(color, accent, num, label) {
     const t = geo(`jt${color},${accent},${num},${label}`, () => {
@@ -432,9 +542,9 @@
       g.font = 'bold 30px sans-serif'; g.fillText(label || 'FMIS', 256, 92);
       g.font = 'bold 84px sans-serif'; g.fillText(n, 256, 172);
       g.font = 'bold 72px sans-serif'; g.fillText(n, 0, 150); g.fillText(n, 512, 150);
-      const tx = new THREE.CanvasTexture(c); tx.anisotropy = 4; return tx;
+      const tx = srgb(new THREE.CanvasTexture(c)); tx.anisotropy = 4; return tx;
     });
-    return soften(new THREE.MeshLambertMaterial({ map: t }));
+    return soften(new THREE.MeshLambertMaterial({ map: t, vertexColors: true }), 0.25);
   }
 
   // =========================================================
@@ -444,7 +554,7 @@
   Object.assign(OPT.bottom, { jeans: '청바지', longskirt: '롱스커트', pleats: '플리츠', cargo: '카고 팬츠', wide: '와이드 팬츠' });
   Object.assign(OPT.acc, { earring: '귀걸이', choker: '초커', tote: '에코백', camera: '목걸이 카메라', neckphones: '목 헤드폰', mustache: '콧수염', crossbag: '크로스백', pendant: '펜던트' });
   Object.assign(OPT.hat, { flowercrown: '꽃 화관', tiara: '티아라', bandana: '반다나', captain: '선장 모자', fedora: '페도라', hibiscus: '히비스커스', knit: '니트 비니', boater: '보터햇' });
-  const HS = [1, 1, 1]; HS.yaw = EYE_AZ * D2R * 0.95; HS.th = 94 * D2R;
+  const HS = [1, 1, 1]; HS.yaw = EYE_AZ * D2R * 0.92; HS.th = 95 * D2R;
 
   function build(lookIn) {
     let l = ISLE.normalizeLook(lookIn);
@@ -467,7 +577,7 @@
       const pivot = new THREE.Group(); pivot.position.set(side * 0.072, 0.26, 0);
       PART = 'legs';
       pivot.add(M_('legSkin', legSkinSDF, [-0.08, -0.34, -0.08], [0.08, 0.06, 0.08], 0.008, l.legwear != null ? mat(l.legwear) : skinM));
-      if (longPants || bottom === 'shorts') { PART = 'bottom'; const k = bottom === 'shorts' ? 'shorts' : bottom === 'jeans' ? 'jeans' : bottom === 'wide' ? 'wide' : 'pants'; pivot.add(M_('pleg:' + k, pantLegSDF(k), [-0.1, -0.28, -0.1], [0.1, 0.07, 0.1], 0.008, mat(l.pants))); }
+      if (longPants || bottom === 'shorts') { PART = 'bottom'; const k = bottom === 'shorts' ? 'shorts' : bottom === 'jeans' ? 'jeans' : bottom === 'wide' ? 'wide' : 'pants'; pivot.add(tag(new THREE.Mesh(sdfGeo('pleg:' + k, pantLegSDF(k), [-0.1, -0.28, -0.1], [0.1, 0.07, 0.1], 0.008, cylUV(-0.3, 0.1)), clothMat(l.pattern ? Object.assign({}, l, { pattern: 'plain' }) : l, l.pants, 0, bottom === 'jeans' ? 'denim' : 'cotton')))); }
       if (l.socks != null) { PART = 'legs'; pivot.add(mesh(geo('acSock', () => new THREE.CylinderGeometry(0.047, 0.047, 0.07, 16)), mat(l.socks), 0, -0.235, 0)); }
       PART = 'shoes';
       const st = l.shoeType || 'sneaker';
@@ -483,14 +593,14 @@
     PART = 'top';
     const OPEN = { jacket: 1, coat: 1, cardigan: 1, varsity: 1 };
     const tk = onePiece ? 'dress' : top === 'coat' ? 'coat' : top === 'hoodie' ? 'hoodie' : top === 'puffer' ? 'puffer' : (top === 'tank' || top === 'jersey') ? 'tank' : 'tee';
-    let torsoM = clothMat(l, l.shirt, l.shirt2);
+    let torsoM = clothMat(l, l.shirt, l.shirt2, FABRIC[top]);
     if (top === 'jersey') torsoM = jerseyMat(l.shirt, l.shirt2, l.jerseyNo, l.jerseyLabel);
-    if (OPEN[top] || top === 'pinafore') torsoM = clothMat(l, l.shirt2, l.shirt);
+    if (OPEN[top] || top === 'pinafore') torsoM = clothMat(top === 'pinafore' ? l : Object.assign({}, l, { pattern: 'plain' }), l.shirt2, l.shirt);
     body.add(tag(new THREE.Mesh(torsoGeo(OPEN[top] ? 'tee' : (top === 'pinafore' ? 'tee' : tk)), torsoM)));
-    if (OPEN[top]) body.add(tag(new THREE.Mesh(shellGeo(top === 'coat' ? 'coat' : top), soften(new THREE.MeshLambertMaterial({ color: l.shirt, side: THREE.DoubleSide })))));
+    if (OPEN[top]) body.add(tag(new THREE.Mesh(shellGeo(top === 'coat' ? 'coat' : top), matL(l.shirt, { side: THREE.DoubleSide, vertexColors: true, map: grayTex(top === 'cardigan' ? 'knit' : top === 'jacket' && l.denim ? 'denim' : 'cotton') }))));
     PART = 'head';
     body.add(mesh(capsule(0.045, 0.08), skinM, 0, 0.61, 0));
-    if (bottom !== 'none' && bottom) { PART = 'bottom'; const bk = ['skirt', 'pleats', 'longskirt'].includes(bottom) ? bottom : 'pants'; body.add(tag(new THREE.Mesh(bottomGeo(bk), clothMat(l, l.pants, shade(l.pants, 1.25))))); }
+    if (bottom !== 'none' && bottom) { PART = 'bottom'; const bk = ['skirt', 'pleats', 'longskirt'].includes(bottom) ? bottom : 'pants'; body.add(tag(new THREE.Mesh(bottomGeo(bk), clothMat(Object.assign({}, l, { pattern: l.bottomPattern || 'plain' }), l.pants, shade(l.pants, 1.25), bottom === 'jeans' ? 'denim' : 'cotton')))); }
     PART = 'top';
     const btn = (x, y, z, c = 0xf6f0e4) => body.add(mesh(sphere(0.011, 8, 6), mat(c), x, y, z, false));
     const fz = y => 0.15 * DZ - Math.max(0, y - 0.45) * 0.25;
@@ -515,17 +625,17 @@
       case 'kimono': { for (const s of [-1, 1]) { const f = mesh(box(0.035, 0.2, 0.012, 0.006), mat(l.shirt2), s * 0.03, 0.46, fz(0.46) + 0.004); f.rotation.set(-0.15, 0, s * 0.45); body.add(f); } const ob = mesh(geo('acObi', () => new THREE.CylinderGeometry(0.158, 0.165, 0.065, 28)), mat(l.accColor), 0, 0.34, 0); ob.scale.z = DZ * 1.05; body.add(ob); body.add(mesh(box(0.11, 0.07, 0.045, 0.02), mat(l.accColor), 0, 0.35, -0.13)); break; }
       case 'dress': if (l.bow) body.add(mesh(sphere(0.026), mat(l.accColor), 0, 0.53, 0.11)); break;
     }
-    if (l.apron != null) body.add(M_('apron', (x, y, z) => { let d = sCone(x, y, z / 0.84, 0, 0.36, 0, 0, 0.1, 0, 0.17, 0.27) * 0.86 - 0.012; d = A(d + 0.006) - 0.006; d = smax(d, 0.1 - y, 0.01); d = smax(d, y - 0.34, 0.01); d = smax(d, -z + 0.02, 0.02); return d; }, [-0.34, 0.05, -0.1], [0.34, 0.4, 0.32], 0.01, soften(new THREE.MeshLambertMaterial({ color: l.apron, side: THREE.DoubleSide }))));
+    if (l.apron != null) body.add(M_('apron', (x, y, z) => { let d = sCone(x, y, z / 0.84, 0, 0.36, 0, 0, 0.1, 0, 0.17, 0.27) * 0.86 - 0.012; d = A(d + 0.006) - 0.006; d = smax(d, 0.1 - y, 0.01); d = smax(d, y - 0.34, 0.01); d = smax(d, -z + 0.02, 0.02); return d; }, [-0.34, 0.05, -0.1], [0.34, 0.4, 0.32], 0.01, matL(l.apron, { side: THREE.DoubleSide, vertexColors: true })));
 
     // ----- 팔 -----
     PART = 'arms';
     const sleeveKind = l.sleeve === 'none' || top === 'tank' || top === 'jersey' ? 'none' : (l.sleeve === 'long' || (l.sleeve !== 'short' && ['sweater', 'hoodie', 'longtee', 'shirt', 'jacket', 'coat', 'cardigan', 'varsity', 'puffer', 'kimono', 'uniform'].includes(top))) ? 'long' : 'short';
-    const sleeveM = top === 'varsity' ? mat(l.shirt2) : OPEN[top] ? mat(l.shirt) : top === 'pinafore' ? clothMat(l, l.shirt2, l.shirt) : (top === 'jersey' ? mat(l.shirt) : clothMat(l, l.shirt, l.shirt2));
+    const sleeveM = top === 'varsity' ? clothMat({}, l.shirt2, 0, 'knit') : OPEN[top] ? clothMat({}, l.shirt, 0, top === 'cardigan' ? 'knit' : 'cotton') : top === 'pinafore' ? clothMat(l, l.shirt2, l.shirt) : (top === 'jersey' ? mat(l.shirt) : clothMat(l, l.shirt, l.shirt2, FABRIC[top]));
     const makeArm = side => {
       const pivot = new THREE.Group(); pivot.position.set(side * 0.14, 0.52, 0);
       const inner = new THREE.Group(); inner.rotation.z = side * 0.48; pivot.add(inner);
       inner.add(M_('armSkin', armSkinSDF, [-0.08, -0.31, -0.08], [0.08, 0.06, 0.08], 0.0075, skinM));
-      if (sleeveKind !== 'none') inner.add(M_('sleeve:' + sleeveKind, sleeveSDF(sleeveKind), [-0.09, -0.22, -0.09], [0.09, 0.09, 0.09], 0.0075, sleeveM));
+      if (sleeveKind !== 'none') inner.add(tag(new THREE.Mesh(sdfGeo('sleeve:' + sleeveKind, sleeveSDF(sleeveKind), [-0.09, -0.22, -0.09], [0.09, 0.09, 0.09], 0.0075, cylUV(-0.25, 0.1)), sleeveM)));
       if (sleeveKind === 'long' && (top === 'varsity' || top === 'sweater' || top === 'cardigan')) { const cf = mesh(geo('acCuff', () => new THREE.TorusGeometry(0.041, 0.011, 6, 16)), mat(top === 'varsity' ? l.shirt : shade(l.shirt, 0.92)), 0, -0.175, 0); cf.rotation.x = Math.PI / 2; inner.add(cf); }
       body.add(pivot);
       return pivot;
@@ -539,21 +649,21 @@
     head.scale.setScalar(HEAD_SCALE);
     body.add(head);
     const tFace = faceTexture(l, false), tBlink = faceTexture(l, true);
-    const face = new THREE.Mesh(headGeo(), soften(new THREE.MeshLambertMaterial({ map: tFace })));
+    const face = new THREE.Mesh(headGeo(), soften(new THREE.MeshLambertMaterial({ map: tFace, vertexColors: true }), 0.22));
     face.userData.part = 'face';
     head.add(face);
     PART = 'hair';
     const hs = HAIR[l.hairStyle] ? l.hairStyle : LEGACY[l.hairStyle] || 'boyshort';
-    const hair = tag(new THREE.Mesh(hairGeo(hs), soften(new THREE.MeshLambertMaterial({ color: l.hair, vertexColors: true, side: THREE.DoubleSide }))));
+    const hair = tag(new THREE.Mesh(hairGeo(hs), soften(new THREE.MeshLambertMaterial({ color: lin(l.hair), vertexColors: true, side: THREE.DoubleSide, map: window.__NOMAP ? null : grayTex('hair') }), 0.3)));
     if (l.hairFlip) hair.scale.x = -1;
     if (l.hat !== 'none' && !['flower', 'bow', 'flowercrown', 'hibiscus', 'tiara', 'headband', 'halo', 'horns', 'bandana'].includes(l.hat)) hair.scale.set(hair.scale.x * 0.97, 0.94, 0.97);
     head.add(hair);
     if (l.hairTie != null || ['pony', 'twintail', 'bun', 'odango', 'halfup', 'tiedlong', 'braids'].includes(hs)) addTies(head, hs, l);
     PART = 'hat';
     if (EXTRA_HATS[l.hat]) EXTRA_HATS[l.hat](head, l);
-    else if (l.hat !== 'none') { const hg = new THREE.Group(); hg.scale.setScalar(1.08); hg.position.y = 0.02; M.buildHat(hg, l, [1.04, 1.04, 1.04]); head.add(hg); }
+    else if (l.hat !== 'none') { const hg = new THREE.Group(); hg.scale.setScalar(1.08); hg.position.y = 0.02; M.buildHat(hg, l, [1.04, 1.04, 1.04]); fixLegacy(hg); head.add(hg); }
     PART = 'glasses';
-    if (l.glasses !== 'none') { const gg = new THREE.Group(); M.buildGlasses(gg, l, HS); gg.scale.set(1.08, 1.06, 1.06); head.add(gg); }
+    if (l.glasses !== 'none') { const gg = new THREE.Group(); M.buildGlasses(gg, l, HS); fixLegacy(gg); gg.scale.set(1.08, 1.06, 1.06); head.add(gg); }
     PART = 'acc';
     buildAccs(body, head, l);
     PART = null;
@@ -572,6 +682,8 @@
       hip: 0.2, headZ: 0.95, faceFn: faceTexture, person: true, hairStyle: hs,
     };
   }
+  // 예전 빌더(모자 · 안경)가 만든 재질도 같은 색 공간으로
+  function fixLegacy(g) { g.traverse(o => { if (o.isMesh && o.material && o.material.color && !o.material.userData.lin) { const m = o.material.clone(); m.color.convertSRGBToLinear(); m.userData.lin = true; o.material = m; } }); }
   function addTies(head, hs, l) {
     PART = 'hair';
     const c = mat(l.hairTie != null ? l.hairTie : (l.accColor || 0xff6f86));
@@ -586,6 +698,38 @@
   }
 
   const EXTRA_HATS = {
+    cap(head, l) {
+      const c = matL(l.hatColor, { vertexColors: true, map: grayTex('cotton') });
+      const d = mesh(geo('acCapD', () => new THREE.SphereGeometry(0.54, 36, 16, 0, Math.PI * 2, 0, Math.PI * 0.5)), c, 0, 0.12, -0.04); d.scale.set(1, 1.0, 1); d.rotation.x = -0.15; head.add(d);
+      const v = mesh(geo('acCapV', () => new THREE.CylinderGeometry(0.4, 0.4, 0.035, 30, 1, false, -Math.PI / 2, Math.PI)), c, 0, 0.16, 0.26); v.rotation.x = 0.2; v.scale.set(0.85, 1, 0.9); head.add(v);
+      head.add(mesh(sphere(0.045), c, 0, 0.66, -0.1));
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const ln = mesh(capsule(0.006, 0.36), matL(shade(l.hatColor, 0.8)), Math.sin(a) * 0.25, 0.42, Math.cos(a) * 0.25 - 0.06); ln.visible = false; }
+    },
+    bucket(head, l) {
+      const c = matL(l.hatColor, { vertexColors: true, map: grayTex('cotton') });
+      const d = mesh(geo('acBkD', () => new THREE.SphereGeometry(0.52, 34, 14, 0, Math.PI * 2, 0, Math.PI * 0.5)), c, 0, 0.16, -0.02); d.scale.set(1, 0.72, 1); head.add(d);
+      head.add(mesh(lathe('acBkB2', [[0.5, 0.0], [0.7, -0.1], [0.73, -0.08], [0.52, 0.04]], 36), c, 0, 0.16, -0.02));
+      head.add(mesh(geo('acBkBand', () => new THREE.CylinderGeometry(0.52, 0.53, 0.06, 32)), matL(shade(l.hatColor, 0.85), { vertexColors: true }), 0, 0.2, -0.02));
+    },
+    headband(head, l) {
+      const c = matL(l.hatColor, { vertexColors: true });
+      const g = new THREE.Group(); g.position.set(0, 0.02, 0.0); g.rotation.x = 0.12; g.scale.set(0.98, 1.02, 1); head.add(g);
+      g.add(mesh(geo('acHB2', () => new THREE.TorusGeometry(0.53, 0.03, 10, 40, Math.PI)), c));
+      for (let i = 0; i < 15; i++) { const a = 0.08 + (i / 14) * (Math.PI - 0.16); const f = mesh(sphere(0.036, 10, 8), c, Math.cos(a) * 0.54, Math.sin(a) * 0.54, 0.03); f.scale.set(1, 0.75, 0.55); g.add(f); }
+    },
+    cap(head, l) {
+      const c = matL(l.hatColor, { vertexColors: true, map: grayTex('cotton') });
+      const d = mesh(geo('acCapD', () => new THREE.SphereGeometry(0.54, 36, 16, 0, Math.PI * 2, 0, Math.PI * 0.5)), c, 0, 0.12, -0.04); d.scale.set(1, 1.0, 1); d.rotation.x = -0.15; head.add(d);
+      const v = mesh(geo('acCapV', () => new THREE.CylinderGeometry(0.4, 0.4, 0.035, 30, 1, false, -Math.PI / 2, Math.PI)), c, 0, 0.16, 0.26); v.rotation.x = 0.2; v.scale.set(0.85, 1, 0.9); head.add(v);
+      head.add(mesh(sphere(0.045), c, 0, 0.66, -0.1));
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; const ln = mesh(capsule(0.006, 0.36), matL(shade(l.hatColor, 0.8)), Math.sin(a) * 0.25, 0.42, Math.cos(a) * 0.25 - 0.06); ln.visible = false; }
+    },
+    bucket(head, l) {
+      const c = matL(l.hatColor, { vertexColors: true, map: grayTex('cotton') });
+      const d = mesh(geo('acBkD', () => new THREE.SphereGeometry(0.52, 34, 14, 0, Math.PI * 2, 0, Math.PI * 0.5)), c, 0, 0.16, -0.02); d.scale.set(1, 0.72, 1); head.add(d);
+      head.add(mesh(lathe('acBkB2', [[0.5, 0.0], [0.7, -0.1], [0.73, -0.08], [0.52, 0.04]], 36), c, 0, 0.16, -0.02));
+      head.add(mesh(geo('acBkBand', () => new THREE.CylinderGeometry(0.52, 0.53, 0.06, 32)), matL(shade(l.hatColor, 0.85), { vertexColors: true }), 0, 0.2, -0.02));
+    },
     flowercrown(head, l) {
       const cols = [0xff5a6e, 0xffb13d, 0xffffff, 0xff8fb1, 0xb69cff];
       for (let i = 0; i < 9; i++) { const a = (-64 + i * 16) * D2R; const p = V(Math.sin(a) * 0.4, 0.44 - A(i - 4) * 0.006, Math.cos(a) * 0.38 - 0.08); const f = new THREE.Group(); for (let k = 0; k < 6; k++) { const pa = k / 6 * Math.PI * 2; const pe = mesh(sphere(0.034, 10, 8), mat(cols[i % 5]), Math.cos(pa) * 0.034, Math.sin(pa) * 0.034, 0); pe.scale.z = 0.5; f.add(pe); } f.add(mesh(sphere(0.024, 8, 6), mat(i % 2 ? 0x3a2a20 : 0xffd84a), 0, 0, 0.015)); f.position.copy(p); f.lookAt(p.clone().multiplyScalar(2).setY(p.y * 2 + 0.3)); head.add(f); if (i % 2) head.add(mesh(sphere(0.028, 8, 6), mat(0x4f9a45), p.x * 1.04, p.y - 0.03, p.z)); }
@@ -595,24 +739,24 @@
     bandana(head, l) { const b = mesh(geo('acBand', () => new THREE.SphereGeometry(0.51, 32, 14, 0, Math.PI * 2, 0, Math.PI * 0.4)), clothMat({ pattern: l.hatPattern || 'dots' }, l.hatColor || 0xd8343a, 0xffffff), 0, 0.06, -0.03); b.rotation.x = -0.28; head.add(b); head.add(mesh(sphere(0.06), mat(l.hatColor || 0xd8343a), 0, 0.14, -0.52)); },
     captain(head, l) {
       const g = new THREE.Group(), w = mat(0xffffff), n = mat(0x1f2a4a);
-      g.add(mesh(geo('cpTop', () => new THREE.CylinderGeometry(0.56, 0.46, 0.16, 32)), w, 0, 0.12, 0));
-      g.add(mesh(geo('cpBand', () => new THREE.CylinderGeometry(0.47, 0.47, 0.09, 32)), n, 0, 0.0, 0));
+      g.add(mesh(geo('cpTop2', () => new THREE.CylinderGeometry(0.6, 0.5, 0.16, 32)), w, 0, 0.12, 0));
+      g.add(mesh(geo('cpBand2', () => new THREE.CylinderGeometry(0.51, 0.51, 0.1, 32)), n, 0, 0.0, 0));
       const v = mesh(geo('cpVisor', () => new THREE.CylinderGeometry(0.3, 0.32, 0.025, 24, 1, false, -Math.PI / 2, Math.PI)), n, 0, -0.04, 0.3); v.rotation.x = 0.25; v.scale.set(1, 1, 0.75); g.add(v);
       g.add(mesh(box(0.34, 0.02, 0.02, 0.008), mat(0xd9b44a), 0, 0.03, 0.47));
       g.add(mesh(geo('cpBadge', () => new THREE.CylinderGeometry(0.06, 0.06, 0.012, 16)), mat(0xd9b44a), 0, 0.13, 0.5).rotateX(Math.PI / 2));
-      g.position.set(0, 0.42, -0.02); g.rotation.x = -0.12; head.add(g);
+      g.position.set(0, 0.36, -0.02); g.rotation.x = -0.12; head.add(g);
     },
     fedora(head, l) {
       const g = new THREE.Group(), c = mat(l.hatColor);
-      g.add(mesh(geo('fdTop', () => new THREE.CylinderGeometry(0.34, 0.42, 0.24, 30)), c, 0, 0.12, 0));
-      g.add(mesh(lathe('fdBrim', [[0.38, 0], [0.7, 0.0], [0.74, 0.04], [0.68, 0.025], [0.38, 0.025]], 32), c, 0, 0, 0));
-      g.add(mesh(geo('fdBand', () => new THREE.CylinderGeometry(0.423, 0.423, 0.05, 30)), mat(l.accColor || 0x2b2b30), 0, 0.03, 0));
-      g.position.set(0, 0.4, -0.02); g.rotation.x = -0.08; head.add(g);
+      g.add(mesh(geo('fdTop2', () => new THREE.CylinderGeometry(0.36, 0.5, 0.26, 30)), c, 0, 0.13, 0));
+      g.add(mesh(lathe('fdBrim2', [[0.38, 0], [0.64, -0.01], [0.68, 0.03], [0.62, 0.02], [0.38, 0.025]], 32), c, 0, 0, 0));
+      g.add(mesh(geo('fdBand2', () => new THREE.CylinderGeometry(0.49, 0.5, 0.06, 30)), mat(l.accColor || 0x2b2b30), 0, 0.04, 0));
+      g.position.set(0, 0.33, -0.02); g.rotation.x = -0.08; head.add(g);
     },
     knit(head, l) {
-      const c = mat(l.hatColor);
-      const d = mesh(geo('knitD', () => { const g = new THREE.SphereGeometry(0.52, 32, 18, 0, Math.PI * 2, 0, Math.PI * 0.5); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { if (p.getY(i) > 0.2) p.setY(i, p.getY(i) + (p.getY(i) - 0.2) * 0.9); } g.computeVertexNormals(); return g; }), c, 0, 0.12, -0.02); d.rotation.x = -0.18; head.add(d);
-      const r = mesh(geo('knitR', () => new THREE.TorusGeometry(0.5, 0.06, 10, 36)), mat(shade(l.hatColor, 0.92)), 0, 0.14, -0.01); r.rotation.x = Math.PI / 2 - 0.18; head.add(r);
+      const c = matL(l.hatColor, { vertexColors: true, map: grayTex('knit') });
+      const d = mesh(geo('knitD2', () => { const g = new THREE.SphereGeometry(0.53, 36, 18, 0, Math.PI * 2, 0, Math.PI * 0.52); const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i); if (y > 0.25) p.setY(i, y + (y - 0.25) * 0.35); } g.computeVertexNormals(); return g; }), c, 0, 0.1, -0.02); d.rotation.x = -0.2; head.add(d);
+      const r = mesh(geo('knitR2', () => new THREE.TorusGeometry(0.52, 0.065, 10, 40)), matL(shade(l.hatColor, 0.9), { vertexColors: true, map: grayTex('knit') }), 0, 0.12, -0.01); r.rotation.x = Math.PI / 2 - 0.2; head.add(r);
     },
     boater(head, l) {
       const g = new THREE.Group(), c = mat(l.hatColor || 0xe8c870);
@@ -637,7 +781,7 @@
         case 'tote': body.add(mesh(box(0.13, 0.15, 0.025, 0.01), mat(col), 0.2, 0.25, 0.02)); { const st = mesh(geo('acTote', () => new THREE.TorusGeometry(0.16, 0.007, 6, 22, Math.PI)), mat(col), 0.1, 0.36, 0.02); st.rotation.z = -0.9; body.add(st); } break;
         case 'camera': body.add(mesh(box(0.08, 0.055, 0.045, 0.014), mat(0x2b2b30), 0, 0.37, 0.14)); body.add(mesh(geo('acCamL', () => new THREE.CylinderGeometry(0.018, 0.022, 0.035, 12)), mat(0x5a5f6a), 0, 0.37, 0.17).rotateX(Math.PI / 2)); break;
         case 'neckphones': { const b = mesh(geo('acNph', () => new THREE.TorusGeometry(0.09, 0.012, 6, 22, Math.PI)), mat(0x2b2b30), 0, 0.59, -0.02); b.rotation.set(Math.PI / 2 + 0.3, 0, Math.PI); body.add(b); for (const s of [-1, 1]) body.add(mesh(geo('acNphC', () => new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16)), c, s * 0.09, 0.57, 0.05).rotateZ(Math.PI / 2)); break; }
-        case 'cape': { const cp = mesh(lathe('acCape', [[0.0001, 0.6], [0.11, 0.58], [0.19, 0.36], [0.23, 0.12], [0.0001, 0.12]]), soften(new THREE.MeshLambertMaterial({ color: col, side: THREE.DoubleSide })), 0, 0, -0.05); cp.scale.z = 0.6; body.add(cp); break; }
+        case 'cape': { const cp = mesh(lathe('acCape', [[0.0001, 0.6], [0.11, 0.58], [0.19, 0.36], [0.23, 0.12], [0.0001, 0.12]]), matL(col, { side: THREE.DoubleSide, vertexColors: true }), 0, 0, -0.05); cp.scale.z = 0.6; body.add(cp); break; }
         case 'wings': for (const s of [-1, 1]) { const w = mesh(sphere(0.11), mat(0xffffff), s * 0.12, 0.46, -0.17); w.scale.set(1.3, 0.8, 0.3); w.rotation.z = s * 0.5; body.add(w); } break;
         case 'lei': for (let k = 0; k < 10; k++) { const a2 = k / 10 * Math.PI * 2; body.add(mesh(sphere(0.027), mat([0xff6f86, 0xffd84a, 0xffffff][k % 3]), Math.cos(a2) * 0.1, 0.56 - (Math.sin(a2) > 0 ? Math.sin(a2) * 0.05 : 0), Math.sin(a2) * 0.09 + 0.01, false)); } break;
         case 'earring': for (const s of [-1, 1]) head.add(mesh(sphere(0.024, 10, 8), c, s * 0.445, -0.17, -0.02, false)); break;
