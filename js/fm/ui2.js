@@ -126,7 +126,13 @@
       const memo = [c.firstWord && `첫 마디 "${c.firstWord}"`, c.dol && `돌잡이 ${c.dol}`, c.vig && `추억 ${Object.keys(c.vig).length}편`].filter(Boolean);
       if (memo.length) out.push('📸 ' + esc(memo.join(' · ')));
     }
-    return out.length ? `<div class="kv"><span>가족</span><b>${out.join('<br>')}</b></div>` : '';
+    let extra = '';
+    if (FM.StoryVig && !v.child) {
+      const pg = FM.StoryVig.progress(v);
+      if (pg.story) extra += `<div class="kv"><span>스토리</span><b>📖 ${pg.ep}/5화${pg.ep < 5 ? ' · 더 친해지면 다음 화' : ' · 완결!'}</b></div>`;
+      if (pg.pasts.length) extra += `<div class="kv"><span>과거 인연</span><b>${pg.pasts.map(x => `${esc(x.kind)} · ${esc(x.other.name)}`).join('<br>')}</b></div>`;
+    }
+    return (out.length ? `<div class="kv"><span>가족</span><b>${out.join('<br>')}</b></div>` : '') + extra;
   }
   let pfTab = 'info';
   UI.showProfile = function (v, tab) {
