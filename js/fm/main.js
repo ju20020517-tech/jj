@@ -21,6 +21,8 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 1.35 : 1.75));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // 그림자 지도는 두 프레임에 한 번만 갱신 (그림자 렌더가 장면 전체를 한 번 더 그리는 비용이라)
+    renderer.shadowMap.autoUpdate = false;
     renderer.outputEncoding = THREE.sRGBEncoding;
     camera = new THREE.PerspectiveCamera(50, 1, 0.1, 2000);
     islandScene = new THREE.Scene();
@@ -646,7 +648,9 @@
     }
     FM.Guide.clearWaypointIfNear();
   }
+  let frameNo = 0;
   function frame() {
+    if ((++frameNo & 1) === 0 || G.cine) renderer.shadowMap.needsUpdate = true;
     // 느린 기기에서도 게임 시간은 제대로 흐르게: 시뮬레이션은 최대 0.25초, 카메라/애니메이션은 0.05초로 제한
     const raw = clock.getDelta();
     const dt = Math.min(0.05, raw);

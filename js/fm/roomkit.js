@@ -141,11 +141,11 @@
     return {
       add,
       b: (w, h, d, m, x = 0, y = 0, z = 0, r) => add(mesh(box(w, h, d, r), M(m), x, y, z)),
-      c: (rt, rb, h, m, x = 0, y = 0, z = 0, seg = 20) => add(mesh(cyl(rt, rb, h, seg), M(m), x, y, z)),
+      c: (rt, rb, h, m, x = 0, y = 0, z = 0, seg) => add(mesh(cyl(rt, rb, h, seg), M(m), x, y, z)),
       s: (r, m, x = 0, y = 0, z = 0, sx = 1, sy = 1, sz = 1) => { const o = add(mesh(sphere(r), M(m), x, y, z)); o.scale.set(sx, sy, sz); return o; },
       k: (r, len, m, x = 0, y = 0, z = 0) => add(mesh(capsule(r, len), M(m), x, y, z)),
       p: (w, h, m, x = 0, y = 0, z = 0) => add(mesh(geo(`rkpl${w},${h}`, () => new THREE.PlaneGeometry(w, h)), M(m), x, y, z, false)),
-      t: (R, r, m, x = 0, y = 0, z = 0, arc = PI * 2) => add(mesh(geo(`rktor${R},${r},${arc}`, () => new THREE.TorusGeometry(R, r, 8, 28, arc)), M(m), x, y, z)),
+      t: (R, r, m, x = 0, y = 0, z = 0, arc = PI * 2) => add(mesh(geo(`rktor${R},${r},${arc}`, () => new THREE.TorusGeometry(R, r, r < 0.02 ? 5 : 8, Math.max(10, Math.min(28, Math.round(R * 120 * arc / (PI * 2)))), arc)), M(m), x, y, z)),
       cone: (r, h, m, x = 0, y = 0, z = 0, seg = 16) => add(mesh(geo(`rkcone${r},${h},${seg}`, () => new THREE.ConeGeometry(r, h, seg)), M(m), x, y, z)),
       disc: (r, m, x = 0, y = 0, z = 0) => { const o = add(mesh(geo(`rkdisc${r}`, () => new THREE.CircleGeometry(r, 36)), M(m), x, y, z, false)); o.rotation.x = -PI / 2; return o; },
     };

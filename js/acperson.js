@@ -174,7 +174,10 @@
     }
     g.setAttribute('color', new THREE.BufferAttribute(c, 3));
   }
-  const sdfGeo = (key, f, min, max, cell, post, aoStep) => geo('sdf:' + key, () => { const g = nets(f, min, max, cell); bakeAO(g, f, aoStep || cell * 1.6); if (window.__NOAO) g.attributes.color.array.fill(1); if (post) post(g); return g; });
+  // 메시 해상도 배율 (1 = 원본). 캐릭터 한 명당 삼각형 수를 줄여 렉을 줄임
+  // 머리 · 얼굴(가장 큰 부분)은 많이, 겹쳐 입는 옷은 조금만 줄여 옷 사이로 비치지 않게
+  const RES = key => (window.__CHAR_RES || 1) * (/^(hair|head)/.test(key) ? 1.6 : 1.2);
+  const sdfGeo = (key, f, min, max, cell, post, aoStep) => geo('sdf:' + key, () => { cell *= RES(key); const g = nets(f, min, max, cell); bakeAO(g, f, aoStep || cell * 1.6); if (window.__NOAO) g.attributes.color.array.fill(1); if (post) post(g); return g; });
   // 일반 지오메트리에도 흰 버텍스 컬러 (vertexColors 재질 공용)
   const plain = g => { if (!g.attributes.color) { const c = new Float32Array(g.attributes.position.count * 3).fill(1); g.setAttribute('color', new THREE.BufferAttribute(c, 3)); } return g; };
 
