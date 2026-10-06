@@ -474,13 +474,13 @@
     const nb = s.newsBoard || { items: [] };
     const R = s.rankings || {};
     const types = { all: '전체', couple: '💕 연애', friend: '🤝 우정', crush: '💗 짝사랑', jealous: '⚡ 질투', breakup: '💔 이별', wedding: '💒 결혼', baby: '👶 육아', quirk: '🌀 기행', medical: '🏥 병원', news: '📺 뉴스' };
-    const logs = s.log.filter(e => logFilter === 'all' || e.type === logFilter || (logFilter === 'wedding' && e.type === 'engage') || (logFilter === 'couple' && ['confess', 'date', 'romance'].includes(e.type))).slice(-80).reverse();
+    const logs = (s.rumors || []).map(r => ({ day: r.day, hm: r.src === 'told' && r.by ? Sim.nameOf(r.by) + '에게 들음' : r.src === 'heard' ? '엿들음' : '직접 봄', text: `${r.icon} ${r.text}`, type: r.type })).filter(e => logFilter === 'all' || e.type === logFilter || (logFilter === 'wedding' && e.type === 'engage') || (logFilter === 'couple' && ['confess', 'date', 'romance'].includes(e.type))).slice(-80).reverse();
     body.innerHTML = `
       <h4>📺 친구모아 뉴스 (${esc(nb.anchor || '')})</h4><ul class="list">${nb.items.map(i => `<li>${esc(J(i))}</li>`).join('')}</ul>
       <h4>🏆 실시간 도시 랭킹</h4>
       <div class="rank"><div><b>섬 최고의 인싸</b>${(R.insider || []).map((x, i) => `<span>${i + 1}. ${esc(x.name)}</span>`).join('')}</div><div><b>가장 빚이 많은 주민</b>${(R.debt || []).filter(x => x.val > 0).map((x, i) => `<span>${i + 1}. ${esc(x.name)} (${x.val})</span>`).join('') || '<span>없음</span>'}</div><div><b>부자</b>${(R.rich || []).map((x, i) => `<span>${i + 1}. ${esc(x.name)}</span>`).join('')}</div><div><b>설렘 유발자</b>${(R.love || []).map((x, i) => `<span>${i + 1}. ${esc(x.name)}</span>`).join('')}</div></div>
       ${s.album && s.album.length ? `<h4>📸 앨범</h4><ul class="list">${s.album.map(a => `<li>${a.day}일차 · ${esc(J(a.title))} (${a.who.length}명)</li>`).join('')}</ul>` : ''}
-      <h4>🗞️ 섬 소식 기록</h4><div class="chips">${Object.entries(types).map(([k, v]) => `<button data-f="${k}" class="${logFilter === k ? 'on' : ''}">${v}</button>`).join('')}</div>
+      <h4>🗞️ 소문 수첩 (내가 듣고 본 소식)</h4><div class="chips">${Object.entries(types).map(([k, v]) => `<button data-f="${k}" class="${logFilter === k ? 'on' : ''}">${v}</button>`).join('')}</div>
       <ul class="list log">${logs.map(e => `<li><small>${e.day}일 ${e.hm}</small> ${esc(e.text)}</li>`).join('')}</ul>`;
     body.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { logFilter = b.dataset.f; paintNews(body); });
   }

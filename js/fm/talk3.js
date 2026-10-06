@@ -48,7 +48,7 @@
     cute: { name: '애교 말투', pre: ['히힛,', '에헤헤~', '앗,', '있잖아앙~'], post: ['뿌잉뿌잉!', '헤헷 ♡', '(볼 빵빵)', '히히', '꺄아~'], pr: 0.3, po: 0.45 },
     tsundere: { name: '츤데레', pre: ['흥,', '딱히…', '뭐,', '…착각하지 마.'], post: ['…착각하지 마!', '흥!', '(고개를 홱 돌린다)', '딱히 너 때문은 아니거든?'], pr: 0.35, po: 0.35 },
     cool: { name: '시크 단답', fx: t => { const m = t.match(/^[^.!?…]*[.!?…]+/); return (m ? m[0] : t).replace(/!+/g, '.'); }, pre: ['…', '음.', '뭐.'], post: ['…', '(시선을 돌린다)', '(무심한 표정)'], pr: 0.25, po: 0.2 },
-    hyper: { name: '텐션 폭발', fx: dot2bang, pre: ['우와아!', '대박!', '야야야!', '헐 대박!'], post: ['!!!', '완전 신나!', '🔥', '꺄하하!'], pr: 0.4, po: 0.4 },
+    hyper: { name: '텐션 폭발', fx: dot2bang, pre: ['우와아!', '대박!', '야야야!', '헐 대박!'], post: ['완전 신나!', '🔥', '꺄하하!', '두근두근!'], pr: 0.4, po: 0.4 },
     net: { name: '인터넷체', fx: t => t.replace(/정말|진짜/g, () => pick(['ㄹㅇ', '진짜', '완전', '찐으로'])), pre: ['헐', 'ㄹㅇ', '아 맞다', '와'], post: ['ㅋㅋㅋ', 'ㅇㅈ?', '실화냐', '(폰을 보며)', 'ㅋㅋ 개웃겨'], pr: 0.35, po: 0.5 },
     dreamy: { name: '몽환 말투', pre: ['음…', '있잖아…', '별이 그러는데…', '꿈에서…'], post: ['…☁️', '…아마도.', '…꿈에서 본 것 같아.', '(먼 곳을 본다)'], pr: 0.3, po: 0.35 },
     shy: { name: '수줍은 말투', pre: ['저, 저기…', '그, 그게…', '…', '혹시…'], post: ['(꼼지락)', '(얼굴이 빨개진다)', '…헤헤', '(눈을 못 마주친다)'], pr: 0.4, po: 0.4 },
@@ -297,6 +297,7 @@
     const st = S(); const ev = st.log.slice(-25).filter(e => e.imp >= 2 && (e.who || []).length && ['couple', 'breakup', 'wedding', 'jealous', 'friend', 'fight', 'confess', 'baby', 'rel', 'romance', 'medical', 'quirk', 'triangle', 'affair'].includes(e.type) && !(e.who || []).includes(v.id)).pop();
     if (!ev) return mk(v, fresh(v, THOUGHTS));
     const t = W.niceNews ? W.niceNews(ev.text) : String(ev.text).replace(/^[^\s가-힣]+\s*/, '');
+    if (FM.Rumor) FM.Rumor.add(ev, 'told', v.id, true);   // 들은 소문은 소문 수첩(소식지)에
     return mk(v, fresh(v, [`들었어? ${t}`, `섬 소식 봤어? ${t} 놀랍지 않아?`, `방금 들은 얘긴데… ${t}`]), ['agree', 'ask', 'tease']);
   });
   reg('t3_food', v => ((v.hunger || 0) > 40 ? 2 : 0.8), v => {

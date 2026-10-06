@@ -101,10 +101,10 @@
   }
 
   // ---------------- 📰 소식 ----------------
+  // 소식지 = 내가 들은 · 엿들은 · 본 소문만 (rumors.js)
   function heads() {
-    const st = S(), day = Sim.time.day();
-    const L = (st.log || []).filter(e => !e.secret && e.imp >= 2 && e.day >= day - 2).slice(-12).reverse();
-    return L.length ? L : (st.log || []).filter(e => !e.secret).slice(-5).reverse();
+    const st = S();
+    return (st.rumors || []).slice(-12).reverse().map(r => ({ text: `${r.icon} ${r.text}`, who: r.who, day: r.day, hm: (r.src === 'told' && r.by ? `${Sim.nameOf(r.by)}에게 들음` : r.src === 'heard' ? '엿들음' : '직접 봄') }));
   }
   function upcoming() {
     const st = S(), h = Sim.time.hour(), d = Sim.time.day(), wd = Sim.time.weekday(), out = [];
@@ -122,7 +122,7 @@
     const pids = Object.keys(st.photos || {}); const ph = e && pids.reverse().map(k => st.photos[k]).find(x => (x.who || []).some(w => (e.who || []).includes(w)));
     const hero = ph ? `<div class="pa-hero" style="background-image:url(${ph.url})"></div>` : `<div class="pa-hero grad">${ppl.map(v => face(v, 70)).join('') || '<span style="font-size:54px">📰</span>'}</div>`;
     const dots = Array.from({ length: Math.min(n, 6) }, (_, i) => `<i class="${i === idx.n ? 'on' : ''}"></i>`).join('');
-    return `${e ? `<div class="pa-card pa-ncard" id="paSwipe"><button class="pa-nav l" data-ns="-1">‹</button><button class="pa-nav r" data-ns="1">›</button>${hero}<div class="pa-nbody"><span class="pa-tag">${idx.n === 0 ? '오늘의 톱뉴스' : '섬 소식'}</span><div class="pa-qt">${esc(e.text)}</div><div class="pa-sub">${e.day}일차 ${esc(e.hm || '')}</div></div></div>` : '<div class="pa-card pa-empty">아직 소식이 없어요</div>'}
+    return `${e ? `<div class="pa-card pa-ncard" id="paSwipe"><button class="pa-nav l" data-ns="-1">‹</button><button class="pa-nav r" data-ns="1">›</button>${hero}<div class="pa-nbody"><span class="pa-tag">${idx.n === 0 ? '오늘의 톱뉴스' : '섬 소식'}</span><div class="pa-qt">${esc(e.text)}</div><div class="pa-sub">${e.day}일차 ${esc(e.hm || '')}</div></div></div>` : '<div class="pa-card pa-empty">아직 들은 소문이 없어요<div class="pa-sub">주민과 이야기하거나, 수다 떠는 주민 곁에 가 보세요 👂</div></div>'}
       <div class="pa-dots">${dots}</div>
       ${upcoming().map(t => `<div class="pa-todo"><span>${esc(t)}</span></div>`).join('')}
       <div class="pa-acts" style="margin-top:6px"><button class="on" id="paTv">📺 뉴스 방송 보기</button></div>
