@@ -1,6 +1,6 @@
 /* =========================================================
  *  UI 2 — 주민 카드 목록(얼굴), 탭형 프로필, 주민 중심 관계도,
- *  친구모아 뉴스 방송, 우리 집 꾸미기 버튼, 3D 타이틀 화면
+ *  찐구모아 뉴스 방송, 우리 집 꾸미기 버튼, 3D 타이틀 화면
  * ========================================================= */
 (() => {
   'use strict';
@@ -399,7 +399,7 @@
   }
 
   // =========================================================
-  // 친구모아 뉴스 — 방송 화면
+  // 찐구모아 뉴스 — 방송 화면
   // =========================================================
   let showState = null;
   const unseen = () => (st() && st().news ? st().news.filter(n => n.seen === false).length : 0);
@@ -407,7 +407,7 @@
     const s = st();
     const src = s.log.filter(e => e.imp >= 2 && !e.secret).slice(-5);
     const cards = src.map(e => ({ text: e.text.replace(/^[^\s]+\s/, ''), who: (e.who || []).slice(0, 3), icon: (e.text.match(/^(\S+)\s/) || [])[1] || '📰' }));
-    if (!cards.length) cards.push({ text: `${s.villagers.length}명의 주민이 사는 친구모아 아일랜드에 오신 걸 환영합니다! 오늘도 즐거운 하루 보내세요`, who: s.villagers.slice(0, 3).map(v => v.id), icon: '🏝️' });
+    if (!cards.length) cards.push({ text: `${s.villagers.length}명의 주민이 사는 찐구 모아 와르르 섬에 오신 걸 환영합니다! 오늘도 즐거운 하루 보내세요`, who: s.villagers.slice(0, 3).map(v => v.id), icon: '🏝️' });
     const anc = (FM.Ev && FM.Ev.staffById('s_anchor')) || s.villagers.find(v => v.job === 'anchor');
     return { day: Sim.time.day(), hm: Sim.time.hm(), cards, anchorId: anc ? anc.id : null, special: true };
   }
@@ -422,9 +422,9 @@
     const anchor = ep.anchorId && Sim.byId(ep.anchorId);
     const auto = s.flags.autoNews !== false;
     el.innerHTML = `<div class="ns-tv">
-      <div class="ns-top"><span class="ns-logo">친구모아 <b>NEWS</b></span><span class="ns-live">● LIVE</span><span class="ns-time">${ep.day}일차 ${ep.hm}${ep.special ? ' · 특별 방송' : ''}</span><button class="ns-x" title="닫기">✕</button></div>
+      <div class="ns-top"><span class="ns-logo">찐구모아 <b>NEWS</b></span><span class="ns-live">● LIVE</span><span class="ns-time">${ep.day}일차 ${ep.hm}${ep.special ? ' · 특별 방송' : ''}</span><button class="ns-x" title="닫기">✕</button></div>
       <div class="ns-stage">
-        <div class="ns-anchor"><div class="ns-desk"></div><div class="ns-aface">${anchor ? `<img class="face a0" src="${FM.Face.url(anchor)}"><img class="face a1" src="${FM.Face.url(anchor, 'happy')}">` : '<span class="ns-mic">🎙️</span>'}</div><div class="ns-aname">${anchor ? esc(anchor.name) : '친구모아'} 앵커</div></div>
+        <div class="ns-anchor"><div class="ns-desk"></div><div class="ns-aface">${anchor ? `<img class="face a0" src="${FM.Face.url(anchor)}"><img class="face a1" src="${FM.Face.url(anchor, 'happy')}">` : '<span class="ns-mic">🎙️</span>'}</div><div class="ns-aname">${anchor ? esc(anchor.name) : '찐구모아'} 앵커</div></div>
         <div class="ns-card"></div>
       </div>
       <div class="ns-bottom"><div class="ns-ticker"><span>${cards.map(c => esc(J(c.text))).join('  ◆  ')}</span></div>
@@ -508,7 +508,7 @@
     const last = s.news[s.news.length - 1];
     const rk = (arr, f) => (arr || []).map((x, i) => { const v = s.villagers.find(o => o.name === x.name); return `<span>${i + 1}. ${v ? face(v, 22) : ''} ${esc(x.name)}${f ? ` <small>${f(x)}</small>` : ''}</span>`; }).join('') || '<span class="muted">-</span>';
     body.innerHTML = `
-      <button class="news-hero" id="nsPlay"><span class="tv">📺</span><span><b>친구모아 뉴스 보기</b><small>${last ? `${last.day}일차 ${last.hm} 방송${unseen() ? ` · 새 방송 ${unseen()}개` : ''}` : '첫 방송은 9시! 지금은 특별 방송'}</small></span></button>
+      <button class="news-hero" id="nsPlay"><span class="tv">📺</span><span><b>찐구모아 뉴스 보기</b><small>${last ? `${last.day}일차 ${last.hm} 방송${unseen() ? ` · 새 방송 ${unseen()}개` : ''}` : '첫 방송은 9시! 지금은 특별 방송'}</small></span></button>
       <button class="btn small ghost" id="nsArc" style="width:100%;margin:4px 0 8px">📼 지난 방송 다시 보기</button>
       <h4>🏆 섬 랭킹</h4>
       <div class="rank2"><div><b>👑 인싸</b>${rk(R.insider)}</div><div><b>💰 부자</b>${rk(R.rich)}</div><div><b>💘 설렘 유발자</b>${rk(R.love)}</div><div><b>💸 빚쟁이</b>${rk((R.debt || []).filter(x => x.val > 0), x => x.val)}</div></div>
@@ -529,7 +529,7 @@
     if (hb && !$('#btnNews')) {
       const mk = (id, t, txt) => { const b = document.createElement('button'); b.id = id; b.title = t; b.textContent = txt; hb.insertBefore(b, hb.firstChild); return b; };
       mk('btnHome', '우리 집 꾸미기 (H)', '🏠');
-      mk('btnNews', '친구모아 뉴스 (N)', '📺');
+      mk('btnNews', '찐구모아 뉴스 (N)', '📺');
     }
     if (!$('#breaking')) { const d = document.createElement('div'); d.id = 'breaking'; d.hidden = true; $('#hud').appendChild(d); }
     origInit();
@@ -540,7 +540,7 @@
       paintNewsBadge();
       const s = st();
       if (s.flags.autoNews !== false && !UI.modalOpen() && !UI.editing && G().view !== 'observe' && s.speed <= 4) UI.newsShow();
-      else UI.toast('📺 친구모아 뉴스가 방송됐어요! 📺 버튼으로 볼 수 있어요');
+      else UI.toast('📺 찐구모아 뉴스가 방송됐어요! 📺 버튼으로 볼 수 있어요');
     });
     FM.bus.on('log', e => { if (e && e.imp >= 2 && !e.secret && BREAK_TYPES[e.type]) breaking(e); });
     document.addEventListener('keydown', e => {
@@ -703,9 +703,9 @@
     const el = $('#start');
     el.classList.add('title3d');
     const has = FM.G.hasSave();
-    const logo = '친구모아'.split('').map((ch, i) => `<span style="--d:${i * 0.12}s">${ch}</span>`).join('') + '<br>' + '아일랜드'.split('').map((ch, i) => `<span class="b" style="--d:${0.5 + i * 0.12}s">${ch}</span>`).join('');
+    const logo = '찐구모아'.split('').map((ch, i) => `<span style="--d:${i * 0.12}s">${ch}</span>`).join('') + '<br>' + '와르르섬'.split('').map((ch, i) => `<span class="b" style="--d:${0.5 + i * 0.12}s">${ch}</span>`).join('');
     el.innerHTML = `<canvas id="titleCv"></canvas>
-      <div class="tt-logo"><div class="tt-leaf">🌴</div><h1>${logo}</h1><p>주민들의 우정 · 사랑 · 드라마를 지켜보는 섬 생활</p></div>
+      <div class="tt-logo"><div class="tt-leaf">🌴</div><h1>${logo}</h1><p>~평범한 내가 이 섬에선 우주최강?!~</p></div>
       <div class="tt-menu" id="ttMenu">
         ${has ? '<button class="tt-btn main" id="stContinue">▶ 이어하기</button>' : ''}
         <button class="tt-btn ${has ? '' : 'main'}" id="ttNew">🌱 새 섬 만들기</button>

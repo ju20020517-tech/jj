@@ -1,6 +1,6 @@
 /* =========================================================
  *  장소 이벤트 & 시스템
- *  북쪽/중앙/동쪽/서쪽/남쪽 5대 구역의 엉뚱 AI, 친구모아 뉴스, 랭킹,
+ *  북쪽/중앙/동쪽/서쪽/남쪽 5대 구역의 엉뚱 AI, 찐구모아 뉴스, 랭킹,
  *  시티 코인 경제, 날씨, 병원, 꿈, 방 테마 반응, 스태프 NPC
  * ========================================================= */
 (() => {
@@ -51,7 +51,7 @@
   Ev.init = function () {
     const st = S();
     st.weather = rollWeather();
-    st.newsBoard = { items: ['친구모아 아일랜드 개장! 모든 주민이 아파트 "시티 타워"에 입주했습니다.'], at: st.time };
+    st.newsBoard = { items: ['찐구 모아 와르르 섬 개장! 모든 주민이 아파트 "시티 타워"에 입주했습니다.'], at: st.time };
     st.rankings = {};
     computeRankings();
   };
@@ -104,7 +104,7 @@
   };
 
   // =========================================================
-  // 친구모아 뉴스 (09:00 / 19:00) & 실시간 도시 랭킹
+  // 찐구모아 뉴스 (09:00 / 19:00) & 실시간 도시 랭킹
   // =========================================================
   function computeRankings() {
     const st = S();
@@ -134,16 +134,16 @@
     if (R.insider[0]) items.push(`섬 최고의 인싸 주민 TOP 3: ${R.insider.map((x, i) => `${i + 1}위 ${x.name}`).join(', ')}`);
     if (R.debt[0] && R.debt[0].val > 0) items.push(`가장 빚이 많은 주민 TOP 3: ${R.debt.filter(x => x.val > 0).map((x, i) => `${i + 1}위 ${x.name}(${x.val}코인)`).join(', ')}`);
     items.push(`오늘의 날씨: ${WEATHER[st.weather.type]}`);
-    if (!items.length) items.push('오늘도 평화로운 친구모아 아일랜드입니다.');
+    if (!items.length) items.push('오늘도 평화로운 찐구 모아 와르르 섬입니다.');
     st.lastNewsT = st.time;
     for (let i = cards.length; i < items.length; i++) cards.push({ text: items[i], who: [], type: 'info', icon: i === items.length - 1 ? '☀️' : '🏆' });
     const anc = Ev.staffById('s_anchor') || st.villagers.find(v => v.job === 'anchor');
-    st.newsBoard = { items, cards, at: st.time, anchor: anc ? anc.name : '친구모아 앵커', anchorId: anc ? anc.id : null };
+    st.newsBoard = { items, cards, at: st.time, anchor: anc ? anc.name : '찐구모아 앵커', anchorId: anc ? anc.id : null };
     st.news.push({ day: day(), hm: hm(), items, cards, anchorId: anc ? anc.id : null, seen: false });
     if (st.news.length > 40) st.news.shift();
     const anchor = st.villagers.find(v => v.job === 'anchor' && v.loc === 'studio_in');
-    if (anchor) { Sim.say(anchor, `친구모아 뉴스입니다. ${items[0]}`, 6); anchor.pose = 'anchor'; }
-    Sim.log('news', `📺 친구모아 뉴스 (${hm()}) — ${items[0]}`, [], 1);
+    if (anchor) { Sim.say(anchor, `찐구모아 뉴스입니다. ${items[0]}`, 6); anchor.pose = 'anchor'; }
+    Sim.log('news', `📺 찐구모아 뉴스 (${hm()}) — ${items[0]}`, [], 1);
     emit('news', st.newsBoard);
   }
   Ev.broadcastNews = broadcastNews;

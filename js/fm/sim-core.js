@@ -678,7 +678,7 @@
     }
   }
   Sim.assignJobs = assignJobs;
-  Sim.JOB_NAMES = { office: '회사원 (오피스 타워)', freelance: '재택 프리랜서', anchor: '친구모아 뉴스 앵커', pharmacist: '24시 약국 약사', child: '어린이', none: '무직' };
+  Sim.JOB_NAMES = { office: '회사원 (오피스 타워)', freelance: '재택 프리랜서', anchor: '찐구모아 뉴스 앵커', pharmacist: '24시 약국 약사', child: '어린이', none: '무직' };
 
   // 입주 (집 배정 + 방 기본 가구)
   function moveIn(v, silent) {
@@ -745,7 +745,7 @@
     ensurePlayerRoom();
     FM.Soc && FM.Soc.init && FM.Soc.init();
     FM.Ev && FM.Ev.init && FM.Ev.init();
-    Sim.log('system', `🏝️ 친구모아 아일랜드에 오신 것을 환영해요! 주민 ${S.villagers.length}명이 아파트 "시티 타워"에 입주했어요.`, [], 3);
+    Sim.log('system', `🏝️ 찐구 모아 와르르 섬에 오신 것을 환영해요! 주민 ${S.villagers.length}명이 아파트 "시티 타워"에 입주했어요.`, [], 3);
     emit('villagers');
     return S;
   };

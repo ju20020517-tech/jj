@@ -261,3 +261,26 @@ select, input[type=text], input[type=search], input[type=number], textarea { bac
 #editor .bar { height: 8px; border-radius: 6px; background: #f0e8fa; overflow: hidden; margin: 4px 0; }
 #editor .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ff9ac8, #b69cff); }
 #editor .sw { display: inline-block; width: 12px; height: 12px; border-radius: 4px; vertical-align: -2px; margin-right: 2px; }
+
+/* ===== 지도 (깔끔 버전) ===== */
+#map { width: min(1080px, calc(100vw - 16px)) !important; padding: 14px !important; gap: 10px !important; }
+.map-head { font-size: 17px !important; }
+.map-layers { display: flex; gap: 6px; margin-left: 8px; }
+.map-layers button { border: 0; border-radius: 999px; padding: 5px 12px; font-size: 13px; background: rgba(255, 255, 255, .75); color: #6a5a7a; box-shadow: 0 1px 4px rgba(90, 60, 120, .12); }
+.map-layers button.on { background: #6a5aff; color: #fff; }
+.map-cv { position: relative; }
+#mapC { border-radius: 20px !important; box-shadow: 0 6px 18px rgba(60, 90, 140, .18) !important; }
+.map-legend2 { position: absolute; left: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 8px; background: rgba(255, 255, 255, .82); border-radius: 12px; padding: 5px 10px; font-size: 12px; color: #5a4a6a; pointer-events: none; }
+.map-legend2 i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; border: 1.5px solid rgba(90, 60, 40, .5); }
+.map-legend2 .me { background: #ff3a3a; border-color: #fff; } .map-legend2 .vl { background: #fff; } .map-legend2 .wr { background: #ff5d9e; }
+.map-q { border: 0; border-radius: 14px; padding: 9px 14px; font-size: 14px; background: rgba(255, 255, 255, .85); box-shadow: inset 0 0 0 1.5px rgba(150, 120, 190, .25); outline: none; }
+.map-q:focus { box-shadow: inset 0 0 0 2px #8a7aff; }
+#mapInfo { background: rgba(255, 255, 255, .88) !important; border: 0 !important; border-radius: 18px !important; box-shadow: 0 3px 12px rgba(90, 60, 120, .1); }
+#mapList h5 { font-size: 13px !important; color: #6a5a7a; margin: 10px 2px 5px !important; }
+.map-chips button { border: 0 !important; background: rgba(255, 255, 255, .85) !important; border-radius: 10px !important; padding: 5px 10px !important; box-shadow: 0 1px 3px rgba(90, 60, 120, .12); }
+.map-chips button.on { background: #ffe8dc !important; box-shadow: inset 0 0 0 2px #ff8f6a; }
+.map-legend { display: none; }
+@media (max-width: 760px) { .map-layers { margin-left: 0; } .map-legend2 { font-size: 11px; gap: 5px; } }
+.map-reg { background: transparent !important; backdrop-filter: none !important; padding: 0 !important; gap: 5px !important; }
+.map-reg button { padding: 5px 10px !important; font-size: 13px !important; background: rgba(255, 255, 255, .85) !important; color: #5a4a6a !important; }
+.map-reg button.on { background: #6a5aff !important; color: #fff !important; }

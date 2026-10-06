@@ -40,7 +40,7 @@
     scr = document.createElement('div'); scr.className = 'ph-scr'; scr.dataset.mode = 'home';
     scr.innerHTML = `<div class="ph-bar"><span id="phClock">--:--</span><span class="notch"></span><span>📶 🔋</span></div>
       <div class="ph-head"><button class="ph-back" id="phBack" title="홈">◀</button><span id="phTitle"></span><button class="ph-back ph-x" id="phX2" title="닫기">✕</button></div>
-      <div class="ph-home"><div class="ph-hello" id="phHello">친구모아 폰</div><div class="ph-sub" id="phSub">오늘도 좋은 하루!</div>
+      <div class="ph-home"><div class="ph-hello" id="phHello">찐구모아 폰</div><div class="ph-sub" id="phSub">오늘도 좋은 하루!</div>
         <div class="ph-apps">${APPS.map(a => `<button class="ph-app" data-app="${a[0]}"><i style="background:${a[3]}">${a[1]}</i>${a[2]}</button>`).join('')}</div>
         <div class="ph-dock">${DOCK.map(a => `<button class="ph-app" data-app="${a[0]}"><i style="background:${a[3]}">${a[1]}</i></button>`).join('')}</div></div>`;
     const body = $('#sideBody');
@@ -91,7 +91,7 @@
     oInit.apply(this, arguments);
     const hb = $('.hud-btns');
     if (hb && !$('#btnPhone')) {
-      const b = document.createElement('button'); b.id = 'btnPhone'; b.title = '친구모아 폰 (P / Tab)'; b.textContent = '📱'; hb.appendChild(b);
+      const b = document.createElement('button'); b.id = 'btnPhone'; b.title = '찐구모아 폰 (P / Tab)'; b.textContent = '📱'; hb.appendChild(b);
       b.onclick = toggle;
       for (const id of ['btnCut', 'btnNews', 'btnHome']) { const x = $('#' + id); if (x) x.style.display = 'none'; }
     }

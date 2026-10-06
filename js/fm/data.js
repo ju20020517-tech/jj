@@ -1,5 +1,5 @@
 /* =========================================================
- *  친구모아 아일랜드 — 기획 데이터
+ *  찐구 모아 와르르 섬 — 기획 데이터
  *  (성격 4레이어, 행동 스탯, 행동 상태, 관계 단계, 테마, 아이템)
  *  기획서 문구는 가능한 그대로 옮겨 적고, 로직은 sim-*.js 에서 사용
  * ========================================================= */
@@ -7,7 +7,7 @@
   'use strict';
   const FM = (window.FM = window.FM || {});
   const D = (FM.D = {});
-  // 친구모아 아일랜드는 사람만 사는 섬 (예전 저장의 동물 외형도 사람으로 그림)
+  // 찐구 모아 와르르 섬는 사람만 사는 섬 (예전 저장의 동물 외형도 사람으로 그림)
   if (window.ISLE) window.ISLE.HUMAN_ONLY = true;
 
   D.SAVE_KEY = 'friendmoa-island-v1';
@@ -437,7 +437,7 @@
     candy:    { name: '헨젤과 그레텔 과자의 집', cat: '판타지 & SF', wall: 0xffd6a8, floor: 'candy', floorColor: 0xff9ec0, light: 'warm', bgm: 'chip',
       furn: ['choco_bed', 'candy_chair', 'cupcake_table', 'jelly_sofa', 'lollipop'], aff: { FOOD: 3, LAZY: 2, CUTE: 2, CLEAN: -1 },
       act: '가구를 몰래 한 입씩 갉아먹다가 입가에 크림을 묻히고 웃음', dress: 'baker', line: '이 벽지는 딸기 맛일까? (할짝)' },
-    // [병맛 & 이색] (친구모아 갬성)
+    // [병맛 & 이색] (찐구모아 갬성)
     prison:   { name: '최첨단 비밀 감옥', cat: '병맛 & 이색', wall: 0x8c9096, floor: 'tile', floorColor: 0x6a6e74, light: 'cool', bgm: 'chip',
       furn: ['jail_bars', 'chain_bunk', 'metal_table', 'cctv', 'toilet'], aff: { CRANKY: 1, PRANKSTER: 2, ARTISTIC: 1, SNOB: -3, ANXIOUS: -2 },
       act: '죄수복을 입고 팔굽혀펴기를 하거나 철창을 잡고 흔들며 억울해함', dress: 'prisoner', line: '난 죄가 없다! 단지 너무 귀여웠을 뿐...' },

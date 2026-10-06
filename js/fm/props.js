@@ -383,7 +383,7 @@
     board.position.set(0, h - 4.2, d / 2 + 0.06); board.userData.dyn = true; g.add(board);
     const frame = mesh(box(w - 0.5, 6.5, 0.3, 0.1), mat(0x2b2b30), 0, h - 4.2, d / 2 - 0.08); g.add(frame);
     door(g, 0, d / 2 + 0.05, 1.8, 2.4, 0x2f4b6e);
-    roofSign(g, '📺 친구모아 방송국', 6, h + 1, 0, '#2f4b6e', '#ffd84a');
+    roofSign(g, '📺 찐구모아 방송국', 6, h + 1, 0, '#2f4b6e', '#ffd84a');
     g.userData.board = board;
     return g;
   };

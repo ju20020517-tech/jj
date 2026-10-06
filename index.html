@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>친구모아 아일랜드</title>
+  <title>찐구 모아 와르르 섬 ~평범한 내가 이 섬에선 우주최강?!~</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
@@ -22,7 +22,7 @@
 
   <div id="hud" hidden>
     <div class="hud-top">
-      <button class="chip title" id="hudTitle" title="시작 화면으로">🏝️ 친구모아 아일랜드</button>
+      <button class="chip title" id="hudTitle" title="시작 화면으로">🏝️ 찐구 모아 와르르 섬</button>
       <div class="chip" id="hudTime">-</div>
       <div class="chip" id="hudWeather">-</div>
       <div class="chip speed"><button data-speed="0">⏸</button><button data-speed="1">×1</button><button data-speed="4">×4</button><button data-speed="15">×15</button><button data-speed="60">×60</button></div>
@@ -61,12 +61,11 @@
     <div id="editor" hidden></div>
     <div id="dialog" hidden></div>
     <div id="map" hidden>
-      <div class="map-head"><b>🗺️ 친구모아 아일랜드 지도</b><span class="muted">장소나 주민을 눌러 바로 이동하세요</span><button id="mapX" title="닫기 (M)">✕</button></div>
+      <div class="map-head"><b>🗺️ 섬 지도</b><div class="map-layers" id="mapLayers"></div><button id="mapX" title="닫기 (M)">✕</button></div>
       <div class="map-body">
-        <div class="map-cv"><canvas id="mapC" width="560" height="500"></canvas></div>
-        <div class="map-side"><div id="mapInfo"></div><div id="mapList"></div></div>
+        <div class="map-cv"><canvas id="mapC" width="560" height="500"></canvas><div class="map-legend2"><span><i class="me"></i>나</span><span><i class="vl"></i>주민</span><span><i class="wr"></i>고민 중</span><span>⭐ 퀘스트</span><span>📍 목적지</span></div></div>
+        <div class="map-side"><input id="mapQ" class="map-q" placeholder="🔍 장소 · 주민 이름 검색"><div id="mapInfo"></div><div id="mapList"></div></div>
       </div>
-      <small class="map-legend">🔴 나 · ⚪ 주민 · 🩷 고민 중인 주민 · ⭐ 퀘스트 목적지 · 📍 표시한 목적지 · Ⓜ 지하철역</small>
     </div>
     <div id="qtrack" hidden></div>
 

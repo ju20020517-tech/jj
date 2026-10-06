@@ -54,7 +54,7 @@
     bld: { type: 'station', w: 12, d: 7, h: 5 }, door: [-20, 25.2], tags: ['station', 'bench'],
     spots: [[-25, 23, ['bench', 'station'], { seat: true, face: 0 }], [-15, 23, ['bench', 'station'], { seat: true, face: 0 }], [-13, 27, ['lostfound']]],
     desc: '동, 서, 남, 북으로 이동하는 모든 주민이 반드시 거쳐 가는 대중교통 허브' });
-  place('studio', { name: '친구모아 중앙 전광판 & 방송 스튜디오', district: 'CORE', x: 20, z: 29,
+  place('studio', { name: '찐구모아 중앙 전광판 & 방송 스튜디오', district: 'CORE', x: 20, z: 29,
     bld: { type: 'studio', w: 12, d: 7, h: 14 }, door: [20, 25.2], interior: 'studio_in', tags: ['news'],
     spots: [[14, 22, ['news']], [18, 21, ['news']], [22, 21, ['news']]],
     desc: '광장 중앙 마천루 벽면에 걸린 거대 LED 전광판과 그 뒤의 방송 스튜디오' });

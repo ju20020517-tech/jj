@@ -1,5 +1,5 @@
 /* =========================================================
- *  재즈바 "블루문" (클럽 13×10 → 16×12) & 친구모아 뉴스 방송국 (10×7 → 16×11)
+ *  재즈바 "블루문" (클럽 13×10 → 16×12) & 찐구모아 뉴스 방송국 (10×7 → 16×11)
  *   🎷 재즈바 (사진 1 · 2) : 붉은 벨벳 커튼 무대 · 트러스 조명 & 무대 스포트라이트 · 드럼 · 피아노 · 첼로 · 색소폰 · 일렉 기타 · 베이스 · 스탠드 마이크
  *                      금빛 테이블보 원형 테이블 & 붉은 연회 의자 · 보라 유리 촛불 · 칵테일 · 크림슨 · 퍼플 체크 카펫 · 벽돌 벽 & 재즈 포스터 · 스피커
  *                      짙은 원목 바 & 가죽 스툴 · 병 · 머그 선반 · 핑크 달 조명 · 핑크 미러볼 · "We're Open" 네온 · 생과일주스 라이트 간판 · 정글 창 · 넝쿨
@@ -171,12 +171,12 @@
     const gr = c.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#0a2a6a'); gr.addColorStop(1, '#1a0a4a'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
     c.fillStyle = 'rgba(120,200,255,0.25)'; for (let i = 0; i < 90; i++) { c.beginPath(); c.arc(260 + Math.cos(i * 2.4) * (40 + (i % 9) * 8), 96 + Math.sin(i * 1.7) * 60, 2.2, 0, 7); c.fill(); }
     c.strokeStyle = 'rgba(120,200,255,0.4)'; c.lineWidth = 1; c.beginPath(); c.arc(260, 96, 80, 0, 7); c.stroke(); c.beginPath(); c.ellipse(260, 96, 80, 30, 0, 0, 7); c.stroke(); c.beginPath(); c.ellipse(260, 96, 30, 80, 0, 0, 7); c.stroke();
-    c.fillStyle = '#ffffff'; c.font = 'bold 34px sans-serif'; c.fillText('친구모아', 22, 70); c.fillStyle = '#ff3a6a'; c.fillText('NEWS', 22, 112); c.fillStyle = 'rgba(255,255,255,0.7)'; c.font = '14px sans-serif'; c.fillText('FRIENDS ISLAND BROADCASTING', 22, 140);
+    c.fillStyle = '#ffffff'; c.font = 'bold 34px sans-serif'; c.fillText('찐구모아', 22, 70); c.fillStyle = '#ff3a6a'; c.fillText('NEWS', 22, 112); c.fillStyle = 'rgba(255,255,255,0.7)'; c.font = '14px sans-serif'; c.fillText('FRIENDS ISLAND BROADCASTING', 22, 140);
     c.fillStyle = '#ff3a6a'; c.fillRect(380, 20, 110, 30); c.fillStyle = '#fff'; c.font = 'bold 18px sans-serif'; c.fillText('● LIVE', 396, 42); for (let i = 0; i < 4; i++) { c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(380, 64 + i * 26, 110, 18); }
     c.fillStyle = 'rgba(0,0,0,0.25)'; for (let y = 0; y < h; y += 3) c.fillRect(0, y, w, 1);
   });
   def('k14_led_wall', 'LED 뉴스 월 (지구본 · 로고)', 'wall', 6000, 7.4, 0.3, g => { const k = K(g); k.b(7.4, 3.0, 0.12, 0x0a0a12, 0, 2.3, 0.06, 0.02); plane(k, 7.2, 2.8, new THREE.MeshBasicMaterial({ map: ledTex }), 0, 2.3, 0.125); for (let i = 1; i < 6; i++) k.b(0.01, 2.8, 0.005, 0x05050a, -3.6 + i * 1.2, 2.3, 0.13); k.b(7.6, 0.14, 0.2, 0x2a2a3a, 0, 3.86, 0.1, 0.02); k.b(7.6, 0.14, 0.2, 0x2a2a3a, 0, 0.74, 0.1, 0.02); halo(k, 3.2, 0x4a8aff, 0, 2.3, 0.3, 0.18); lightPatch(k, 'k14led', 6.5, 2.5, 0x5a8aff, 0, 1.6, 0, 0.12, 1, 1); }, { wall: true, tags: ['smart', 'light'], lamp: [[0, 2.2, 1.2, 0x6a9aff, 0.5, 7]] });
-  const deskFront = ctex('k14desk', 256, 64, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#1a2a5a'); gr.addColorStop(0.5, '#2a4a9a'); gr.addColorStop(1, '#1a2a5a'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.fillStyle = '#ffffff'; c.font = 'bold 22px sans-serif'; c.textAlign = 'center'; c.fillText('친구모아 NEWS', w / 2, 40); c.fillStyle = '#ff3a6a'; c.fillRect(0, h - 8, w, 4); c.fillStyle = '#6ab0ff'; c.fillRect(0, 4, w, 2); });
+  const deskFront = ctex('k14desk', 256, 64, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#1a2a5a'); gr.addColorStop(0.5, '#2a4a9a'); gr.addColorStop(1, '#1a2a5a'); c.fillStyle = gr; c.fillRect(0, 0, w, h); c.fillStyle = '#ffffff'; c.font = 'bold 22px sans-serif'; c.textAlign = 'center'; c.fillText('찐구모아 NEWS', w / 2, 40); c.fillStyle = '#ff3a6a'; c.fillRect(0, h - 8, w, 4); c.fillStyle = '#6ab0ff'; c.fillRect(0, 4, w, 2); });
   def('k14_anchor_desk', '곡선 앵커 데스크 (모니터 · 원고 · 로고)', 'venue', 6000, 3.6, 1.8, g => {
     const k = K(g); const front = k.add(mesh(geo('k14deskc', () => new THREE.CylinderGeometry(2.2, 2.2, 0.9, 32, 1, true, -0.65, 1.3)), new THREE.MeshBasicMaterial({ map: deskFront, side: THREE.DoubleSide }), 0, 0.45, -1.6)); front.rotation.y = 0;
     const top = k.add(mesh(geo('k14deskt', () => new THREE.RingGeometry(1.72, 2.32, 32, 1, -PI / 2 - 0.7, 1.4)), new THREE.MeshPhongMaterial({ color: 0xf4f6fa, shininess: 90, side: THREE.DoubleSide }), 0, 0.95, -1.6)); top.rotation.x = -PI / 2;
@@ -200,7 +200,7 @@
 
   const SD = FM.INTERIORS.studio_in;
   if (SD) {
-    Object.assign(SD, { name: '친구모아 뉴스 방송국', w: 16, d: 11, wallH: 4.5, wallStyle: 'st_newswall', wallStyleL: 'st_newswall', wallStyleR: 'st_newswall', floor: 'newsfloor', floorColor: 0x141c30, wall: 0x0e1630, light: 'cool', maxLamps: 12,
+    Object.assign(SD, { name: '찐구모아 뉴스 방송국', w: 16, d: 11, wallH: 4.5, wallStyle: 'st_newswall', wallStyleL: 'st_newswall', wallStyleR: 'st_newswall', floor: 'newsfloor', floorColor: 0x141c30, wall: 0x0e1630, light: 'cool', maxLamps: 12,
       zones: '가운데 LED 뉴스 월 & 앵커 데스크 · 왼쪽 날씨 코너 & 분장실 · 오른쪽 부조정실 · 앞쪽 인터뷰 세트 & 카메라',
       venueMood: { main: 0.32, lamp: 0.9, hemi: [0xc8d8ff, 0x1a2030, 0.3], amb: [0xb0c8ff, 0.1], dir: [0xf4f4ff, 0.35], bg: 0x0a0e1a, rim: 0.45, shadow: { pos: [0, 9, 5], soft: 4 } },
       furn: [

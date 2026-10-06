@@ -28,7 +28,7 @@
     const me = cr && cr.playerId ? chars.find(c => c.id === cr.playerId) : null;
     el.innerHTML = `
       <div class="start-card">
-        <h1>🏝️ 친구모아 아일랜드</h1>
+        <h1>🏝️ 찐구 모아 와르르 섬</h1>
         <p class="sub">주민들의 우정 · 짝사랑 · 연애 · 질투 · 결혼 · 육아를 관찰하고 참견하는 섬 생활 시뮬레이션</p>
         ${FM.G.hasSave() ? '<button class="btn big" id="stContinue">▶ 이어하기</button>' : ''}
         <details ${FM.G.hasSave() ? '' : 'open'}><summary>✨ 새로 시작하기</summary>
@@ -476,7 +476,7 @@
     const types = { all: '전체', couple: '💕 연애', friend: '🤝 우정', crush: '💗 짝사랑', jealous: '⚡ 질투', breakup: '💔 이별', wedding: '💒 결혼', baby: '👶 육아', quirk: '🌀 기행', medical: '🏥 병원', news: '📺 뉴스' };
     const logs = (s.rumors || []).map(r => ({ day: r.day, hm: (r.src === 'told' && r.by ? Sim.nameOf(r.by) + '에게 들음' : r.src === 'heard' ? '엿들음' : '직접 봄') + (FM.Rumor && FM.Rumor.sureTag ? FM.Rumor.sureTag(r) : ''), text: `${r.icon} ${r.text}`, type: r.type })).filter(e => logFilter === 'all' || e.type === logFilter || (logFilter === 'wedding' && e.type === 'engage') || (logFilter === 'couple' && ['confess', 'date', 'romance'].includes(e.type))).slice(-80).reverse();
     body.innerHTML = `
-      <h4>📺 친구모아 뉴스 (${esc(nb.anchor || '')})</h4><ul class="list">${nb.items.map(i => `<li>${esc(J(i))}</li>`).join('')}</ul>
+      <h4>📺 찐구모아 뉴스 (${esc(nb.anchor || '')})</h4><ul class="list">${nb.items.map(i => `<li>${esc(J(i))}</li>`).join('')}</ul>
       <h4>🏆 실시간 도시 랭킹</h4>
       <div class="rank"><div><b>섬 최고의 인싸</b>${(R.insider || []).map((x, i) => `<span>${i + 1}. ${esc(x.name)}</span>`).join('')}</div><div><b>가장 빚이 많은 주민</b>${(R.debt || []).filter(x => x.val > 0).map((x, i) => `<span>${i + 1}. ${esc(x.name)} (${x.val})</span>`).join('') || '<span>없음</span>'}</div><div><b>부자</b>${(R.rich || []).map((x, i) => `<span>${i + 1}. ${esc(x.name)}</span>`).join('')}</div><div><b>설렘 유발자</b>${(R.love || []).map((x, i) => `<span>${i + 1}. ${esc(x.name)}</span>`).join('')}</div></div>
       ${s.album && s.album.length ? `<h4>📸 앨범</h4><ul class="list">${s.album.map(a => `<li>${a.day}일차 · ${esc(J(a.title))} (${a.who.length}명)</li>`).join('')}</ul>` : ''}
@@ -1234,10 +1234,17 @@
   const PLACE_ICON = { apartment: '🏢', apt_yard: '🌷', plaza: '⛲', cafe: '☕', metro: 'Ⓜ️', studio: '📺', stairs: '🪜', bridge: '🌉', cliff: '🌅', cliff_lawn: '🌿', cathedral: '⛪', observatory: '🔭', waterfall: '💧', home_p: '🏠', park: '🌳', playground: '🛝', school: '🏫', library: '📚', workshop: '🔨', teahouse: '🍵', skylounge: '🍽️', mall: '🛍️', arcade: '🎳', sushi: '🍣', pub: '🥟', club: '🎤', conv: '🏪', alley: '🍢', office: '🏢', cityhall: '🏛️', medical: '🏥', beach: '🏖️', ferry: '⛴️' };
   const placeIcon = p => PLACE_ICON[p.id] || (p.plot ? '🏡' : '📍');
   let mapSel = null, mapBg = null;
+  const mapLayer = () => (UI._mapLayer || (UI._mapLayer = { names: false, vill: true }));
+  function paintLayers() {
+    const box = $('#mapLayers'); if (!box) return; const L = mapLayer();
+    box.innerHTML = `<button data-ly="names" class="${L.names ? 'on' : ''}">🏷️ 이름표</button><button data-ly="vill" class="${L.vill ? 'on' : ''}">👥 주민</button>`;
+    box.querySelectorAll('[data-ly]').forEach(b => b.onclick = () => { L[b.dataset.ly] = !L[b.dataset.ly]; paintLayers(); drawMap(); });
+    const q = $('#mapQ'); if (q && !q._b) { q._b = 1; q.oninput = () => { UI._mapQ = q.value.trim(); paintMapSide(); }; }
+  }
   UI.toggleMap = function (sel) {
     const m = $('#map');
     m.hidden = sel ? false : !m.hidden;
-    if (!m.hidden) { if (sel) mapSel = sel; else if (!mapSel) mapSel = null; $('#mapX').onclick = () => UI.toggleMap(); drawMap(); paintMapSide(); }
+    if (!m.hidden) { if (sel) mapSel = sel; else if (!mapSel) mapSel = null; $('#mapX').onclick = () => UI.toggleMap(); paintLayers(); drawMap(); paintMapSide(); }
   };
   UI.openMapAt = sel => UI.toggleMap(sel);
   function mapXY() {
@@ -1247,23 +1254,37 @@
   }
   function mapBackground(W2, H2) {
     if (mapBg) return mapBg;
+    const { minX, maxX, minZ, maxZ } = MAP.SIZE;
+    // 1) 땅 모양을 작게 계산 → 2) 부드럽게 키워서 깔끔한 일러스트 느낌
+    const SW = Math.round(W2 / 4), SH = Math.round(H2 / 4);
+    const sm = document.createElement('canvas'); sm.width = SW; sm.height = SH;
+    const sg = sm.getContext('2d'), mask = document.createElement('canvas'); mask.width = SW; mask.height = SH;
+    const mg = mask.getContext('2d');
+    for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
+      const wx = minX + (x + 0.5) / SW * (maxX - minX), wz = minZ + (y + 0.5) / SH * (maxZ - minZ);
+      const h = FM.T.height(wx, wz);
+      if (h < 0.15 || FM.T.inWater(wx, wz)) { if (h >= 0.15) { sg.fillStyle = '#8fd6ec'; sg.fillRect(x, y, 1, 1); } continue; }
+      sg.fillStyle = h > 20 ? '#c4e6a0' : h > 5 ? '#acdc88' : h > 1.5 ? '#bde39c' : '#f7e9c4';
+      sg.fillRect(x, y, 1, 1); mg.fillStyle = '#effcff'; mg.fillRect(x, y, 1, 1);
+    }
     const c = document.createElement('canvas'); c.width = W2; c.height = H2;
     const g = c.getContext('2d');
-    const { minX, maxX, minZ, maxZ } = MAP.SIZE;
-    const sea = g.createLinearGradient(0, 0, 0, H2); sea.addColorStop(0, '#8fd8ec'); sea.addColorStop(1, '#6cc6e0');
+    const sea = g.createLinearGradient(0, 0, 0, H2); sea.addColorStop(0, '#9fdcf0'); sea.addColorStop(1, '#7cc8e4');
     g.fillStyle = sea; g.fillRect(0, 0, W2, H2);
-    for (let y = 0; y < H2; y += 2) for (let x = 0; x < W2; x += 2) {
-      const wx = minX + x / W2 * (maxX - minX), wz = minZ + y / H2 * (maxZ - minZ);
-      const h = FM.T.height(wx, wz);
-      if (h < 0.15) continue;
-      g.fillStyle = FM.T.inWater(wx, wz) ? '#7ccfe6' : h > 20 ? '#bfe096' : h > 5 ? '#a4d97c' : h > 1.5 ? '#b3de92' : '#f6e6b8';
-      g.fillRect(x, y, 2, 2);
-    }
-    g.strokeStyle = 'rgba(255,248,235,0.9)'; g.lineWidth = 3; g.lineCap = 'round';
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    // 해안 물결 (땅 그림자 테두리)
+    g.save(); g.filter = 'blur(7px)'; g.globalAlpha = 0.85; g.drawImage(mask, -6, -6, W2 + 12, H2 + 12); g.restore();
+    g.save(); g.filter = 'blur(0.6px)'; g.drawImage(sm, 0, 0, W2, H2); g.restore();
     const sx = x => (x - minX) / (maxX - minX) * W2, sz = z => (z - minZ) / (maxZ - minZ) * H2;
+    // 길: 얇은 흰 점선 대신 부드러운 선
+    g.strokeStyle = 'rgba(255,250,240,0.95)'; g.lineWidth = 2.5; g.lineCap = 'round'; g.lineJoin = 'round';
     for (const [a, b] of MAP.E) { const A = MAP.N[a], B2 = MAP.N[b]; g.beginPath(); g.moveTo(sx(A[0]), sz(A[1])); g.lineTo(sx(B2[0]), sz(B2[1])); g.stroke(); }
-    g.font = 'bold 15px Jua, sans-serif'; g.textAlign = 'center'; g.fillStyle = 'rgba(90,60,40,0.35)';
-    for (const [k, d] of Object.entries(MAP.DISTRICTS)) { const pos = { CORE: [0, -12], NORTH: [10, -112], WEST: [-100, -8], EAST: [95, -30], SOUTH: [0, 100] }[k]; g.fillText(d.short + ' 지구', sx(pos[0]), sz(pos[1])); }
+    g.font = 'bold 13px Jua, sans-serif'; g.textAlign = 'center';
+    for (const [k, d] of Object.entries(MAP.DISTRICTS)) {
+      const pos = { CORE: [0, -12], NORTH: [10, -112], WEST: [-100, -8], EAST: [95, -30], SOUTH: [0, 100] }[k]; const t = d.short + ' 지구';
+      g.fillStyle = 'rgba(255,255,255,0.7)'; const w = g.measureText(t).width + 14; g.beginPath(); g.roundRect ? g.roundRect(sx(pos[0]) - w / 2, sz(pos[1]) - 11, w, 18, 9) : g.rect(sx(pos[0]) - w / 2, sz(pos[1]) - 11, w, 18); g.fill();
+      g.fillStyle = d.color || '#7a5a40'; g.fillText(t, sx(pos[0]), sz(pos[1]) + 3);
+    }
     mapBg = c; return c;
   }
   function drawMap() {
@@ -1283,12 +1304,12 @@
       const x = sx(p.x), y = sz(p.z);
       const sel = mapSel && mapSel.type === 'place' && mapSel.id === p.id;
       g.fillStyle = sel ? '#ff8f6a' : 'rgba(255,255,255,0.92)'; g.strokeStyle = MAP.DISTRICTS[p.district].color; g.lineWidth = sel ? 3 : 2;
-      g.beginPath(); g.arc(x, y, sel ? 13 : 10, 0, Math.PI * 2); g.fill(); g.stroke();
-      g.font = (sel ? '15' : '12') + 'px serif'; g.fillText(placeIcon(p), x, y + (sel ? 5 : 4));
-      if (sel || p.bld && !p.plot) { g.font = (sel ? '14' : '11') + 'px Jua, sans-serif'; g.fillStyle = '#3b2b20'; g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 3; const t = FM.Guide.shortName(p).slice(0, 12); g.strokeText(t, x, y - 13); g.fillText(t, x, y - 13); }
+      g.beginPath(); g.arc(x, y, sel ? 13 : 9, 0, Math.PI * 2); g.fill(); g.stroke();
+      g.font = (sel ? '15' : '11') + 'px serif'; g.fillText(placeIcon(p), x, y + (sel ? 5 : 4));
+      if (sel || (mapLayer().names && p.bld && !p.plot)) { g.font = (sel ? '14' : '11') + 'px Jua, sans-serif'; g.fillStyle = '#3b2b20'; g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 3; const t = FM.Guide.shortName(p).slice(0, 12); const tw = g.measureText(t).width / 2 + 4; const lx = Math.max(tw, Math.min(W2 - tw, x)); g.strokeText(t, lx, y - 13); g.fillText(t, lx, y - 13); }
     }
     // 주민
-    for (const v of s2.villagers) {
+    if (mapLayer().vill) for (const v of s2.villagers) {
       const w = v.loc === 'island' ? { x: v.x, z: v.z } : null; if (!w) continue;
       const sel = mapSel && mapSel.type === 'v' && mapSel.id === v.id;
       g.fillStyle = v.balloon ? '#ff5d9e' : '#ffffff'; g.strokeStyle = sel ? '#ff8f6a' : 'rgba(90,60,40,0.6)'; g.lineWidth = sel ? 3 : 1.5;
@@ -1360,7 +1381,8 @@
     const regOf = p => ({ CORE: 'c', NORTH: 'n', EAST: 'e', WEST: 'w', SOUTH: 's' })[p.district] || (Math.hypot(p.x, p.z) < 34 ? 'c' : Math.abs(p.x) > Math.abs(p.z) * 0.9 ? (p.x > 0 ? 'e' : 'w') : (p.z < 0 ? 'n' : 's'));
     const RNAME = { c: '⛲ 중앙 광장 일대', n: '⬆️ 북쪽 — 언덕 · 성당 · 온천 · 천문대', e: '➡️ 동쪽 — 번화가 · 마츠리 · 업무 지구', w: '⬅️ 서쪽 — 주택가 · 공원 · 학교 · 도서관', s: '⬇️ 남쪽 — 해변 · 병원 · 부두' };
     const RCOL = { c: '#ffb86a', n: '#b69cff', e: '#ff8ac0', w: '#7ad89a', s: '#6ac8f0' };
-    const all = []; for (const arr of Object.values(groups)) for (const p of arr) if (!all.includes(p)) all.push(p);
+    const QQ = (UI._mapQ || '').toLowerCase(); const hit = t => !QQ || String(t).toLowerCase().includes(QQ);
+    const all = []; for (const arr of Object.values(groups)) for (const p of arr) if (!all.includes(p) && hit(p.name)) all.push(p);
     const tab = UI._mapTab || 'all';
     html += `<div class="map-reg">${REG.map(([k, n]) => `<button data-reg="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}</div>`;
     if (tab !== 'v') for (const r of ['c', 'n', 'e', 'w', 's']) {
@@ -1368,7 +1390,7 @@
       const arr = all.filter(p => regOf(p) === r); if (!arr.length) continue;
       html += `<h5><i style="background:${RCOL[r]}"></i>${RNAME[r]} <small style="color:var(--muted)">${arr.length}곳</small></h5><div class="map-chips">${arr.map(p => `<button data-p="${p.id}" class="${mapSel && mapSel.id === p.id ? 'on' : ''}">${placeIcon(p)} ${esc(FM.Guide.shortName(p).slice(0, 14))}${qplace === p.id ? ' <span class="q">⭐</span>' : ''}</button>`).join('')}</div>`;
     }
-    if (tab === 'v' || tab === 'all') html += `<h5>👥 주민에게 가기</h5><div class="map-chips">${s2.villagers.map(v => `<button data-v="${v.id}" class="${mapSel && mapSel.id === v.id ? 'on' : ''}">${icon(v)} ${esc(v.name)}${v.balloon ? ' <span class="q">!</span>' : ''}</button>`).join('')}</div>`;
+    if (tab === 'v' || tab === 'all') html += `<h5>👥 주민에게 가기</h5><div class="map-chips">${s2.villagers.filter(v => hit(v.name)).map(v => `<button data-v="${v.id}" class="${mapSel && mapSel.id === v.id ? 'on' : ''}">${icon(v)} ${esc(v.name)}${v.balloon ? ' <span class="q">!</span>' : ''}</button>`).join('')}</div>`;
     list.innerHTML = html;
     list.querySelectorAll('[data-reg]').forEach(b => b.onclick = () => { UI._mapTab = b.dataset.reg; paintMapSide(); });
     list.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { mapSel = { type: 'place', id: b.dataset.p }; drawMap(); paintMapSide(); });
