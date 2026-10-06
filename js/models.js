@@ -14,15 +14,19 @@
     {
       vec3 vd = normalize( vViewPosition );
       float rim = 1.0 - clamp( dot( vd, normal ), 0.0, 1.0 );
-      outgoingLight += diffuseColor.rgb * pow( rim, 2.2 ) * SOFT_RIM;
-      outgoingLight += vec3( 1.0 ) * pow( rim, 5.0 ) * 0.06;
+      outgoingLight += diffuseColor.rgb * pow( rim, 2.2 ) * SOFT_RIM * rimK;
+      outgoingLight += vec3( 1.0 ) * pow( rim, 5.0 ) * 0.06 * rimK;
     }
     #include <output_fragment>`;
+  // 림 라이트 세기 (전역) — 어두운 무드 방에서는 낮춰서 조명 · 그림자가 살아나게
+  const rimU = { value: 1 };
+  M.rimU = rimU;
   function soften(m, strength = 0.38) {
     m.onBeforeCompile = shader => {
+      shader.uniforms.rimK = rimU;
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <output_fragment>', RIM_CHUNK)
-        .replace('#include <common>', `#include <common>\n#define SOFT_RIM ${strength.toFixed(2)}`);
+        .replace('#include <common>', `#include <common>\nuniform float rimK;\n#define SOFT_RIM ${strength.toFixed(2)}`);
     };
     m.customProgramCacheKey = () => 'soft' + strength;
     return m;
@@ -68,11 +72,15 @@
   }
   M.roundedBoxGeo = roundedBoxGeo;
 
-  const sphere = (r, ws = 28, hs = 20) => geo(`s${r},${ws}`, () => new THREE.SphereGeometry(r, ws, hs));
+  // 조각 수는 크기에 비례 (작은 구슬 · 꽃잎까지 1,120개 삼각형으로 만들던 것을 줄여 렉 감소)
+  const sphere = (r, ws, hs) => {
+    if (ws === undefined) { ws = Math.max(8, Math.min(28, Math.round(r * 90))); hs = Math.max(6, Math.round(ws * 0.7)); } else if (hs === undefined) hs = 20;
+    return geo(`s${r},${ws},${hs}`, () => new THREE.SphereGeometry(r, ws, hs));
+  };
   // 기본 상자는 전부 살짝 둥글게
   const box = (w, h, d, r) => geo(`rb${w},${h},${d},${r}`, () =>
     roundedBoxGeo(w, h, d, r !== undefined ? r : Math.min(0.07, Math.min(w, h, d) * 0.3)));
-  const cyl = (rt, rb, h, seg = 22) => geo(`c${rt},${rb},${h},${seg}`, () => new THREE.CylinderGeometry(rt, rb, h, seg));
+  const cyl = (rt, rb, h, seg) => { if (seg === undefined) seg = Math.max(8, Math.min(22, Math.round(Math.max(rt, rb) * 110))); return geo(`c${rt},${rb},${h},${seg}`, () => new THREE.CylinderGeometry(rt, rb, h, seg)); };
   const capsule = (r, len) => geo(`cap${r},${len}`, () => new THREE.CapsuleGeometry(r, len, 8, 16));
   // 부드러운 곡선으로 회전체 만들기
   function lathe(key, pts, seg = 28) {

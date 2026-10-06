@@ -3,142 +3,182 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>두근두근 섬 생활 3D</title>
+  <title>찐구 모아 와르르 섬 ~평범한 내가 이 섬에선 우주최강?!~</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="fm.css" />
+  <link rel="stylesheet" href="ui2.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="glass.css" />
 </head>
-<body>
-  <div id="app">
-    <header class="top">
-      <h1>🍃 <span id="islandTitle">두근두근 섬</span> 생활 <small>3D</small></h1>
-      <p class="sub"><a class="creator-link" href="creator.html">🎨 캐릭터 만들기</a> · 방향키/WASD 이동 · Shift 달리기 · Space 행동 · Q 심기 · 1~0 아이템 · 휠 확대/축소</p>
-    </header>
+<body data-view="island">
+  <canvas id="game"></canvas>
+  <div id="warm"></div>
+  <div id="bubbles"></div>
+  <div id="fade"></div>
+  <div id="loading" hidden>🏝️ 섬으로 가는 중…</div>
+  <div id="start" hidden></div>
 
-    <main class="layout">
-      <section class="game-col">
-        <div class="game-wrap" id="gameWrap">
-          <canvas id="game"></canvas>
-          <div class="loading" id="loading">🏝️ 섬으로 가는 중…</div>
-          <div class="bubble-layer" id="bubbleLayer"></div>
+  <div id="hud" hidden>
+    <div class="hud-top">
+      <button class="chip title" id="hudTitle" title="시작 화면으로">🏝️ 찐구 모아 와르르 섬</button>
+      <div class="chip" id="hudTime">-</div>
+      <div class="chip" id="hudWeather">-</div>
+      <div class="chip speed"><button data-speed="0">⏸</button><button data-speed="1">×1</button><button data-speed="4">×4</button><button data-speed="15">×15</button><button data-speed="60">×60</button></div>
+      <div class="chip" id="hudCoins">🪙 0</div>
+      <div class="chip stam">⚡<div class="bar"><i id="hudStam"></i></div></div>
+      <div class="chip mail" id="hudMail"></div>
+      <div class="hud-btns">
+        <button id="btnObserve" title="아파트 관찰 모드 (O)">🏢</button>
+        <button id="btnMap" title="지도 (M)">🗺️</button>
+        <button id="btnRel" title="관계도 (R)">🕸️</button>
+        <button id="btnSound" title="소리">🔇</button>
+        <button id="btnPanel" title="패널">☰</button>
+      </div>
+    </div>
+    <div id="notif"></div>
+    <div id="toasts"></div>
+    <div id="banner" hidden></div>
+    <div id="hint" hidden></div>
+    <button id="hintBtn" hidden>행동</button>
+    <div id="emotes"></div>
 
-          <div class="hud hud-left">
-            <div class="chip" id="playerChip">🙂 주민</div>
-            <div class="chip bells">💰 <span id="bells">0</span> 벨</div>
-          </div>
-          <div class="hud hud-right">
-            <div class="chip" id="clock">--:--</div>
-            <div class="chip" id="locChip">🏝️</div>
-          </div>
-          <div class="zoom">
-            <button id="zoomIn" type="button" title="가까이">＋</button>
-            <button id="zoomOut" type="button" title="멀리">－</button>
-          </div>
-          <div class="hint" id="hint"></div>
-          <div class="toast-box" id="toastBox"></div>
+    <aside id="side" class="open">
+      <nav>
+        <button class="tab" data-tab="villagers">👥 주민</button>
+        <button class="tab" data-tab="quest">📜 퀘스트</button>
+        <button class="tab" data-tab="news">📰 소식</button>
+        <button class="tab" data-tab="bag">🎒 가방</button>
+        <button class="tab" data-tab="god">✨ 신의 툴</button>
+        <button class="tab" data-tab="settings">⚙️</button>
+        <button class="tab" data-tab="help">❓</button>
+      </nav>
+      <div id="sideBody"></div>
+    </aside>
 
-          <!-- 가구 배치 바 -->
-          <div class="place-bar" id="placeBar" hidden>
-            <span id="placeTitle"></span>
-            <div class="pb-btns">
-              <button id="pbPlace" class="btn small">놓기</button>
-              <button id="pbRotate" class="btn small alt">↻ 회전 (R)</button>
-              <button id="pbMove" class="btn small alt">✥ 옮기기</button>
-              <button id="pbRemove" class="btn small warn">회수 (X)</button>
-              <button id="pbCancel" class="btn small ghost">닫기</button>
-            </div>
-          </div>
+    <div id="obs" hidden></div>
+    <div id="editor" hidden></div>
+    <div id="dialog" hidden></div>
+    <div id="map" hidden>
+      <div class="map-head"><b>🗺️ 섬 지도</b><div class="map-layers" id="mapLayers"></div><button id="mapX" title="닫기 (M)">✕</button></div>
+      <div class="map-body">
+        <div class="map-cv"><canvas id="mapC" width="560" height="500"></canvas><div class="map-legend2"><span><i class="me"></i>나</span><span><i class="vl"></i>주민</span><span><i class="wr"></i>고민 중</span><span>⭐ 퀘스트</span><span>📍 목적지</span></div></div>
+        <div class="map-side"><input id="mapQ" class="map-q" placeholder="🔍 장소 · 주민 이름 검색"><div id="mapInfo"></div><div id="mapList"></div></div>
+      </div>
+    </div>
+    <div id="qtrack" hidden></div>
 
-          <!-- 터치 조작 -->
-          <div class="stick" id="stick"><div class="knob" id="stickKnob"></div></div>
-          <div class="touch-btns" aria-hidden="true">
-            <button id="btnRun" class="round run">달리기</button>
-            <button id="btnB" class="round b">심기</button>
-            <button id="btnA" class="round a">행동</button>
-          </div>
-          <div class="fade" id="fade"></div>
-        </div>
-
-        <div class="hotbar-wrap">
-          <div class="hotbar" id="hotbar"></div>
-          <div class="hotbar-info">
-            <span id="selectedName">선택한 아이템 없음</span>
-            <button class="btn small" id="btnPlace">🌱 심기 / 내려놓기 (Q)</button>
-          </div>
-        </div>
-      </section>
-
-      <aside class="side">
-        <nav class="tabs" role="tablist">
-          <button class="tab active" data-tab="todo">📝 할 일</button>
-          <button class="tab" data-tab="furn">🛋️ 가구</button>
-          <button class="tab" data-tab="me">🎨 나</button>
-          <button class="tab" data-tab="help">❓</button>
-        </nav>
-
-        <div class="panel active" id="panel-todo">
-          <form class="todo-form" id="todoForm">
-            <input id="todoInput" type="text" maxlength="40" placeholder="오늘 섬에서 할 일을 적어보세요" autocomplete="off" />
-            <button class="btn" type="submit">추가</button>
-          </form>
-          <div class="todo-filter" id="todoFilter">
-            <button data-filter="all" class="active">전체</button>
-            <button data-filter="active">진행 중</button>
-            <button data-filter="done">완료</button>
-          </div>
-          <ul class="todo-list" id="todoList"></ul>
-          <div class="todo-foot">
-            <span id="todoCount"></span>
-            <button class="link" id="clearDone">완료 항목 지우기</button>
-          </div>
-        </div>
-
-        <div class="panel" id="panel-furn">
-          <p class="furn-help">🏠 집 안에서 가구를 골라 원하는 곳에 놓아보세요.<br>놓인 가구를 클릭(또는 앞에서 Space)하면 회전·옮기기·회수할 수 있어요.</p>
-          <div class="catalog" id="catalog"></div>
-        </div>
-
-        <div class="panel" id="panel-me">
-          <label class="field">내 이름
-            <input id="nameInput" type="text" maxlength="8" />
-          </label>
-          <label class="field">섬 이름
-            <input id="islandInput" type="text" maxlength="10" />
-          </label>
-          <div class="field">옷 색깔<div class="swatches" id="shirtSwatches"></div></div>
-          <div class="field">머리 색깔<div class="swatches" id="hairSwatches"></div></div>
-          <div class="field">모자<div class="swatches" id="hatSwatches"></div></div>
-          <a class="btn creator-btn" href="creator.html">🎨 캐릭터 만들기에서 동물로 꾸미기</a>
-          <p class="note" id="customNote" hidden>지금은 캐릭터 만들기에서 고른 캐릭터로 플레이 중이에요.</p>
-          <div class="stats" id="stats"></div>
-          <button class="btn danger" id="resetBtn">🗑️ 섬 처음부터 다시 시작</button>
-        </div>
-
-        <div class="panel" id="panel-help">
-          <ul class="help">
-            <li>🌳 <b>나무</b> 앞에서 Space → 흔들어서 과일 떨어뜨리기</li>
-            <li>🍊 <b>과일·조개·꽃·잡초</b> 앞에서 Space → 줍기</li>
-            <li>🌱 과일을 골라 <b>Q</b> → 심으면 2분 뒤 나무로 자라요</li>
-            <li>🌼 꽃을 골라 <b>Q</b> → 꽃 심기</li>
-            <li>⛰️ 언덕은 <b>비탈길</b>로 올라가요. 폭포도 구경해 보세요!</li>
-            <li>📦 <b>상점 상자</b> 앞에서 Space → 선택한 아이템 팔기</li>
-            <li>🐾 주민에게 말을 걸어보세요. 과일을 들고 말 걸면 선물!</li>
-            <li>🏠 집 문으로 걸어가면 들어가요. <b>가구</b> 탭에서 집을 꾸며요</li>
-            <li>🌙 실제 시간에 따라 낮·노을·밤이 바뀌어요</li>
-            <li>💾 모든 진행 상황은 자동 저장 (새로고침해도 유지)</li>
-          </ul>
-        </div>
-      </aside>
-    </main>
+    <div id="stick"><div id="knob"></div></div>
+    <div class="mbtns">
+      <button id="mSit">앉기</button><button id="mBug">채집</button><button id="mFish">낚시</button><button id="mRun">달리기</button><button id="mAct" class="big">행동</button>
+    </div>
   </div>
 
+  <div id="modal" hidden></div>
+  <div id="dreamBox" hidden></div>
+
   <script src="vendor/three.min.js"></script>
+  <script src="js/fm/icons.js"></script>
   <script src="js/data.js"></script>
   <script src="js/textures.js"></script>
   <script src="js/models.js"></script>
   <script src="js/character.js"></script>
-  <script src="js/world.js"></script>
-  <script src="js/game.js"></script>
+  <script src="js/acperson.js"></script>
+  <script src="js/cast30.js"></script>
+  <script src="js/fm/data.js"></script>
+  <script src="js/fm/map.js"></script>
+  <script src="js/fm/terrain.js"></script>
+  <script src="js/fm/furniture.js"></script>
+  <script src="js/fm/interiors.js"></script>
+  <script src="js/fm/lines.js"></script>
+  <script src="js/fm/sim-core.js"></script>
+  <script src="js/fm/sim-social.js"></script>
+  <script src="js/fm/sim-events.js"></script>
+  <script src="js/fm/talk2.js"></script>
+  <script src="js/fm/drama.js"></script>
+  <script src="js/fm/needs.js"></script>
+  <script src="js/fm/mediate.js"></script>
+  <script src="js/fm/life.js"></script>
+  <script src="js/fm/guide.js"></script>
+  <script src="js/fm/play.js"></script>
+  <script src="js/fm/actex.js"></script>
+  <script src="js/fm/props.js"></script>
+  <script src="js/fm/roomkit.js"></script>
+  <script src="js/fm/roomkit2.js"></script>
+  <script src="js/fm/roomkit3.js"></script>
+  <script src="js/fm/roomkit4.js"></script>
+  <script src="js/fm/roomkit5.js"></script>
+  <script src="js/fm/roomkit6.js"></script>
+  <script src="js/fm/roomkit7.js"></script>
+  <script src="js/fm/roomkit8.js"></script>
+  <script src="js/fm/roomkit9.js"></script>
+  <script src="js/fm/roomkit10.js"></script>
+  <script src="js/fm/roomkit11.js"></script>
+  <script src="js/fm/roomkit12.js"></script>
+  <script src="js/fm/roomkit13.js"></script>
+  <script src="js/fm/roomkit14.js"></script>
+  <script src="js/fm/roomkit15.js"></script>
+  <script src="js/fm/roomkit16.js"></script>
+  <script src="js/fm/roomkit18.js"></script>
+  <script src="js/fm/roomkit19.js"></script>
+  <script src="js/fm/roomkit20.js"></script>
+  <script src="js/fm/roomkit21.js"></script>
+  <script src="js/fm/roomkit22.js"></script>
+  <script src="js/fm/roomkit17.js"></script>
+  <script src="js/fm/furnthumb.js"></script>
+  <script src="js/fm/acbld.js"></script>
+  <script src="js/fm/acbld2.js"></script>
+  <script src="js/fm/acbld3.js"></script>
+  <script src="js/fm/acbld4.js"></script>
+  <script src="js/fm/acbld5.js"></script>
+  <script src="js/fm/acbld6.js"></script>
+  <script src="js/fm/anim.js"></script>
+  <script src="js/fm/world3d.js"></script>
+  <script src="js/fm/chars3d.js"></script>
+  <script src="js/fm/portrait.js"></script>
+  <script src="js/fm/faces.js"></script>
+  <script src="js/fm/interior3d.js"></script>
+  <script src="js/fm/audio.js"></script>
+  <script src="js/fm/voice.js"></script>
+  <script src="js/fm/persona.js"></script>
+  <script src="js/fm/ui.js"></script>
+  <script src="js/fm/ui2.js"></script>
+  <script src="js/fm/cutscene.js"></script>
+  <script src="js/fm/vignettes.js"></script>
+  <script src="js/fm/friendvig.js"></script>
+  <script src="js/fm/album.js"></script>
+  <script src="js/fm/moral.js"></script>
+  <script src="js/fm/values.js"></script>
+  <script src="js/fm/outing.js"></script>
+  <script src="js/fm/schedule.js"></script>
+  <script src="js/fm/npclife.js"></script>
+  <script src="js/fm/sunsetgarden.js"></script>
+  <script src="js/fm/beach.js"></script>
+  <script src="js/fm/flora.js"></script>
+  <script src="js/fm/townlife.js"></script>
+  <script src="js/fm/photo.js"></script>
+  <script src="js/fm/places2.js"></script>
+  <script src="js/fm/consume.js"></script>
+  <script src="js/fm/minigames.js"></script>
+  <script src="js/fm/staff2.js"></script>
+  <script src="js/fm/phone.js"></script>
+  <script src="js/fm/phoneapps.js"></script>
+  <script src="js/fm/castjobs.js"></script>
+  <script src="js/fm/love2.js"></script>
+  <script src="js/fm/talk3.js"></script>
+  <script src="js/fm/talk3b.js"></script>
+  <script src="js/fm/rumors.js"></script>
+  <script src="js/fm/underground.js"></script>
+  <script src="js/fm/babyvig.js"></script>
+  <script src="js/fm/places3.js"></script>
+  <script src="js/fm/diary.js"></script>
+  <script src="js/fm/lifevig.js"></script>
+  <script src="js/fm/interact.js"></script>
+  <script src="js/fm/storydata.js"></script>
+  <script src="js/fm/storyvig.js"></script>
+  <script src="js/fm/romvig.js"></script>
+  <script src="js/fm/perf.js"></script>
+  <script src="js/fm/main.js"></script>
 </body>
 </html>
