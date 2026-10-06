@@ -76,6 +76,9 @@
     requestAnimationFrame(loop);
     setInterval(G.save, 10000);
     window.addEventListener('beforeunload', G.save);
+    // 앱(안드로이드)에서는 백그라운드로 가면 바로 저장 — 강제 종료돼도 진행이 날아가지 않게
+    document.addEventListener('visibilitychange', () => { if (document.hidden) G.save(); });
+    window.addEventListener('pagehide', G.save);
     $('#loading').hidden = true;
   };
 

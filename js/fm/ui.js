@@ -370,7 +370,7 @@
         <small>${esc(v.title)}</small><small class="muted">📍 ${esc(locName(v))} · ${esc(act)} · ${Soc.stageName(r.friendship_stage)}</small></div>
         <div class="vbtn"><button data-a="prof">프로필</button><button data-a="go">찾기</button></div></div>`;
     }).join('');
-    body.innerHTML = `<div class="panel-top"><button class="btn small" id="addV">➕ 주민 이주시키기</button> <span class="muted">${s.villagers.length}명 · 아파트 ${s.villagers.filter(v => v.home && v.home.startsWith('apt')).length}/20호</span></div>${rows}`;
+    body.innerHTML = `<div class="panel-top"><button class="btn small" id="addV">➕ 주민 이주시키기</button> <span class="muted">${s.villagers.length}명 · 아파트 ${s.villagers.filter(v => v.home && v.home.startsWith('apt')).length}/20호${FM.Ug && FM.Ug.isOpen() ? ` · 지하 ${s.villagers.filter(v => v.home && v.home.startsWith('ug-')).length}/${FM.Ug.ROOMS.length}호` : ''}</span></div>${rows}`;
     body.querySelectorAll('.vrow').forEach(r => {
       const v = Sim.byId(r.dataset.id);
       r.querySelector('[data-a=prof]').onclick = () => UI.showProfile(v);

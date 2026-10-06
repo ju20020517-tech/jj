@@ -44,12 +44,17 @@
     snack: { label: '🍪 간식 파티', key: 'LAZY', txt: '냠냠... 행복해...' },
   };
   Life.EDU = EDU;
-  const TODDLER = { toy: ['🧸 장난감 던지기', '데굴데굴~ 꺄르르!', 5], hug: ['🤗 꼭 안아주기', '(폭 안긴다) 헤헤...', 6], follow: ['👣 뒤따라오게 하기', '아장아장... 따라갈래!', 4] };
-  const BABY = { soothe: ['🤱 달래기', '(울음을 그치고 새근새근)', 6] };
+  const TODDLER = { toy: ['🧸 장난감 던지기', '데굴데굴~ 꺄르르!', 5], hug: ['🤗 꼭 안아주기', '(폭 안긴다) 헤헤...', 6], follow: ['👣 뒤따라오게 하기', '아장아장... 따라갈래!', 4], hide: ['🙈 숨바꼭질', '(커튼 뒤에서 발이 보인다) …여기 없어!', 5], book: ['📕 그림책 읽기', '멍멍이! 멍멍이 또 읽어 죠!', 5] };
+  const BABY = { soothe: ['🤱 달래기', '(울음을 그치고 새근새근)', 6], milk: ['🍼 분유 주기', '(꿀꺽꿀꺽… 끄억!) 꺄르르', 6], lullaby: ['🎶 자장가 불러 주기', '(눈꺼풀이 스르르…) 새근새근', 5], peek: ['🙈 까꿍 놀이', '까꿍! …꺄르르르!', 4] };
 
   const origOpts = Soc.talkOptions;
   Soc.talkOptions = function (v) {
-    const O = origOpts(v);
+    let O = origOpts(v);
+    // 아기 · 유아에게는 어른용 대화(부추기기 · 방 치워 · 부탁 등)를 띄우지 않음
+    if (v && v.child && (v.child.stage === 'BABY' || v.child.stage === 'TODDLER') && Array.isArray(O)) {
+      O = O.filter(o => o.id === 'bye' || o.id === 'gift' || (typeof o.id === 'string' && o.id.startsWith('baby:')));
+      if (!v.child.parents.includes(P)) { const bi = O.findIndex(o => o.id === 'bye'); O.splice(bi < 0 ? O.length : bi, 0, { id: 'baby:peek', label: '🙈 까꿍 놀이' }); }
+    }
     if (!v || !v.child || !v.child.parents.includes(P)) return O;
     const add = [];
     const st2 = v.child.stage;
@@ -79,7 +84,8 @@
         if (c.crying) c.crying = false;
         if (k === 'follow' && Soc.addFollower) Soc.addFollower(v, 'walk');
         if (k === 'toy') Sim.fx && Sim.fx('sparkle', v);
-        Sim.emote(v, k === 'hug' ? '🥰' : '😊');
+        Sim.emote(v, k === 'hug' ? '🥰' : k === 'lullaby' ? '💤' : k === 'milk' ? '🍼' : '😊');
+        if (k === 'book') { c.edu = c.edu || {}; c.edu.SCHOLARLY = (c.edu.SCHOLARLY || 0) + 0.5; }
         return { text: T[1], options: Soc.talkOptions(v), close: k === 'follow' };
       }
     }
