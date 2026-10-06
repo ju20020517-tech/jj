@@ -220,7 +220,7 @@
   Job.ensureAll = ensureAll;
   // 기존 세이브: 새 고정 주민(c31~c40)이 아직 없으면 빈 집으로 이사 옴
   // 다시 디자인한 새 주민(c31~c40): 예전 세이브의 이름 · 외모 · 성격을 새 설정으로 맞춤
-  const CAST_REV = 3;
+  const CAST_REV = 4;
   function syncCast() {
     const st = S(); if (!st) return;
     const C = {}; for (const c of (window.ISLE && ISLE.CAST) || []) C[c.id] = c;
@@ -240,10 +240,18 @@
       if (old !== c.name) Sim.log('move', `✨ ${old}이(가) 이름을 '${c.name}'(으)로 바꾸고 새 출발을 했어요!`, [v.id], 1);
     }
   }
-  Job.syncCast = syncCast;
+  // 기존 30명 중 외형만 손본 주민 (저장 파일에도 반영)
+  const LOOK_FIX = { c26: { rev: 1, keys: ['eyeKit'] } };
+  function syncLookFix() {
+    const st = S(); if (!st) return;
+    const C = {}; for (const c of (window.ISLE && ISLE.CAST) || []) C[c.id] = c;
+    for (const v of st.villagers) { const f = LOOK_FIX[v.castId], c = C[v.castId]; if (!f || !c || (v.lookFix || 0) >= f.rev) continue; for (const k of f.keys) v.look[k] = c.look[k]; v.lookFix = f.rev; FM.bus.emit('outfit', v); }
+  }
+  const oSync = syncCast;
+  Job.syncCast = function () { oSync(); syncLookFix(); };
   function migrateCast() {
     const st = S(); if (!st || !Sim.makeVillager || !Sim.moveIn) return;
-    syncCast();
+    Job.syncCast();
     const ids = new Set(st.villagers.map(v => v.castId || v.id));
     const arrived = [];
     for (const c of (window.ISLE && ISLE.CAST) || []) {

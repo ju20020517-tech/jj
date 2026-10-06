@@ -26,6 +26,12 @@
   place('apartment', { name: '5층 메가 아파트 "시티 타워"', district: 'CORE', x: 0, z: -15,
     bld: { type: 'apartment', w: 30, d: 11, h: 17 }, door: [0, -9], tags: ['home'],
     desc: '모든 주민이 섬에 처음 이주했을 때 입주하는 5층, 20호실 규모의 주거 관찰 전용 타워' });
+  // 서쪽 곶의 하얀 등대 (전망 벤치 · 낭만 장소) + 썰물 때만 드러나는 숨겨진 해안 동굴
+  place('lighthouse', { name: '바람의 곶 "하얀 등대"', district: 'EAST', x: 124, z: 36, door: [121.4, 36], interior: 'lh_in', tags: ['sea', 'romance', 'quiet', 'view'],
+    spots: [[120.5, 31, ['sea', 'view', 'romance', 'bench'], { seat: true, face: Math.PI / 2 }], [120.5, 41, ['sea', 'view', 'romance', 'bench'], { seat: true, face: Math.PI / 2 }], [118, 30, ['sea', 'quiet', 'view']], [118, 42, ['sea', 'view', 'romance']]],
+    desc: '섬 동쪽 끝 바람 부는 곶 위의 빨간 줄무늬 등대. 해 질 녘 전망이 섬에서 제일 예뻐요' });
+  place('seacave', { name: '숨겨진 "별빛 해안 동굴"', district: 'EAST', x: 112, z: 46, door: [112, 43.6], interior: 'cave_in', hidden: 'cave', tags: ['quiet', 'romance'],
+    desc: '썰물 때만 입구가 드러나는 동굴. 안쪽에서 별처럼 빛나는 수정과 소원 웅덩이가 있어요' });
   // 숨겨진 장소 — 집이 모자라면 열리는 지하 아파트 (시티 타워 옆 계단 입구)
   place('underground', { name: '숨겨진 지하 아파트 "B1 언더하우스"', district: 'CORE', x: -19, z: -7.5, door: [-19, -5.2], interior: 'ug_lobby', hidden: true, tags: ['home'],
     desc: '섬에 집이 모자라자 시티 타워 옆 낡은 계단 아래에서 발견된 비밀 지하 주거 공간' });
@@ -258,5 +264,7 @@
   const HUB = { CORE: 'C', NORTH: 'N', WEST: 'W', EAST: 'E', SOUTH: 'S' };
   for (const p of Object.values(P)) if (!p.hub) p.hub = HUB[p.district];
 
-  FM.MAP = { DISTRICTS, P, PLOTS, BEACH_SOLIDS, STATIONS, N, E, HUB, SIZE: { minX: -140, maxX: 140, minZ: -130, maxZ: 115 } };
+  // 숨겨진 장소가 아직 안 열렸는지 (지하 아파트: 집 부족 / 동굴: 썰물 때 발견)
+  const isHidden = pl => { if (!pl || !pl.hidden) return false; const st = FM.Sim && FM.Sim.get(); if (pl.hidden === 'cave') return !(st && st.found && st.found.cave); return !(FM.Ug && FM.Ug.isOpen()); };
+  FM.MAP = { isHidden, DISTRICTS, P, PLOTS, BEACH_SOLIDS, STATIONS, N, E, HUB, SIZE: { minX: -140, maxX: 140, minZ: -130, maxZ: 115 } };
 })();

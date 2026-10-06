@@ -547,6 +547,7 @@
   const curExpr = {};
   function play(c) {
     const s = st();
+    try { FM.bus.emit('cutPlay', c); } catch (e) { /* */ }
     const T = THEME[c.theme] || THEME.confess;
     const savedSpeed = s.speed; s.speed = 0;
     FM.UI.closeDialog && !$('#dialog').hidden && FM.UI.closeDialog();

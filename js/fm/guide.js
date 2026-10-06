@@ -21,7 +21,7 @@
     const out = {};
     for (const p of Object.values(MAP.P)) {
       if (p.plot && !st().villagers.some(v => v.home === p.interior)) continue;
-      if (p.hidden && !(FM.Ug && FM.Ug.isOpen())) continue;
+      if (MAP.isHidden(p)) continue;
       if (!p.bld && !p.desc && !['playground', 'alley', 'cliff_lawn'].includes(p.id)) continue;
       (out[p.district] = out[p.district] || []).push(p);
     }

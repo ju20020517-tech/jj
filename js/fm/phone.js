@@ -84,7 +84,7 @@
       const pb = $('#btnPhone'); if (pb) pb.dataset.badge = total ? String(total) : '';
     } catch (e) { /* */ }
   }
-  UI.phone = { show, close, toggle, home, open };
+  UI.phone = { show, close, toggle, home, open, APPS };
 
   const oInit = UI.init;
   UI.init = function () {

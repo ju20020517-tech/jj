@@ -65,6 +65,12 @@
     APT_ROOMS.push(id);
     I[id] = { id, kind: 'room', name: `${fl}0${n}호`, place: 'apartment', floor: fl, idx: n, w: 8, d: 6, door: { x: 3.2, z: -2.6 } };
   }
+  venue('lh_in', { name: '등대 전망실 & 등대지기의 방', place: 'lighthouse', w: 8, d: 8, floor: 'wood', floorColor: 0xc8a878, wall: 0xf4f0e6, light: 'warm', door: { x: 0, z: 3.6 },
+    furn: [f('k19r_telescope', -2.6, -2.6), f('bench_long', 0, -2.9), f('bookshelf', 3.2, -2.6, -90), f('k10_reading_lamp_table', 2.6, 0.6), f('k_rug_kilim', 0, 0), f('plant_monstera', -3.2, 2.8)],
+    zones: '망원경 · 등대 일지 책장 · 바다가 보이는 벤치' });
+  venue('cave_in', { name: '별빛 해안 동굴', place: 'seacave', w: 12, d: 10, floor: 'tile', floorColor: 0x3c4258, wall: 0x2e2a3e, light: 'dark', door: { x: 0, z: 4.6 },
+    furn: [f('k9_celestial_rug', 0, -1), f('k9_orb_lamp', -4.5, -3.8), f('k9_orb_lamp', 4.5, -3.8), f('k5_star_glow_lamp', -5, 1.5), f('k5_star_glow_lamp', 5, 1.5), f('k_lava_lamp', -2.5, -4.2), f('k_lava_lamp', 2.5, -4.2), f('bench_long', 0, 2.6)],
+    zones: '빛나는 수정 · 소원 웅덩이' });
   // 숨겨진 지하 아파트 (집이 모자라면 열림): 로비 + 12호실
   venue('ug_lobby', { name: '지하 아파트 로비 "B1 언더하우스"', place: 'underground', w: 14, d: 9, floor: 'tile', floorColor: 0x6a6470, wall: 0x9a8478, light: 'warm', door: { x: 0, z: 4.1 }, under: true,
     furn: [f('k22o_wash', -5.5, -3.3), f('k22o_wash', -4, -3.3), f('k13_lockers', -1.5, -3.6), f('k_neon_tube', 2, -4.2), f('arcade_cab', 4.5, -3.3), f('k_drink_shelf', 6, -3.3),

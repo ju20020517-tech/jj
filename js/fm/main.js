@@ -428,7 +428,7 @@
     let best = null;
     for (const pl of Object.values(MAP.P)) {
       if (!pl.door || !pl.interior && pl.id !== 'apartment') continue;
-      if (pl.hidden && !(FM.Ug && FM.Ug.isOpen())) continue;
+      if (MAP.isHidden(pl)) continue;
       const d = Math.hypot(pl.door[0] - x, pl.door[1] - z);
       if (d < 2.2 && (!best || d < best.dist)) best = { id: pl.id, dist: d, name: pl.name, place: pl };
     }
