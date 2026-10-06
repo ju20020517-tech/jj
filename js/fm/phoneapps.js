@@ -104,7 +104,7 @@
   // 소식지 = 내가 들은 · 엿들은 · 본 소문만 (rumors.js)
   function heads() {
     const st = S();
-    return (st.rumors || []).slice(-12).reverse().map(r => ({ text: `${r.icon} ${r.text}`, who: r.who, day: r.day, hm: (r.src === 'told' && r.by ? `${Sim.nameOf(r.by)}에게 들음` : r.src === 'heard' ? '엿들음' : '직접 봄') }));
+    return (st.rumors || []).slice(-12).reverse().map(r => ({ text: `${r.icon} ${r.text}`, who: r.who, day: r.day, hm: (r.src === 'told' && r.by ? `${Sim.nameOf(r.by)}에게 들음` : r.src === 'heard' ? '엿들음' : '직접 봄') + (FM.Rumor && FM.Rumor.sureTag ? FM.Rumor.sureTag(r) : '') }));
   }
   function upcoming() {
     const st = S(), h = Sim.time.hour(), d = Sim.time.day(), wd = Sim.time.weekday(), out = [];

@@ -474,7 +474,7 @@
     const nb = s.newsBoard || { items: [] };
     const R = s.rankings || {};
     const types = { all: '전체', couple: '💕 연애', friend: '🤝 우정', crush: '💗 짝사랑', jealous: '⚡ 질투', breakup: '💔 이별', wedding: '💒 결혼', baby: '👶 육아', quirk: '🌀 기행', medical: '🏥 병원', news: '📺 뉴스' };
-    const logs = (s.rumors || []).map(r => ({ day: r.day, hm: r.src === 'told' && r.by ? Sim.nameOf(r.by) + '에게 들음' : r.src === 'heard' ? '엿들음' : '직접 봄', text: `${r.icon} ${r.text}`, type: r.type })).filter(e => logFilter === 'all' || e.type === logFilter || (logFilter === 'wedding' && e.type === 'engage') || (logFilter === 'couple' && ['confess', 'date', 'romance'].includes(e.type))).slice(-80).reverse();
+    const logs = (s.rumors || []).map(r => ({ day: r.day, hm: (r.src === 'told' && r.by ? Sim.nameOf(r.by) + '에게 들음' : r.src === 'heard' ? '엿들음' : '직접 봄') + (FM.Rumor && FM.Rumor.sureTag ? FM.Rumor.sureTag(r) : ''), text: `${r.icon} ${r.text}`, type: r.type })).filter(e => logFilter === 'all' || e.type === logFilter || (logFilter === 'wedding' && e.type === 'engage') || (logFilter === 'couple' && ['confess', 'date', 'romance'].includes(e.type))).slice(-80).reverse();
     body.innerHTML = `
       <h4>📺 친구모아 뉴스 (${esc(nb.anchor || '')})</h4><ul class="list">${nb.items.map(i => `<li>${esc(J(i))}</li>`).join('')}</ul>
       <h4>🏆 실시간 도시 랭킹</h4>

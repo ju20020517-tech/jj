@@ -11,6 +11,9 @@
  *    · 다툼 소식 → 더 친한 쪽 편을 듦 (한쪽과 가까워지고 한쪽과 멀어짐)
  *    · 우정 · 아기 · 입원 소식 → 축하 · 병문안 (관계 생김)
  *    같은 소문은 같은 주민에게 한 번만 · 너무 많이 퍼뜨리면 "소문쟁이" 평판
+ *   헛소문 — 엿들은 소문 · 수다쟁이가 전한 소문은 가끔 사실이 아님
+ *    · 소문 속 당사자에게 "🔍 사실이야?" 하고 물어 확인할 수 있음 (✔ 사실 / ❌ 헛소문)
+ *    · 확인 안 된 헛소문을 퍼뜨리면 들킴 → 나와 당사자 사이 신뢰 하락, 당사자는 처음 퍼뜨린 주민을 원망
  * ========================================================= */
 (() => {
   'use strict';
@@ -25,6 +28,7 @@
   const sty = (v, t) => (FM.Speech ? FM.Speech.apply(v, J(t)) : J(t));
   const toast = t => FM.bus.emit('toast', J(t));
   const R = (FM.Rumor = {});
+  const gossipy = v => Sim.has && (Sim.has(v, 'GOSSIP') || Sim.has(v, 'EXTROVERT') || Sim.has(v, 'BUSYBODY') || Sim.has(v, 'BEAGLE'));
   const book = () => { const st = S(); return st.rumors || (st.rumors = []); };
   const nice = t => (W && W.niceNews ? W.niceNews(t) : String(t).replace(/^[^\s가-힣]+\s*/, ''));
   const RELTYPES = ['couple', 'romance', 'confess', 'wedding', 'engage', 'breakup', 'divorce', 'fight', 'jealous', 'triangle', 'affair', 'friend', 'rel', 'baby', 'medical', 'crush', 'quirk', 'date'];
@@ -50,6 +54,7 @@
     const r = { key: keyOf(e), t: e.t, at: S().time, day: day(), hm: Sim.time.hm ? Sim.time.hm() : '', text: nice(e.text), raw: e.text, type: e.type, newsKind: e.newsKind || null,
       who: (e.who || []).filter(id => id !== P), kind: kindOf(e), src, by: byIdV || null, told: {} };
     r.icon = KIND_ICON[r.kind];
+    maybeFake(r, src, byIdV);
     const b = book(); b.push(r); if (b.length > 80) b.splice(0, b.length - 80);
     if (!quiet) {
       const how = { told: `${nm(byIdV)}에게 들은 소문`, heard: '엿들은 소문', seen: '직접 본 일' }[src] || '소문';
@@ -58,6 +63,27 @@
     FM.bus.emit('rumor', r);
     return r;
   }
+  // 헛소문: 엿들은 소문 25% · 수다쟁이가 전한 소문 15% · 그 밖에 전해 들은 소문 6% (직접 본 일은 항상 사실)
+  const FAKE_TPL = {
+    couple: ['{A}와(과) {C}이(가) 몰래 사귄대요', '{A}이(가) {C}한테 고백했대요'],
+    breakup: ['{A}와(과) {C}이(가) 헤어졌대요'],
+    fight: ['{A}와(과) {C}이(가) 크게 싸웠대요', '{A}이(가) {C}랑 말도 안 한대요'],
+    friend: ['{A}와(과) {C}이(가) 절친이 됐대요'],
+  };
+  function maybeFake(r, src, byIdV) {
+    if (!FAKE_TPL[r.kind] || r.who.length < 1) return;
+    const by = byIdV && byId(byIdV);
+    const p = src === 'heard' ? 0.25 : src === 'told' ? (by && gossipy(by) ? 0.15 : 0.06) : 0;
+    if (!chance(p)) return;
+    const a = byId(r.who[0]); if (!a) return;
+    const pool = S().villagers.filter(x => !x.child && x.id !== a.id && !r.who.includes(x.id) && (r.kind !== 'couple' || !Soc.canRomance || Soc.canRomance(a.id, x.id)));
+    const c = pick(pool); if (!c) return;
+    r.fake = true; r.key += '|fake'; r.who = [a.id, c.id];
+    r.text = J(pick(FAKE_TPL[r.kind]).replace('{A}', a.name).replace('{C}', c.name));
+  }
+  const live = r => !r.debunked;
+  const sureTag = r => r.debunked ? ' · ❌ 헛소문' : r.sure ? ' · ✔ 사실' : r.src === 'heard' ? ' · 긴가민가' : '';
+  R.sureTag = sureTag;
   R.add = add; R.book = book; R.kindOf = kindOf; R.KIND_ICON = KIND_ICON;
   // 주민이 아직 플레이어에게 말 안 한 따끈한 소문
   function freshFor(v) {
@@ -82,6 +108,7 @@
   Soc.playerChoose = function (v, id, arg) {
     if (id === 'rumorMenu') return rumorMenu(v);
     if (id === 'rumorTell') return tellRumor(v, arg);
+    if (id === 'rumorCheck') return checkRumor(v, arg);
     const r = oChoose.apply(this, arguments);
     try {
       if (id === 'news' && r && v && !v.child) {
@@ -95,7 +122,6 @@
   // ---------------------------------------------------------
   // 2) 수다쟁이 주민이 직접 다가와서 알려 줌
   // ---------------------------------------------------------
-  const gossipy = v => Sim.has && (Sim.has(v, 'GOSSIP') || Sim.has(v, 'EXTROVERT') || Sim.has(v, 'BUSYBODY') || Sim.has(v, 'BEAGLE'));
   FM.bus.on('hour', h => {
     try {
       if (h < 8 || h > 21) return;
@@ -147,14 +173,17 @@
     const O = oOpts.apply(this, arguments);
     try {
       if (!v || v.child || v.balloon || !Array.isArray(O) || !O.some(o => o.id === 'bye')) return O;
-      const n = book().filter(r => !r.told[v.id] && !r.who.includes(v.id) && day() - r.day <= 5).length;
-      if (n) { const i = O.findIndex(o => o.id === 'bye'); O.splice(i < 0 ? O.length : i, 0, { id: 'rumorMenu', label: `🗞️ 소문 전하기 (${n})` }); }
+      const n = book().filter(r => live(r) && !r.told[v.id] && !r.who.includes(v.id) && day() - r.day <= 5).length;
+      const i = () => { const k = O.findIndex(o => o.id === 'bye'); return k < 0 ? O.length : k; };
+      if (n) O.splice(i(), 0, { id: 'rumorMenu', label: `🗞️ 소문 전하기 (${n})` });
+      const q = book().slice().reverse().find(r => live(r) && !r.sure && r.who.includes(v.id) && day() - r.day <= 7);
+      if (q) O.splice(i(), 0, { id: 'rumorCheck', label: '🔍 그 소문, 사실이야?', arg: q.key });
     } catch (er) { /* */ }
     return O;
   };
   function rumorMenu(v) {
-    const list = book().filter(r => !r.told[v.id] && !r.who.includes(v.id) && day() - r.day <= 5).slice(-8).reverse();
-    return { text: sty(v, pick(['뭔데뭔데? 얘기해 봐!', '소문? 무슨 소문?', '…궁금하네. 말해 봐.'])), options: list.map(r => ({ id: 'rumorTell', label: `${r.icon} ${r.text}`, arg: r.key })).concat([{ id: 'menu', label: '↩️ 돌아가기' }]) };
+    const list = book().filter(r => live(r) && !r.told[v.id] && !r.who.includes(v.id) && day() - r.day <= 5).slice(-8).reverse();
+    return { text: sty(v, pick(['뭔데뭔데? 얘기해 봐!', '소문? 무슨 소문?', '…궁금하네. 말해 봐.'])), options: list.map(r => ({ id: 'rumorTell', label: `${r.icon} ${r.text}${sureTag(r)}`, arg: r.key })).concat([{ id: 'menu', label: '↩️ 돌아가기' }]) };
   }
   function goSee(v, o, line, onEnd) {
     if (!o || o.loc === 'metro' || v.sceneId || o.sceneId) { if (onEnd) onEnd(); return; }
@@ -166,6 +195,7 @@
     const st = S(); st.rumorSpread = st.rumorSpread || {}; st.rumorSpread[day()] = (st.rumorSpread[day()] || 0) + 1;
     const [a, b] = r.who.map(byId); const fA = a ? Soc.rel(v.id, a.id).friendship_point : 0, fB = b ? Soc.rel(v.id, b.id).friendship_point : 0;
     let text = '', fx = null;
+    if (r.fake) return tellFake(v, r, a, b);
     const crushOn = x => x && v.crush && v.crush.target === x.id;
     const romOn = x => x && Soc.F(v.id, x.id).romance;
     if (r.kind === 'couple' || r.kind === 'wedding') {
@@ -228,4 +258,60 @@
     return { text: sty(v, text), options: Soc.talkOptions(v) };
   }
   R.tell = tellRumor;
+
+  // 확인 안 된 헛소문을 퍼뜨림 → 듣는 사람이 당사자를 찾아갔다가 들통
+  function tellFake(v, r, a, b) {
+    const o = [a, b].filter(Boolean).sort((x, y) => Soc.rel(v.id, y.id).friendship_point - Soc.rel(v.id, x.id).friendship_point)[0];
+    const text = pick(['헐, 진짜? 직접 물어봐야겠다!', '에이, 설마… 확인해 볼게!', '그게 정말이야? 가서 물어볼래.']);
+    const debunk = () => {
+      if (r.debunked) return; r.debunked = true;
+      Soc.addFriend(v.id, P, -3, -4, '헛소문');
+      if (o) { Soc.addFriend(o.id, P, -4, -5, '헛소문'); if (r.by && r.by !== o.id) Soc.addFriend(o.id, r.by, -4, -3, '헛소문을 퍼뜨림'); }
+      toast(`❌ 헛소문이었어요! ${o ? o.name : '당사자'}이(가) "그런 적 없다"고 했대요… (${v.name}${o ? '·' + o.name : ''}의 신뢰 하락)`);
+      Sim.log('rel', `😤 ${o ? o.name : ''}이(가) 자기에 대한 헛소문에 화가 났어요`, [o && o.id, v.id].filter(Boolean), 1);
+    };
+    if (o && !o.sceneId && !v.sceneId && o.loc !== 'metro') {
+      Sim.scene({ title: '헛소문 확인', actors: { A: v, B: o }, steps: [{ go: 'A', to: { actor: 'B', near: 1.1 }, max: 90 }, { face: 'A', at: 'B' }, { face: 'B', at: 'A' },
+        { say: 'A', text: sty(v, `너 그거 진짜야? ${r.text}`), t: 3 }, { emote: 'B', e: '💢' },
+        { say: 'B', text: () => sty(o, pick(['뭐?! 그런 적 없어! 누가 그래?', '…그거 완전 헛소문이야.', '하… 누가 그런 말을 퍼뜨려?'])), t: 3 }], onEnd: debunk });
+    } else setTimeout(debunk, 4000);
+    if (W && W.remember) W.remember(v, 'rumor', `${pl().name}한테 "${r.text}" 얘기를 들었어`);
+    return { text: sty(v, text), options: Soc.talkOptions(v) };
+  }
+
+  // 당사자에게 직접 확인
+  function checkRumor(v, key) {
+    const r = book().find(x => x.key === key); if (!r) return { text: sty(v, '응?'), options: Soc.talkOptions(v) };
+    let text;
+    if (r.fake) {
+      r.debunked = true; Sim.emote(v, '💢');
+      const by = r.by && byId(r.by);
+      if (by && by.id !== v.id) Soc.addFriend(v.id, by.id, -3, -2, '헛소문을 퍼뜨림');
+      Soc.addFriend(v.id, P, 1, 2, '직접 물어봐 줌');
+      text = pick([`뭐어?! 그런 적 없거든! ${by ? `${by.name}이(가) 그래? …두고 봐.` : '누가 그런 말을 해?'}`, '헛소문이야. 그래도 나한테 직접 물어봐 줘서 고마워.', '…그런 소문이 돌아? 진짜 어이없다.']);
+      toast(`❌ 헛소문이었어요 — 소문 수첩에 표시했어요`);
+    } else {
+      r.sure = true; Soc.addFriend(v.id, P, 1, 1, '솔직한 대화');
+      text = { couple: pick(['…응, 맞아. 어떻게 알았어?! 아직 비밀이야!', '헤헤… 소문 빠르네. 맞아.']), wedding: '응! 결혼해! 꼭 와 줘!', breakup: pick(['…응. 그렇게 됐어. 괜찮아, 이제.', '맞아… 아직 좀 힘들어.']), fight: pick(['…응. 좀 다퉜어. 곧 풀겠지.', '그 얘긴 하고 싶지 않아… 근데 맞아.']), friend: '응! 요즘 진짜 친해!', baby: '맞아! 우리 아기 보러 와!', sick: '응… 이제 좀 괜찮아. 걱정해 줘서 고마워.' }[r.kind] || '응, 맞아.';
+      if (r.kind === 'breakup' || r.kind === 'fight' || r.kind === 'sick') Sim.emote(v, '😢'); else Sim.emote(v, '😊');
+      toast(`✔ 사실로 확인된 소문이에요`);
+    }
+    return { text: sty(v, text), options: Soc.talkOptions(v) };
+  }
+  R.check = checkRumor;
+
+  // 새 소문 배지 (폰 · 소식 앱)
+  function badge() {
+    let el = document.getElementById('rumorBadge');
+    if (!el) { el = document.createElement('span'); el.id = 'rumorBadge'; el.style.display = 'none'; document.body.appendChild(el); }
+    const st = S(); const seen = st && st.rumorSeen || 0;
+    const n = st ? book().filter(r => (r.at || 0) > seen).length : 0;
+    el.dataset.badge = n ? String(n) : '';
+  }
+  FM.bus.on('rumor', badge);
+  const UI = FM.UI;
+  if (UI && UI.tab) {
+    const oTab = UI.tab;
+    UI.tab = function (t) { if (t === 'news') { const st = S(); if (st) { st.rumorSeen = st.time; badge(); } } return oTab.apply(this, arguments); };
+  }
 })();

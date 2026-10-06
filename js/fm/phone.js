@@ -16,7 +16,7 @@
     ['villagers', '👥', '주민', 'linear-gradient(135deg,#ffc8dc,#ff9ac8)', 'villagers'],
     ['love', '💞', '연애', 'linear-gradient(135deg,#ffd6e8,#ff7ab0)', 'love'],
     ['quest', '📜', '퀘스트', 'linear-gradient(135deg,#fff0b0,#ffd27a)', 'quest'],
-    ['news', '📰', '소식', 'linear-gradient(135deg,#d0ecff,#8fc8ff)', 'news'],
+    ['news', '📰', '소식', 'linear-gradient(135deg,#d0ecff,#8fc8ff)', 'news', 'rumorBadge'],
     ['bag', '🎒', '가방', 'linear-gradient(135deg,#d8f4c8,#9adc8a)', 'bag'],
     ['map', '🗺️', '지도', 'linear-gradient(135deg,#c8f4ec,#7ad8c8)', () => UI.toggleMap()],
     ['rel', '🕸️', '관계도', 'linear-gradient(135deg,#e8dcff,#b69cff)', () => FM.Drama && FM.Drama.openMap()],
