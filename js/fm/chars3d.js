@@ -43,6 +43,15 @@
       case 'uniform': Object.assign(l, { top: 'vest', shirt: 0x2f4b6e, shirt2: 0xffffff, bottom: 'skirt', pants: 0x2f4b6e, acc: 'bowtie', accColor: 0xc0392b, pattern: 'plain' }); break;
       case 'couple': { const c = [0xff8fb1, 0x8fd3ff, 0xffd84a][(e.coupleHue || 0) % 3]; Object.assign(l, { top: 'tee', shirt: c, shirt2: 0xffffff, pattern: 'heart' }); break; }
     }
+    // 아기 · 유아 전용 디자인 (부모에게 물려받은 피부 · 머리색 · 눈은 그대로)
+    if (e.child && (e.child.stage === 'BABY' || e.child.stage === 'TODDLER') && !o) {
+      const pastel = [0xbfe8d8, 0xffd0e0, 0xfff0a8, 0xc8e4ff, 0xe0d0ff][h % 5];
+      if (e.child.stage === 'BABY') Object.assign(l, { top: 'hoodie', shirt: pastel, shirt2: 0xffffff, pattern: ['dots', 'star', 'heart', 'plain'][h % 4], bottom: 'pants', pants: pastel, shoes: 0xffffff, shoeType: 'sneaker', socks: undefined,
+        hairStyle: 'buzz', hat: 'none', acc: 'none', acc2: 'none', glasses: 'none', eyeKit: 'big', blush: true, mouth: (h >> 3) % 2 ? 'open' : 'smile', brows: undefined, mole: '', freckles: false, width: 1.2, height: 0.86 });
+      else Object.assign(l, { top: 'overalls', shirt: 0xffffff, shirt2: pastel, pattern: 'plain', bottom: 'shorts', pants: pastel, shoes: [0xff6f61, 0x3a7bd5, 0xffd84a][h % 3], shoeType: 'sneaker',
+        hat: 'none', acc: 'none', acc2: 'none', glasses: 'none', eyeKit: 'big', blush: true, mouth: 'grin', width: 1.12, height: 0.92,
+        hairStyle: e.gender === 'F' ? (['twintail', 'odango', 'bobbang'][h % 3]) : (['bowl', 'boyshort', 'curlyshort'][h % 3]) });
+    }
     if (st.hatOverride && !['swim', 'bride', 'space', 'diving', 'worker'].includes(o)) { l.hat = st.hatOverride; l.hatColor = [0xff6f61, 0x8fd3ff, 0xffd84a, 0xb69cff][h % 4]; }
     if (st.hatGone) l.hat = 'none';
     if (st.hair === 'neon' && l.species === 'human') l.hair = 0x39ff14;
@@ -54,6 +63,40 @@
   // ---------------------------------------------------------
   // 덧입히는 소품 (안전모, 잠수모, 우주 헬멧, 면사포, 튜브, 벨트 ...)
   // ---------------------------------------------------------
+  function babyBits(c, e) {
+    const head = c.head, top = 0.4;
+    // 아기: 머리 위 곱슬 한 가닥 · 쪽쪽이 · 턱받이 · (절반은) 레이스 보닛 / 유아: 곱슬 + 턱받이
+    if (!(e.child && (e.child.stage === 'BABY' || e.child.stage === 'TODDLER'))) return;
+    {
+      const h = hash(e.id || e.name), lk = e.look || {};
+      const baby = e.child.stage === 'BABY';
+      head.scale.multiplyScalar(baby ? 1.14 : 1.06);
+      const curl = mesh(geo('bcurl', () => new THREE.TorusGeometry(0.07, 0.025, 6, 14, Math.PI * 1.6)), mat(lk.hair || 0x6a4a30), 0, top + 0.06, 0.12);
+      curl.rotation.y = Math.PI / 2; head.add(curl);
+      const bib = mesh(geo('bbib2', () => new THREE.CircleGeometry(0.12, 20)), mat(0xffffff), 0, 0.38, 0.262);
+      c.body.add(bib);
+      const bh = mesh(geo('bbibHeart', () => { const sh = new THREE.Shape(); const k = 0.012; sh.moveTo(0, -3 * k); sh.bezierCurveTo(-5 * k, 0, -3 * k, 4 * k, 0, 2 * k); sh.bezierCurveTo(3 * k, 4 * k, 5 * k, 0, 0, -3 * k); return new THREE.ShapeGeometry(sh); }), mat([0xff8fb1, 0x8fd3ff, 0xffd84a][h % 3]), 0, 0.36, 0.268);
+      c.body.add(bh);
+      if (baby) {
+        const pc = new THREE.Group();
+        pc.add(mesh(geo('pacR', () => new THREE.TorusGeometry(0.06, 0.018, 6, 16)), mat([0xff8fb1, 0x8fd3ff, 0xffd84a, 0x8ee07a][h % 4])));
+        pc.add(mesh(geo('pacS', () => new THREE.CylinderGeometry(0.075, 0.075, 0.03, 16)), mat(0xffffff), 0, 0, -0.02));
+        pc.children[1].rotation.x = Math.PI / 2;
+        pc.position.set(0, -0.27, 0.42); head.add(pc);
+        if (h % 2 === 0) {
+          const bc = [0xffffff, 0xffe0ec, 0xe8f4ff][h % 3];
+          const bon = mesh(geo('bonnet3', () => new THREE.SphereGeometry(0.53, 22, 12, 0, Math.PI * 2, 0, Math.PI * 0.62)), mat(bc), 0, 0.02, -0.05);
+          bon.rotation.x = -1.2; head.add(bon);
+          const rim = mesh(geo('bonRim2', () => new THREE.TorusGeometry(0.49, 0.06, 8, 32)), mat(0xffffff));
+          { const y = 0.53 * Math.cos(Math.PI * 0.62), a = -1.2; rim.position.set(0, 0.02 + y * Math.cos(a), -0.05 + y * Math.sin(a)); }
+          rim.rotation.x = -1.2 + Math.PI / 2; head.add(rim);
+          for (const sx of [-1, 1]) head.add(mesh(geo('bonTie', () => new THREE.SphereGeometry(0.06, 8, 6)), mat([0xff8fb1, 0x8fd3ff, 0xffd84a][h % 3]), sx * 0.3, -0.36, 0.2));
+        }
+      }
+    }
+  }
+  Ch.babyBits = babyBits;
+
   function overlays(c, e) {
     const st = e.status || {};
     const o = e.outfit;
@@ -71,6 +114,7 @@
     if (o === 'hanbok') { const r = mesh(box(0.08, 0.28, 0.03, 0.02), mat(0xc0392b), 0.08, 0.34, 0.25); r.rotation.z = 0.3; c.body.add(r); }
     if (o === 'prisoner') c.body.add(mesh(box(0.2, 0.1, 0.02, 0.01), mat(0xffffff), 0.1, 0.36, 0.27));
     if (o === 'pajama' || (e.act && e.act.id === 'sleep' && !e.child)) { const nc = mesh(geo('nightcap2', () => new THREE.ConeGeometry(0.28, 0.6, 12)), mat(0x8fd3ff), 0.05, top + 0.2, -0.05); nc.rotation.z = -0.5; head.add(nc); }
+    babyBits(c, e);
     // 파격 머리 (동물): 형광 초록 모히칸
     if (st.hair === 'neon' && e.look && e.look.species !== 'human') for (let i = 0; i < 5; i++) head.add(mesh(geo('mohawk', () => new THREE.ConeGeometry(0.07, 0.3, 6)), mat(0x39ff14), 0, top + 0.08, 0.2 - i * 0.12).rotateX(-0.3 + i * 0.1));
     // 이상한 선탠 자국 (선글라스 모양 / 별 모양)
@@ -129,6 +173,8 @@
     c.root.traverse(o => { if (o.isMesh) o.userData.entity = e.id; });
     return { c, key: modelKey(e), bal, emo, balKey: null, emoKey: null, prop: null, propName: null, poseT: 0, lastPose: null, scene: null };
   }
+
+  Ch.build = build;
 
   function setProp(m, name) {
     if (m.propName === name) return;

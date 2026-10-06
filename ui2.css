@@ -357,6 +357,8 @@ body.cine-thriller #game { filter: saturate(.6) brightness(.7) hue-rotate(170deg
 .cs-where { margin-top: 8px; opacity: .85; letter-spacing: 1px !important; }
 .cs-narr { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: #3d2c24; font-size: 32px; }
 .cs-pop.txt { font-size: 40px; color: #fff; -webkit-text-stroke: 2px #ff6f9f; font-weight: bold; }
+body.cine-night #game { filter: brightness(.62) saturate(.8) hue-rotate(12deg) !important; transition: filter .6s; }
+body.cine-night #cutscene .cs-tint { background: radial-gradient(circle at 50% 30%, rgba(40, 50, 120, .25), rgba(10, 14, 40, .5) 75%) !important; }
 body.cine-holy #game { filter: sepia(.35) saturate(1.4) brightness(1.12) !important; transition: filter .6s; }
 body.cine-sepia #game { filter: sepia(.8) contrast(.95) brightness(.95) !important; transition: filter .6s; }
 body.cine-holy #cutscene .cs-tint { background: radial-gradient(circle at 50% 35%, rgba(255, 240, 160, .45), rgba(255, 190, 60, .25) 70%) !important; }

@@ -65,6 +65,18 @@
     APT_ROOMS.push(id);
     I[id] = { id, kind: 'room', name: `${fl}0${n}호`, place: 'apartment', floor: fl, idx: n, w: 8, d: 6, door: { x: 3.2, z: -2.6 } };
   }
+  // 숨겨진 지하 아파트 (집이 모자라면 열림): 로비 + 12호실
+  venue('ug_lobby', { name: '지하 아파트 로비 "B1 언더하우스"', place: 'underground', w: 14, d: 9, floor: 'tile', floorColor: 0x6a6470, wall: 0x9a8478, light: 'warm', door: { x: 0, z: 4.1 }, under: true,
+    furn: [f('k22o_wash', -5.5, -3.3), f('k22o_wash', -4, -3.3), f('k13_lockers', -1.5, -3.6), f('k_neon_tube', 2, -4.2), f('arcade_cab', 4.5, -3.3), f('k_drink_shelf', 6, -3.3),
+      f('bench_long', -5, 1.5, 90), f('plant_monstera', -6.2, 3.4), f('k22o_hang_lamp', 0, 0), f('k20f_menu_board', 5.8, 2.6, -90), f('k_rug_kilim', 0, 0.5)],
+    zones: '세탁실 · 사물함 · 오락기 · 주민 게시판' });
+  const UG_ROOMS = [];
+  for (let fl = 1; fl <= 2; fl++) for (let n = 1; n <= 6; n++) {
+    const id = `ug-B${fl}0${n}`;
+    UG_ROOMS.push(id);
+    I[id] = { id, kind: 'room', name: `지하 B${fl}-0${n}호`, place: 'underground', floor: -fl, idx: n, w: 8, d: 6, door: { x: 3.2, z: -2.6 }, under: true };
+  }
+  FM.UG_ROOMS = UG_ROOMS;
   for (const pl of FM.MAP.PLOTS) {
     const big = pl.size === 'large';
     I[pl.id + '_in'] = { id: pl.id + '_in', kind: 'room', name: FM.MAP.P[pl.id].name, place: pl.id, w: big ? 12 : 10, d: big ? 9 : 7, door: { x: 0, z: (big ? 9 : 7) / 2 - 0.4 }, villa: true };

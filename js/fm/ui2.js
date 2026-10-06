@@ -109,6 +109,25 @@
   // =========================================================
   // 프로필 — 탭형
   // =========================================================
+  // 가족: 쌍둥이 · 남매 · 부모 · 자녀 + 아이의 성장 기록 (첫 마디 · 돌잡이 · 다음 성장까지)
+  function familyKv(v) {
+    const st = Sim.get(), out = [];
+    const nm = id => (id === P ? st.player.name : Sim.nameOf(id));
+    for (const id of v.siblings || []) if (Sim.byId(id)) out.push(`${v.twin === id ? '👯 쌍둥이' : '👫 남매'} ${esc(nm(id))}`);
+    const par = (v.child && v.child.parents) || (v.grownUp && v.grownUp.parents) || [];
+    if (par.length) out.push(`👪 부모 ${par.map(id => esc(nm(id))).join(' · ')}`);
+    const kids = st.villagers.filter(o => o !== v && ((o.child && o.child.parents.includes(v.id)) || (o.grownUp && o.grownUp.parents.includes(v.id))));
+    if (kids.length) out.push(`🍼 자녀 ${kids.map(o => esc(o.name) + (o.child ? ` (${{ BABY: '아기', TODDLER: '유아', CHILD: '어린이' }[o.child.stage] || ''})` : '')).join(' · ')}`);
+    if (v.child) {
+      const c = v.child, age = Sim.time.day() - (c.birthDay || Sim.time.day()), DP = D.PARENT;
+      const next = c.stage === 'BABY' ? DP.babyDays : c.stage === 'TODDLER' ? DP.babyDays + DP.toddlerDays : (FM.Life && FM.Life.INDEP_DAY) || 15;
+      const nxt = { BABY: '걸음마', TODDLER: '입학', CHILD: '독립' }[c.stage];
+      out.push(`📅 ${age}일째${nxt ? ` · ${nxt}까지 ${Math.max(0, next - age)}일` : ''}`);
+      const memo = [c.firstWord && `첫 마디 "${c.firstWord}"`, c.dol && `돌잡이 ${c.dol}`, c.vig && `추억 ${Object.keys(c.vig).length}편`].filter(Boolean);
+      if (memo.length) out.push('📸 ' + esc(memo.join(' · ')));
+    }
+    return out.length ? `<div class="kv"><span>가족</span><b>${out.join('<br>')}</b></div>` : '';
+  }
   let pfTab = 'info';
   UI.showProfile = function (v, tab) {
     if (!v || v.staff) return;
@@ -177,6 +196,7 @@
           <div class="kv"><span>직업</span><b>${Sim.JOB_NAMES[v.job] || '-'}</b></div>
           <div class="kv"><span>지갑</span><b>🪙 ${Math.floor(v.coins).toLocaleString()}${v.debt ? ` <small class="neg">(빚 ${v.debt})</small>` : ''}</b></div>
           <div class="kv"><span>집</span><b>${esc(homeName(v.home))}</b></div>
+          ${familyKv(v)}
           <div class="kv"><span>자주 하는 일</span><b>${esc(topActs.join(', ') || '-')}</b></div>
         </section>
       </div>

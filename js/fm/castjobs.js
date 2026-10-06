@@ -152,7 +152,7 @@
     c21: '요~ 오늘 셋리스트 장난 아니야!', c22: '…뭐야, 일하는 거 구경 왔냐?', c23: '입항 예정 정상. 무슨 일이야?', c24: '이 벽에 고래를 그릴 거야. 하늘에서 헤엄치는 고래!',
     c25: '어어? 사과가 또 굴러간다~!', c26: '승선을 환영합니다. 오늘 바다는 잔잔합니다.', c27: '깜짝 사진 찍었지롱! ㅋㅋ', c28: '아, 어서 오세요… 어디 아프신 건 아니죠?',
     c29: '저기 봐, 물총새야. 소리 내지 말고.', c30: '이 셔츠 오늘 들어온 거야. 너한테 딱인데?',
-    c31: '자자~ 떡볶이 왔어요 떡볶이! 너는 특별히 하나 더!', c32: '앗, 연습 보러 온 거야? 무대 아니면 부끄러운데…', c33: '어서 오시옵소서, 주인님. 성당은 오늘도 정갈하옵니다.', c34: '하아암… 마사지 받으러 왔어? 누워.', c35: '얼씨구~ 타코야키 갓 나왔어! 여섯 알 받아 가!',
+    c31: '자자~ 떡볶이 왔어요 떡볶이! 너는 특별히 하나 더!', c32: '앗, 연습 보러 왔어?! 꺄~ 잘 보고 가! 원, 투, 쓰리!', c33: '어서 오시옵소서, 주인님. 성당은 오늘도 정갈하옵니다.', c34: '하아암… 마사지 받으러 왔어? 누워.', c35: '얼씨구~ 타코야키 갓 나왔어! 여섯 알 받아 가!',
     c36: '어서 오시오, 소협! 오늘의 특선은 탕수육이오!', c37: '짜잔~! 손님 오셨다! 카드 한 장 골라 봐!', c38: '충성! 열차는 정시 운행 중입니다!', c39: '쉿, 지금 수업 중이야! 이따 보자!', c40: '앗, 미술실까지 왔어? 아이들이 그린 그림 볼래?',
   };
   if (Soc) {
@@ -220,7 +220,7 @@
   Job.ensureAll = ensureAll;
   // 기존 세이브: 새 고정 주민(c31~c40)이 아직 없으면 빈 집으로 이사 옴
   // 다시 디자인한 새 주민(c31~c40): 예전 세이브의 이름 · 외모 · 성격을 새 설정으로 맞춤
-  const CAST_REV = 2;
+  const CAST_REV = 3;
   function syncCast() {
     const st = S(); if (!st) return;
     const C = {}; for (const c of (window.ISLE && ISLE.CAST) || []) C[c.id] = c;
@@ -228,7 +228,13 @@
       const c = C[v.castId]; if (!c || !/^c(3[1-9]|40)$/.test(c.id) || v.castRev === CAST_REV) continue;
       const old = v.name;
       Object.assign(v, { name: c.name, gender: c.gender, age: c.age, concept: c.concept, castJob: c.job, signature: c.signature, phrase: c.phrase, look: JSON.parse(JSON.stringify(c.look)), keys: Object.assign({}, c.keys), castRev: CAST_REV });
-      if (c.sibling) v.siblings = [c.sibling];
+      if (c.sibling) {
+        v.siblings = [c.sibling]; if (c.twin) v.twin = c.sibling;
+        const sib = st.villagers.find(o => o.castId === c.sibling);
+        if (sib) { sib.siblings = [c.id]; if (c.twin) sib.twin = c.id; Soc && Soc.addFriend && (Soc.addFriend(v.id, sib.id, 30, 30, '가족'), Soc.addFriend(sib.id, v.id, 30, 30, '가족'));
+          // 쌍둥이·남매는 빈자리가 있으면 한집으로
+          if (sib.home && /^villa/.test(sib.home) && st.villagers.filter(o => o.home === sib.home).length < 2 && v.home !== sib.home) v.home = sib.home; }
+      }
       if (Sim.derive) try { Sim.derive(v); } catch (e) { /* */ }
       applyJob(v); FM.bus.emit('outfit', v);
       if (old !== c.name) Sim.log('move', `✨ ${old}이(가) 이름을 '${c.name}'(으)로 바꾸고 새 출발을 했어요!`, [v.id], 1);

@@ -682,7 +682,7 @@
 
   // 입주 (집 배정 + 방 기본 가구)
   function moveIn(v, silent) {
-    if (!v.home) v.home = freeHome(v.preferHome);
+    if (!v.home) v.home = Sim.freeHome(v.preferHome);
     if (!v.home || S.villagers.filter(o => !o.child).length >= Sim.MAX_VILLAGERS && !v.child) return false;
     S.villagers.push(v);
     if (!S.rooms[v.home]) S.rooms[v.home] = FM.defaultRoom(v);
@@ -699,7 +699,7 @@
   // 고정 주민 집 정하기: 남매(sibling)는 2인용 빌라에 함께 · 형제가 될 주민은 2인용 빌라를 먼저 잡아 둠
   Sim.castHome = function (v, c) {
     const cast = (window.ISLE && ISLE.CAST) || [];
-    if (c.sibling) { const sib = S.villagers.find(o => o.castId === c.sibling); if (sib && sib.home) { const n = S.villagers.filter(o => o.home === sib.home).length; if (n < 2 && /^villa/.test(sib.home)) v.home = sib.home; } v.siblings = [c.sibling]; if (sib) sib.siblings = [c.id]; }
+    if (c.sibling) { const sib = S.villagers.find(o => o.castId === c.sibling); if (sib && sib.home) { const n = S.villagers.filter(o => o.home === sib.home).length; if (n < 2 && /^villa/.test(sib.home)) v.home = sib.home; } v.siblings = [c.sibling]; if (sib) sib.siblings = [c.id]; if (c.twin) { v.twin = c.sibling; if (sib) sib.twin = c.id; } }
     else if (cast.some(x => x.sibling === c.id)) { const big = Sim.homeOptions().find(o => o.kind === 'villaL' && o.used === 0); if (big) v.home = big.id; }
   };
 

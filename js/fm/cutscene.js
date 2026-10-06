@@ -341,6 +341,7 @@
       let look; try { look = v.id === P ? v.look : FM.Chars.outfitLook(Object.assign({}, v, c.outfits && c.outfits[k] ? { outfit: c.outfits[k] } : {})); } catch (e) { look = v.look; }
       if (c.lookPatch && c.lookPatch[k] && !(c.outfits && c.outfits[k])) look = Object.assign({}, look, c.lookPatch[k]);
       const ch = ISLE.M.character(look || ISLE.randomLook());
+      if (v.child && FM.Chars.babyBits) try { FM.Chars.babyBits(ch, v); } catch (e) { /* */ }
       ch.root.traverse(o => { if (o.isMesh) o.castShadow = true; });
       if (v.child && !(c.scale && c.scale[k])) ch.root.scale.multiplyScalar({ BABY: 0.45, TODDLER: 0.58, CHILD: 0.76 }[v.child.stage] || 1);
       if (c.scale && c.scale[k]) ch.root.scale.multiplyScalar(c.scale[k]);
@@ -584,7 +585,7 @@
       if (!c.replay) { try { if (c.resolve) c.resolve(c.results); } catch (e) { console.error('cut resolve', e); } try { Cut.saveAlbum && Cut.saveAlbum(c); } catch (e) { console.error('album', e); } }
       setTimeout(() => {
         try { if (stage) stage.dispose(); } catch (e) { console.error('cut dispose', e); try { FM.G.endCine(); FM.Chars.hidden = null; } catch (e2) { /* 무시 */ } }
-        el.remove(); playing = null; delete document.body.dataset.cine; document.body.classList.remove('cine-gray', 'cine-thriller', 'cine-holy', 'cine-sepia');
+        el.remove(); playing = null; delete document.body.dataset.cine; document.body.classList.remove('cine-gray', 'cine-thriller', 'cine-holy', 'cine-sepia', 'cine-night');
         const cur = st(); if (cur && cur.speed === 0) cur.speed = savedSpeed;
         FM.UI.paint && FM.UI.paint();
         if (queue.length && cur.flags.autoCut !== false) setTimeout(() => { if (!playing && !busy()) Cut.playNext(); }, 1200);
@@ -689,7 +690,7 @@
         if (g) { g.visible = false; const [x, y] = stage.localToScreen(g.position.x, 0.6, g.position.z); pop(fx, x, y, '💥', 'big'); const h1 = stage.addProp('sofa', g.position.x - 0.7, g.position.z, 0.3); const h2 = stage.addProp('sofa', g.position.x + 0.7, g.position.z, -0.3); h1.scale.set(0.5, 1, 1); h2.scale.set(0.5, 1, 1); }
         stage && stage.shake(1.2); flash(); sfx('boom'); wait = 1500;
       }
-      else if (b.filter !== undefined) { document.body.classList.remove('cine-gray', 'cine-thriller', 'cine-holy', 'cine-sepia'); if (b.filter) document.body.classList.add('cine-' + b.filter); if (b.filter === 'thriller') { flash(true); sfx('drone'); } wait = b.t || 700; }
+      else if (b.filter !== undefined) { document.body.classList.remove('cine-gray', 'cine-thriller', 'cine-holy', 'cine-sepia', 'cine-night'); if (b.filter) document.body.classList.add('cine-' + b.filter); if (b.filter === 'thriller') { flash(true); sfx('drone'); } wait = b.t || 700; }
       else if (b.beam) {
         if (stage) { stage.shot('zoom', b.beam); setTimeout(() => { const eyes = stage.eyes(b.beam); const [tx, ty] = b.at ? scr(b.at) : [innerWidth / 2, innerHeight / 2]; for (const [ex, ey] of eyes) { const ln = document.createElement('div'); ln.className = 'cs-beam'; const dx = tx - ex, dy = ty + 60 - ey; ln.style.left = ex + 'px'; ln.style.top = ey + 'px'; ln.style.width = Math.hypot(dx, dy) + 'px'; ln.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`; fx.appendChild(ln); setTimeout(() => ln.remove(), 1800); } }, 600); }
         sfx('boom'); wait = 2400;

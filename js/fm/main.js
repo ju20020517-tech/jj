@@ -425,6 +425,7 @@
     let best = null;
     for (const pl of Object.values(MAP.P)) {
       if (!pl.door || !pl.interior && pl.id !== 'apartment') continue;
+      if (pl.hidden && !(FM.Ug && FM.Ug.isOpen())) continue;
       const d = Math.hypot(pl.door[0] - x, pl.door[1] - z);
       if (d < 2.2 && (!best || d < best.dist)) best = { id: pl.id, dist: d, name: pl.name, place: pl };
     }
@@ -453,7 +454,7 @@
     }
     if (p.loc === 'island') {
       const dr = nearDoor(p.x, p.z);
-      if (dr) add(dr.dist, dr.id === 'apartment' ? '🏢 시티 타워 (관찰 / 방문)' : `🚪 ${dr.name} 들어가기`, () => (dr.id === 'apartment' ? FM.UI.apartmentMenu() : enterInterior(dr.place.interior)));
+      if (dr) add(dr.dist, dr.id === 'apartment' ? '🏢 시티 타워 (관찰 / 방문)' : dr.id === 'underground' ? '🕳️ 지하 아파트 (로비 / 방문)' : `🚪 ${dr.name} 들어가기`, () => (dr.id === 'apartment' ? FM.UI.apartmentMenu() : dr.id === 'underground' ? FM.UI.undergroundMenu() : enterInterior(dr.place.interior)));
       for (const [k, s] of Object.entries(MAP.STATIONS)) { const d = Math.hypot(s.x - p.x, s.z - p.z); if (d < 3.2) add(d, `🚇 ${s.name} (지하철 타기)`, () => FM.UI.metro(k)); }
       const mb = MAP.P.home_p.spots[0]; if (Math.hypot(mb[0] - p.x, mb[1] - p.z) < 2) add(1, '📮 우편함 열기', () => FM.UI.mailbox());
       if (Math.hypot(p.x, p.z - 10) < 5) add(2, '🪙 분수대 소원 동전 던지기', () => FM.UI.wish());

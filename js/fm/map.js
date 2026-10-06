@@ -26,6 +26,9 @@
   place('apartment', { name: '5층 메가 아파트 "시티 타워"', district: 'CORE', x: 0, z: -15,
     bld: { type: 'apartment', w: 30, d: 11, h: 17 }, door: [0, -9], tags: ['home'],
     desc: '모든 주민이 섬에 처음 이주했을 때 입주하는 5층, 20호실 규모의 주거 관찰 전용 타워' });
+  // 숨겨진 장소 — 집이 모자라면 열리는 지하 아파트 (시티 타워 옆 계단 입구)
+  place('underground', { name: '숨겨진 지하 아파트 "B1 언더하우스"', district: 'CORE', x: -19, z: -7.5, door: [-19, -5.2], interior: 'ug_lobby', hidden: true, tags: ['home'],
+    desc: '섬에 집이 모자라자 시티 타워 옆 낡은 계단 아래에서 발견된 비밀 지하 주거 공간' });
   place('apt_yard', { name: '아파트 앞 마당', district: 'CORE', x: 0, z: -5, r: 14, tags: ['yard', 'flowers', 'bench'],
     spots: [[-12, -5, ['flowers']], [12, -5, ['flowers']], [-7, -3.5, ['bench'], { seat: true, face: 0 }], [7, -3.5, ['bench'], { seat: true, face: 0 }], [-16, -2, ['trees']], [16, -2, ['trees']]] });
   place('plaza', { name: '중앙 분수대 & 커뮤니티 광장', district: 'CORE', x: 0, z: 10, r: 14, tags: ['plaza', 'fountain', 'bench', 'pigeons', 'party'],
