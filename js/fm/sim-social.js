@@ -73,6 +73,7 @@
   Soc.stageName = id => (D.FRIEND_STAGES.find(s => s.id === id) || {}).name || id;
 
   function addFriend(a, b, dfp, dtr, why) {
+    if ((a === P || b === P) && Soc.repMul) dfp = Soc.repMul(dfp);   // 평판에 따라 호감 오르는 속도
     const r = rel(a, b);
     r.friendship_point = clamp(r.friendship_point + dfp, 0, 100);
     r.trust_level = clamp(r.trust_level + dtr, 0, 100);

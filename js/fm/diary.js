@@ -196,7 +196,7 @@
     const tabs = `<div class="pa-seg">${[['today', '✅ 오늘'], ['cal', '📅 달력'], ['ach', '🏅 업적']].map(([k, t]) => `<button data-dt="${k}" class="${tab === k ? 'on' : ''}">${t}</button>`).join('')}</div>`;
     let html = '';
     if (tab === 'today') {
-      html = `<div class="pa-card"><div class="pa-name" style="font-size:18px">✅ ${day()}일차 오늘의 할 일</div>
+      html = `${FM.Interact ? `<div class="pa-card" style="text-align:center"><b>${esc(FM.Interact.badge())}</b><div class="pa-sub">칭찬 · 선물 · 부탁으로 오르고, 바람 · 헛소문 · 험담 · 무례한 대답으로 떨어져요</div></div>` : ''}<div class="pa-card"><div class="pa-name" style="font-size:18px">✅ ${day()}일차 오늘의 할 일</div>
         ${d.goals.map(g => `<div class="kv" style="display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px dashed rgba(0,0,0,.08)"><span>${g.done ? '✔️' : '⬜'} ${esc(labelOf(g))}</span><b>${g.got}/${g.n} · 🪙 ${g.pay}</b></div>`).join('')}
         <p class="pa-sub" style="margin-top:8px">${d.bonus ? '🎉 오늘 할 일 완료! 보너스를 받았어요' : '세 개 다 하면 보너스 🪙 600'}</p></div>
         <div class="pa-card"><div class="pa-sub">📅 다가오는 일</div>${calendar(4).filter(x => x.ev.length).slice(0, 3).map(x => `<div class="pa-sub">${x.d === day() ? '오늘' : `${x.d - day()}일 뒤`} · ${x.ev.slice(0, 2).join(' · ')}</div>`).join('') || '<div class="pa-sub">조용한 며칠이 될 것 같아요</div>'}</div>`;

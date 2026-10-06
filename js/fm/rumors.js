@@ -264,7 +264,7 @@
     const o = [a, b].filter(Boolean).sort((x, y) => Soc.rel(v.id, y.id).friendship_point - Soc.rel(v.id, x.id).friendship_point)[0];
     const text = pick(['헐, 진짜? 직접 물어봐야겠다!', '에이, 설마… 확인해 볼게!', '그게 정말이야? 가서 물어볼래.']);
     const debunk = () => {
-      if (r.debunked) return; r.debunked = true;
+      if (r.debunked) return; r.debunked = true; FM.bus.emit('rumorFake', r);
       Soc.addFriend(v.id, P, -3, -4, '헛소문');
       if (o) { Soc.addFriend(o.id, P, -4, -5, '헛소문'); if (r.by && r.by !== o.id) Soc.addFriend(o.id, r.by, -4, -3, '헛소문을 퍼뜨림'); }
       toast(`❌ 헛소문이었어요! ${o ? o.name : '당사자'}이(가) "그런 적 없다"고 했대요… (${v.name}${o ? '·' + o.name : ''}의 신뢰 하락)`);
