@@ -1356,13 +1356,14 @@
       else FM.Guide.teleport(dest, { enter: k === 'enter' });
     });
   }
+  const whoAt = p => st().villagers.filter(v => (p.interior && v.loc === p.interior) || (v.loc === 'island' && Math.hypot(v.x - p.x, v.z - p.z) < (p.r || 12)) || (p.id === 'apartment' && v.loc.startsWith('apt')));
   function paintMapSide() {
     const info = $('#mapInfo'), list = $('#mapList'); if (!info) return;
     const s2 = st();
     if (!mapSel) info.innerHTML = `<h3>어디로 갈까요?</h3><p>지도에서 장소(아이콘)나 주민(점)을 누르거나, 아래 목록에서 골라주세요.<br>✨ <b>바로 가기</b>는 순간 이동, 🚶 <b>걸어서 가기</b>는 길을 따라 자동으로 걸어가요.</p>`;
     else if (mapSel.type === 'place') {
       const p = MAP.P[mapSel.id];
-      const inside = s2.villagers.filter(v => (p.interior && v.loc === p.interior) || (v.loc === 'island' && Math.hypot(v.x - p.x, v.z - p.z) < (p.r || 12)) || (p.id === 'apartment' && v.loc.startsWith('apt')));
+      const inside = whoAt(p);
       const canEnter = p.interior && !p.plot;
       info.innerHTML = `<h3>${placeIcon(p)} ${esc(p.name)}</h3><div class="who">${esc(MAP.DISTRICTS[p.district].name)}</div>${p.desc ? `<p>${esc(p.desc)}</p>` : ''}<div class="who">👥 지금 여기: ${inside.length ? inside.slice(0, 8).map(v => esc(v.name)).join(', ') + (inside.length > 8 ? ` 외 ${inside.length - 8}명` : '') : '아무도 없어요'}</div>${goButtons({ place: p.id }, canEnter)}`;
       bindGo(info, { place: p.id });
@@ -1392,13 +1393,14 @@
     if (tab !== 'v') for (const r of ['c', 'n', 'e', 'w', 's']) {
       if (tab !== 'all' && tab !== r) continue;
       const arr = all.filter(p => regOf(p) === r); if (!arr.length) continue;
-      html += `<h5><i style="background:${RCOL[r]}"></i>${RNAME[r]} <small style="color:var(--muted)">${arr.length}곳</small></h5><div class="map-chips">${arr.map(p => `<button data-p="${p.id}" class="${mapSel && mapSel.id === p.id ? 'on' : ''}">${placeIcon(p)} ${esc(FM.Guide.shortName(p).slice(0, 14))}${qplace === p.id ? ' <span class="q">⭐</span>' : ''}</button>`).join('')}</div>`;
+      html += `<h5><i style="background:${RCOL[r]}"></i>${RNAME[r]} <small style="color:var(--muted)">${arr.length}곳</small></h5><div class="map-grp">${arr.map(p => { const n = whoAt(p).length; return `<div class="map-it ${mapSel && mapSel.id === p.id ? 'on' : ''}" data-p="${p.id}"><span class="ic">${placeIcon(p)}</span><span class="nm">${esc(FM.Guide.shortName(p).slice(0, 16))}${qplace === p.id ? ' <span class="q">⭐</span>' : ''}</span><em>${n ? '주민 ' + n : ''}</em><button class="go" data-tp-p="${p.id}">가기</button></div>`; }).join('')}</div>`;
     }
-    if (tab === 'v' || tab === 'all') html += `<h5>👥 주민에게 가기</h5><div class="map-chips">${s2.villagers.filter(v => hit(v.name)).map(v => `<button data-v="${v.id}" class="${mapSel && mapSel.id === v.id ? 'on' : ''}">${icon(v)} ${esc(v.name)}${v.balloon ? ' <span class="q">!</span>' : ''}</button>`).join('')}</div>`;
+    if (tab === 'v' || tab === 'all') html += `<h5>👥 주민에게 가기</h5><div class="map-grp">${s2.villagers.filter(v => hit(v.name)).map(v => { const w = FM.Guide.whereIs(v); return `<div class="map-it ${mapSel && mapSel.id === v.id ? 'on' : ''}" data-v="${v.id}"><span class="ic">${icon(v)}</span><span class="nm">${esc(v.name)}${v.balloon ? ' <span class="q">!</span>' : ''}</span><em>${esc(w ? String(w.label).slice(0, 10) : '')}</em><button class="go" data-tp-v="${v.id}">가기</button></div>`; }).join('')}</div>`;
     list.innerHTML = html;
     list.querySelectorAll('[data-reg]').forEach(b => b.onclick = () => { UI._mapTab = b.dataset.reg; paintMapSide(); });
     list.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { mapSel = { type: 'place', id: b.dataset.p }; drawMap(); paintMapSide(); });
     list.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { mapSel = { type: 'v', id: b.dataset.v }; drawMap(); paintMapSide(); });
+    list.querySelectorAll('[data-tp-p],[data-tp-v]').forEach(b => b.onclick = e => { e.stopPropagation(); $('#map').hidden = true; FM.Guide.teleport(b.dataset.tpP ? { place: b.dataset.tpP } : { villager: b.dataset.tpV }, {}); });
     const qb = list.querySelector('[data-q]'); if (qb) qb.onclick = () => { mapSel = qd.villager ? { type: 'v', id: qd.villager } : { type: 'place', id: qd.place }; drawMap(); paintMapSide(); };
   }
 

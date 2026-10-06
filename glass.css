@@ -284,3 +284,82 @@ select, input[type=text], input[type=search], input[type=number], textarea { bac
 .map-reg { background: transparent !important; backdrop-filter: none !important; padding: 0 !important; gap: 5px !important; }
 .map-reg button { padding: 5px 10px !important; font-size: 13px !important; background: rgba(255, 255, 255, .85) !important; color: #5a4a6a !important; }
 .map-reg button.on { background: #6a5aff !important; color: #fff !important; }
+
+/* =========================================================
+ *  드라마(컷신) — 젤리 글래스 A안
+ * ========================================================= */
+.cs-bar { background: linear-gradient(180deg, #2a1c3c, #1a1226) !important; }
+.cs-box { background: rgba(255, 255, 255, .74) !important; backdrop-filter: var(--g-blur); -webkit-backdrop-filter: var(--g-blur); border: 2px solid rgba(255, 255, 255, .9) !important; border-radius: 28px !important; box-shadow: var(--g-shadow), 0 12px 30px rgba(40, 20, 70, .25) !important; color: var(--g-ink) !important; padding: 14px 18px !important; }
+.cs-box::before { content: ''; position: absolute; inset: -2px; border-radius: 30px; padding: 2px; background: var(--g-grad); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+.cs-box.hot::before { background: linear-gradient(135deg, #ff6f8a, #ff9ac8); }
+.cs-face { padding: 3px; border-radius: 50%; background: var(--g-grad2); flex: none; }
+.cs-face .face { display: block; box-shadow: 0 0 0 2px #fff; }
+.cs-face:empty { display: none; }
+.cs-name { background: var(--g-grad2) !important; box-shadow: 0 2px 6px rgba(180, 120, 220, .4); padding: 2px 14px !important; font-size: 15px !important; }
+.cs-next { color: #b69cff !important; }
+.cs-box.hot .cs-text { color: #d0306a !important; }
+.cs-ui { gap: 8px !important; }
+.cs-auto, .cs-skip { display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, .62) !important; backdrop-filter: var(--g-blur); -webkit-backdrop-filter: var(--g-blur); border: 1.5px solid rgba(255, 255, 255, .85) !important; box-shadow: var(--g-shadow); border-radius: 999px !important; padding: 7px 14px !important; font-size: 14px !important; color: var(--g-ink) !important; font-family: inherit; cursor: pointer; }
+.cs-auto input { accent-color: #b69cff; margin: 0; }
+.cs-auto:has(input:checked) { background: var(--g-grad2) !important; color: #fff !important; }
+/* 시작 타이틀 */
+.cs-title { background: radial-gradient(circle, rgba(255, 200, 230, .28), rgba(60, 30, 90, .62)) !important; color: var(--g-ink) !important; }
+.cs-tcard { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 88vw; padding: 20px 36px; border-radius: 28px; background: rgba(255, 255, 255, .72); backdrop-filter: var(--g-blur); -webkit-backdrop-filter: var(--g-blur); border: 2px solid #fff; box-shadow: var(--g-shadow), 0 20px 50px rgba(40, 20, 70, .3); animation: rise .5s both; }
+.cs-title small { background: var(--g-grad2); color: #fff; border-radius: 999px; padding: 2px 14px; font-size: 12px !important; letter-spacing: 2px !important; opacity: 1 !important; }
+.cs-title small.cs-where { background: rgba(255, 255, 255, .9); color: var(--g-mut); }
+.cs-title b { background: var(--g-grad); -webkit-background-clip: text; background-clip: text; color: transparent !important; text-shadow: none !important; font-size: clamp(30px, 5vw, 46px) !important; }
+.cs-title span { color: var(--g-ink); text-shadow: none !important; font-size: clamp(22px, 3.6vw, 34px) !important; }
+.cs-cast .face { box-shadow: 0 0 0 3px #fff, 0 4px 10px rgba(150, 100, 200, .3); border-radius: 50%; }
+.cs-cast em { color: var(--g-ink); }
+/* 끝 결과 */
+.cs-end { background: rgba(255, 255, 255, .75); backdrop-filter: var(--g-blur); -webkit-backdrop-filter: var(--g-blur); border: 2px solid #fff; border-radius: 28px; padding: 18px 38px; box-shadow: var(--g-shadow), 0 20px 50px rgba(40, 20, 70, .3); color: var(--g-ink) !important; }
+.cs-end b { background: var(--g-grad); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none !important; font-size: clamp(28px, 4.6vw, 44px) !important; }
+.cs-end small { color: var(--g-mut); font-size: 15px !important; }
+/* 선택 · 투표 · 연타 */
+.cs-qte, .cs-vote { background: rgba(255, 255, 255, .76) !important; backdrop-filter: var(--g-blur); -webkit-backdrop-filter: var(--g-blur); border: 2px solid rgba(255, 255, 255, .9) !important; border-radius: 28px !important; box-shadow: var(--g-shadow), 0 12px 30px rgba(40, 20, 70, .25) !important; color: var(--g-ink) !important; }
+.v-opts button { border: 1.5px solid rgba(190, 170, 220, .5) !important; background: rgba(255, 255, 255, .85) !important; color: var(--g-ink); }
+.v-opts button:hover { border-color: #b69cff !important; }
+.q-btn { background: var(--g-grad2) !important; box-shadow: 0 6px 0 #9a6ad0 !important; }
+.q-bar { background: rgba(180, 160, 210, .28) !important; } .q-bar i { background: var(--g-grad) !important; } .q-cnt { color: #b05aa8 !important; }
+.cs-replay { background: rgba(255, 255, 255, .7) !important; color: var(--g-ink) !important; backdrop-filter: var(--g-blur); }
+
+/* =========================================================
+ *  뉴스 방송창 — 글래스
+ * ========================================================= */
+.ns-tv { background: rgba(255, 255, 255, .62) !important; backdrop-filter: var(--g-blur) !important; -webkit-backdrop-filter: var(--g-blur) !important; border: 2px solid rgba(255, 255, 255, .9) !important; box-shadow: var(--g-shadow), 0 20px 50px rgba(60, 30, 90, .3) !important; color: var(--g-ink) !important; }
+.ns-logo { background: var(--g-grad2) !important; color: #fff !important; } .ns-logo b { color: #fff !important; }
+.ns-time { color: var(--g-mut); opacity: 1 !important; }
+.ns-x { background: #fff !important; box-shadow: var(--g-shadow); color: var(--g-ink); }
+.ns-stage { background: linear-gradient(135deg, rgba(255, 210, 235, .7), rgba(210, 200, 255, .7) 55%, rgba(200, 236, 250, .7)) !important; }
+.ns-card { background: rgba(255, 255, 255, .85) !important; box-shadow: 0 6px 18px rgba(120, 80, 160, .16) !important; }
+.ns-desk { background: rgba(255, 255, 255, .9) !important; box-shadow: 0 6px 0 rgba(182, 156, 255, .5) !important; }
+.ns-desk::after { color: #b05aa8 !important; }
+.ns-aname { background: var(--g-grad2) !important; color: #fff; }
+.ns-ticker { background: var(--g-grad2) !important; color: #fff !important; }
+.ns-nav > button { background: #fff !important; box-shadow: 0 2px 6px rgba(120, 80, 160, .15); }
+.ns-dots i { background: rgba(182, 156, 255, .35) !important; } .ns-dots i.on { background: #b69cff !important; }
+.ns-auto { color: var(--g-ink); }
+
+/* =========================================================
+ *  지도 — 글래스 정돈 1안
+ * ========================================================= */
+#hud:has(> #map:not([hidden])) > .hud-top, #hud:has(> #map:not([hidden])) > #emotes { visibility: hidden; }
+#map { box-shadow: 0 0 0 100vmax rgba(70, 40, 100, .22), 0 20px 50px rgba(110, 70, 160, .3) !important; }
+.map-layers button.on, .map-reg button.on { background: var(--g-grad2) !important; color: #fff !important; }
+.map-head #mapX { background: #fff; box-shadow: var(--g-shadow); }
+#mapC { box-shadow: 0 0 0 3px rgba(255, 255, 255, .9), 0 6px 18px rgba(120, 80, 160, .18) !important; }
+.map-legend2 { color: var(--g-mut) !important; }
+.map-go button.main { background: var(--g-grad2) !important; text-shadow: none !important; }
+.map-go button { background: #fff; box-shadow: 0 2px 6px rgba(120, 80, 160, .15) !important; color: var(--g-ink); }
+#mapList h5 { color: var(--g-ink) !important; }
+.map-grp { background: rgba(255, 255, 255, .75); border-radius: 18px; padding: 2px 10px; box-shadow: 0 2px 10px rgba(120, 80, 160, .08); }
+.map-it { display: flex; align-items: center; gap: 10px; padding: 7px 2px; font-size: 14px; cursor: pointer; border-top: 1px solid rgba(190, 170, 220, .3); }
+.map-it:first-child { border-top: 0; }
+.map-it.on { background: rgba(255, 240, 250, .9); border-radius: 12px; margin: 0 -6px; padding: 7px 8px; }
+.map-it .ic { width: 30px; height: 30px; flex: none; border-radius: 10px; background: linear-gradient(135deg, #ffe0f0, #e6dcff); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.map-it .ic .face { width: 28px; height: 28px; }
+.map-it .nm { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--g-ink); }
+.map-it .nm .q { color: #f5a623; }
+.map-it em { font-style: normal; font-size: 12px; color: var(--g-mut); white-space: nowrap; }
+#mapList .map-it .go { flex: none; border: 0 !important; background: var(--g-grad2) !important; color: #fff !important; box-shadow: none !important; border-radius: 999px; padding: 4px 12px; font-size: 12px; font-family: inherit; cursor: pointer; }
+.map-it .go:hover { filter: brightness(1.06); }

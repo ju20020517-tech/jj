@@ -562,7 +562,7 @@
       <div class="cs-lines"></div><div class="cs-glow"></div><div class="cs-flash"></div>
       <div class="cs-fx"></div><div class="cs-over"></div>
       <div class="cs-bar top"></div><div class="cs-bar bot"></div>
-      <div class="cs-title"><small>${c.replay ? '📼 드라마 앨범 · 다시 보기' : '찐구 모아 와르르 섬 드라마'}</small><b>제 ${ep}화</b><span>「${esc(sub)}」</span><div class="cs-cast">${Object.values(c.cast).map(v => `<div>${FM.Face.img(v, 58)}<em>${esc(v.id === P ? v.name + ' (나)' : v.name)}</em></div>`).join('')}</div>${c.venueName ? `<small class="cs-where">📍 ${esc(c.venueName)}</small>` : ''}</div>
+      <div class="cs-title"><div class="cs-tcard"><small>${c.replay ? '📼 드라마 앨범 · 다시 보기' : '찐구 모아 와르르 섬 드라마'}</small><b>제 ${ep}화</b><span>「${esc(sub)}」</span><div class="cs-cast">${Object.values(c.cast).map(v => `<div>${FM.Face.img(v, 58)}<em>${esc(v.id === P ? v.name + ' (나)' : v.name)}</em></div>`).join('')}</div>${c.venueName ? `<small class="cs-where">📍 ${esc(c.venueName)}</small>` : ''}</div></div>
       <div class="cs-box" hidden><div class="cs-face"></div><div class="cs-talk"><div class="cs-name"></div><div class="cs-text"></div></div><div class="cs-next">▼</div></div>
       <div class="cs-end" hidden></div>
       <div class="cs-ui"><label class="cs-auto"><input type="checkbox" ${s.flags.autoCut !== false ? 'checked' : ''}> 드라마 자동 재생</label><button class="cs-skip">건너뛰기 ⏭</button></div>`;
@@ -571,7 +571,7 @@
     ambient(el.querySelector('.cs-amb'), T.fx);
     let stage = null;
     try { stage = buildStage(c); } catch (e) { console.warn('cutscene3d', e); }
-    if (!c.venueName && c.venueUsed) { const V = c.venueUsed; c.venueName = V.loc === 'island' ? (V.place && FM.MAP.P[V.place] ? FM.MAP.P[V.place].name : FM.MAP.DISTRICTS[FM.T.district(V.x, V.z)].name) : (FM.INTERIORS[V.loc] || {}).name; const w = el.querySelector('.cs-title'); if (w && c.venueName) w.insertAdjacentHTML('beforeend', `<small class="cs-where">📍 ${esc(c.venueName)}</small>`); }
+    if (!c.venueName && c.venueUsed) { const V = c.venueUsed; c.venueName = V.loc === 'island' ? (V.place && FM.MAP.P[V.place] ? FM.MAP.P[V.place].name : FM.MAP.DISTRICTS[FM.T.district(V.x, V.z)].name) : (FM.INTERIORS[V.loc] || {}).name; const w = el.querySelector('.cs-tcard') || el.querySelector('.cs-title'); if (w && c.venueName) w.insertAdjacentHTML('beforeend', `<small class="cs-where">📍 ${esc(c.venueName)}</small>`); }
     const fx = el.querySelector('.cs-fx'), over = el.querySelector('.cs-over');
     const box = el.querySelector('.cs-box');
     let i = -1, typing = null, adv = null, done = false, full = '', waiting = false;
