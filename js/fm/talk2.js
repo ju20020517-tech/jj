@@ -37,7 +37,8 @@
     PASSIONATE: t => t.endsWith('?') ? t + '!' : tail0(t) + pick(['!!', '!!!', '!! 우오오']),
     SHY: t => pick(['...저기, ', '...저, 저기... ', '']) + t + pick([' (꼼지락)', '', '...']),
   };
-  const sty = (v, t) => { const f = SPEECH[(v && v.keys && v.keys.L3) || 'WARM']; return f ? f(t) : t; };
+  // 말투는 talk3.js 의 말투 엔진(FM.Speech)이 문장 단위로 입힘 (예전: 문장 끝에 말버릇을 억지로 붙여 어색했음)
+  const sty = (v, t) => { if (FM.Speech) return FM.Speech.apply(v, t); const f = SPEECH[(v && v.keys && v.keys.L3) || 'WARM']; return f ? f(t) : t; };
   const J = t => (FM.Sim.josa ? FM.Sim.josa(t) : t);
   const rel = (a, b) => Soc.rel(a, b);
   const fp = (a, b) => rel(a, b).friendship_point;
@@ -144,6 +145,14 @@
   };
 
   // 3. 소문 전하기 (실제 섬 뉴스에서)
+  // 섬 기록(로그)을 사람이 하는 말로: "A ↔ B : 어색한 이웃 → 일반 친구" → "A(이)랑 B, 요즘 일반 친구가 됐대!"
+  function niceNews(t) {
+    t = String(t || '').replace(/^[^\s가-힣A-Za-z0-9]+\s*/, '');
+    const m = t.match(/^(.+?)\s*↔\s*(.+?)\s*:\s*(.+?)\s*→\s*(.+)$/);
+    if (m) { const up = ['어색한 이웃', '이웃', '일반 친구', '친한 친구', '절친', '연인'].indexOf(m[4]) >= ['어색한 이웃', '이웃', '일반 친구', '친한 친구', '절친', '연인'].indexOf(m[3]); return up ? `${m[1]}(이)랑 ${m[2]}, 요즘 ${m[4]} 사이가 됐대!` : `${m[1]}(이)랑 ${m[2]}, 요즘 사이가 좀 멀어졌대… (${m[4]})`; }
+    return t.replace(/\s*\(.*?\)\s*$/, '');
+  }
+  W.niceNews = niceNews;
   function freshNews(v) {
     const log = S().log.slice(-60).reverse();
     return log.find(e => e.day >= day() - 2 && ['couple', 'breakup', 'wedding', 'jealous', 'friend', 'fight', 'confess', 'baby', 'rel'].includes(e.type) && !(e.who || []).includes(v.id) && !mind(v).told[e.text]);
@@ -154,7 +163,7 @@
       const e = freshNews(v); mind(v).told[e.text] = 1;
       const who = (e.who || []).filter(id => id !== P);
       const lead = T(v, { loud: ['야야, 그 소식 들었어?!', '대박 뉴스 있어!'], soft: ['있잖아... 이거 들었어?', '소문 하나 들었는데...'], rough: ['관심 없겠지만 알려줄게.', '...들었냐?'], posh: ['흥미로운 소식이 있더군요.'], any: ['이거 비밀인데...'] });
-      return { text: `${lead} ${e.text.replace(/^[^\s]+\s/, '')}`, data: { who },
+      return { text: `${lead} ${niceNews(e.text)}`, data: { who },
         choices: [{ k: 'good', label: '😊 "잘됐다! 축하해 주자"' }, { k: 'knew', label: '😎 "그럴 줄 알았어"' }, { k: 'bad', label: '🤨 "글쎄, 별로 안 어울리던데?"' }, { k: 'stop', label: '🤐 "남 얘기는 그만하자"' }] };
     },
     on: (v, k, d) => {
@@ -179,9 +188,9 @@
     w: v => { const s = strongest(v); return s && Math.abs(s.f - 45) > 20 ? 3 : 0; },
     say: v => {
       const s = strongest(v), o = s.o, like = s.f > 45;
-      if (like) return { data: { o: o.id, like }, text: T(v, { soft: ['{o}는 참 좋은 애야. 같이 있으면 편해', '요즘 {o}랑 자주 얘기해. 말이 잘 통해'], loud: ['{o} 최고야! 걔랑 있으면 시간 가는 줄 몰라!'], rough: ['{o}? ...뭐, 나쁘진 않아'], posh: ['{o}은(는) 품위를 아는 친구입니다'], odd: ['{o}는 나랑 같은 주파수야. 삐빅'], any: ['{o}랑 더 친해지고 싶다'] }, { o: o.name }),
-        choices: [{ k: 'closer', label: `🤝 "${o.name}랑 오늘 놀아 봐!"` }, { k: 'love', label: '😏 "혹시... 좋아하는 거 아냐?"' }, { k: 'meh', label: `😒 "${o.name}? 난 별로던데"` }] };
-      return { data: { o: o.id, like }, text: T(v, { soft: ['{o}랑은... 좀 어색해. 나를 싫어하는 것 같아', '{o} 때문에 속상한 일이 있었어'], loud: ['{o} 진짜 짜증나! 어제도 나 무시했어!'], rough: ['{o} 얘기 꺼내지 마. 기분 나빠'], nervous: ['{o}가 나 보면서 수군거리는 것 같아...'], posh: ['{o}은(는) 예의가 부족하더군요'], any: ['{o}랑은 안 맞는 것 같아'] }, { o: o.name }),
+      if (like) return { data: { o: o.id, like }, text: T(v, { soft: ['{o}는 참 좋은 애야. 같이 있으면 편해', '요즘 {o}(이)랑 자주 얘기해. 말이 잘 통해'], loud: ['{o} 최고야! 걔랑 있으면 시간 가는 줄 몰라!'], rough: ['{o}? ...뭐, 나쁘진 않아'], posh: ['{o}은(는) 품위를 아는 친구입니다'], odd: ['{o}는 나랑 같은 주파수야. 삐빅'], any: ['{o}(이)랑 더 친해지고 싶다'] }, { o: o.name }),
+        choices: [{ k: 'closer', label: `🤝 "${o.name}(이)랑 오늘 놀아 봐!"` }, { k: 'love', label: '😏 "혹시... 좋아하는 거 아냐?"' }, { k: 'meh', label: `😒 "${o.name}? 난 별로던데"` }] };
+      return { data: { o: o.id, like }, text: T(v, { soft: ['{o}(이)랑은... 좀 어색해. 나를 싫어하는 것 같아', '{o} 때문에 속상한 일이 있었어'], loud: ['{o} 진짜 짜증나! 어제도 나 무시했어!'], rough: ['{o} 얘기 꺼내지 마. 기분 나빠'], nervous: ['{o}가 나 보면서 수군거리는 것 같아...'], posh: ['{o}은(는) 예의가 부족하더군요'], any: ['{o}(이)랑은 안 맞는 것 같아'] }, { o: o.name }),
         choices: [{ k: 'reconcile', label: '🕊️ "화해해 봐, 내가 도와줄게"' }, { k: 'side', label: '🛡️ "난 네 편이야"' }, { k: 'blame', label: '🤔 "너도 잘못한 거 아냐?"' }] };
     },
     on: (v, k, d) => {
@@ -202,7 +211,7 @@
   }
   I.budding = {
     w: (v, c) => budding(v) && c.trust >= 30 ? 4 : 0,
-    say: v => { const b = budding(v); return { data: { o: b.o.id }, text: T(v, { soft: ['있잖아... 요즘 {o} 생각이 자꾸 나. 이상하지?', '{o}가 웃으면 나도 모르게 따라 웃게 돼'], loud: ['나 {o}만 보면 심장이 쿵쾅거려! 이거 병인가?!'], rough: ['{o}가... 자꾸 신경 쓰여. 짜증나게'], nervous: ['{o}랑 눈 마주치면 얼굴이 뜨거워져... 어떡해'], posh: ['요즘 {o}의 안부가 궁금하군요... 이 감정은 무엇일까요'], any: ['{o}한테 잘 보이고 싶어'] }, { o: b.o.name }),
+    say: v => { const b = budding(v); return { data: { o: b.o.id }, text: T(v, { soft: ['있잖아... 요즘 {o} 생각이 자꾸 나. 이상하지?', '{o}가 웃으면 나도 모르게 따라 웃게 돼'], loud: ['나 {o}만 보면 심장이 쿵쾅거려! 이거 병인가?!'], rough: ['{o}가... 자꾸 신경 쓰여. 짜증나게'], nervous: ['{o}(이)랑 눈 마주치면 얼굴이 뜨거워져... 어떡해'], posh: ['요즘 {o}의 안부가 궁금하군요... 이 감정은 무엇일까요'], any: ['{o}한테 잘 보이고 싶어'] }, { o: b.o.name }),
       choices: [{ k: 'love', label: '💘 "그거 사랑이야!"' }, { k: 'date', label: '☕ "내가 둘이 만나게 해줄게"' }, { k: 'tip', label: `🎁 "${b.o.name}가 좋아하는 걸 알아봐"` }, { k: 'no', label: '🙅 "착각이야, 그냥 친구지"' }] }; },
     on: (v, k, d) => {
       const o = byId(d.o); if (!o) return { text: '...' };
@@ -305,7 +314,7 @@
   const MEET = [['plaza', '⛲ 광장'], ['cafe', '☕ 카페'], ['beach', '🏖️ 해변'], ['park', '🌳 공원'], ['observatory', '🔭 천문대'], ['cliff', '🌅 절벽 언덕']];
   I.invite = {
     w: (v, c) => c.ge('FRIEND') && !(S().pacts || []).some(p => p.v === v.id) ? 2.5 : 0,
-    say: v => { const [place, name] = pick(MEET), h = Math.max(hour() + 2, 17) % 24; return { data: { place, h }, text: T(v, { loud: ['오늘 {h}시에 {p}에서 만나자! 할 얘기 있어!'], soft: ['혹시... 오늘 {h}시쯤 {p}에서 만날 수 있어?', '{h}시에 {p}에서 기다려도 될까?'], rough: ['{h}시. {p}. 늦으면 간다'], posh: ['{h}시에 {p}에서 담소를 나누시겠습니까?'], any: ['이따 {h}시에 {p} 어때?'] }, { h, p: name.slice(2) }),
+    say: v => { const [place, name] = pick(MEET), h = Math.max(hour() + 2, 17) % 24; return { data: { place, h }, text: T(v, { loud: ['오늘 {h}시에 {p}에서 만나자! 할 얘기 있어!'], soft: ['혹시... 오늘 {h}시쯤 {p}에서 만날 수 있어?', '{h}시에 {p}에서 기다려도 될까?'], rough: ['{h}시. {p}. 늦으면 간다'], posh: ['{h}시에 {p}에서 담소를 나누시겠습니까?'], any: ['이따 {h}시에 {p} 어때?'] }, { h, p: name.replace(/^\S+\s/, '') }),
       choices: [{ k: 'yes', label: '👌 "좋아, 꼭 갈게!"' }, { k: 'no', label: '🙏 "오늘은 안 될 것 같아"' }] }; },
     on: (v, k, d) => {
       if (k === 'no') { Soc.addFriend(v.id, P, -1, 0); return { text: has(v, 'ANXIOUS') ? sty(v, '...그렇구나. 내가 괜히 물어봤나 봐') : sty(v, '아쉽다. 다음에!') }; }
@@ -354,7 +363,7 @@
   // 12. 질투 — 플레이어가 다른 사람과 가까울 때
   I.jealousP = {
     w: (v, c) => c.rom >= 45 && c.pLover && c.pLover !== v.id ? 5 : 0,
-    say: (v, c) => ({ data: { o: c.pLover }, text: T(v, { soft: ['요즘 {o}랑 많이 붙어 다니더라... 아니, 그냥 그렇다고', '{o} 좋아? ...아냐, 대답 안 해도 돼'], rough: ['{o}랑 잘해 봐. ...난 신경 안 써', '흥, {o} 만나러 가지 그래?'], loud: ['{o}만 챙기고! 나도 좀 봐줘!'], any: ['{o}랑 있을 때 너 웃는 거, 봤어'] }, { o: nm(c.pLover) }),
+    say: (v, c) => ({ data: { o: c.pLover }, text: T(v, { soft: ['요즘 {o}(이)랑 많이 붙어 다니더라... 아니, 그냥 그렇다고', '{o} 좋아? ...아냐, 대답 안 해도 돼'], rough: ['{o}(이)랑 잘해 봐. ...난 신경 안 써', '흥, {o} 만나러 가지 그래?'], loud: ['{o}만 챙기고! 나도 좀 봐줘!'], any: ['{o}(이)랑 있을 때 너 웃는 거, 봤어'] }, { o: nm(c.pLover) }),
       choices: [{ k: 'sorry', label: '🫂 "너도 소중한 친구야"' }, { k: 'truth', label: '💬 "혹시 나 좋아해?"' }, { k: 'cold', label: '🧊 "그건 네가 상관할 일 아니야"' }] }),
     on: (v, k) => {
       if (k === 'sorry') { Soc.addFriend(v.id, P, 4, 3); Soc.F(v.id, P).romance = Math.max(0, Soc.F(v.id, P).romance - 6); return { text: sty(v, '...친구. 응, 알았어') }; }
@@ -442,7 +451,7 @@
   // 17. 라이벌 · 경쟁
   I.rival = {
     w: v => bondOf(v, 'RIVAL') ? 3 : 0,
-    say: v => { const o = bondOf(v, 'RIVAL'); return { data: { o }, text: T(v, { loud: ['{o}한테 절대 질 수 없어! 나 응원해 줄 거지?!'], rough: ['{o} 녀석... 다음엔 내가 이긴다'], any: ['{o}랑 또 시합하기로 했어'] }, { o: nm(o) }),
+    say: v => { const o = bondOf(v, 'RIVAL'); return { data: { o }, text: T(v, { loud: ['{o}한테 절대 질 수 없어! 나 응원해 줄 거지?!'], rough: ['{o} 녀석... 다음엔 내가 이긴다'], any: ['{o}(이)랑 또 시합하기로 했어'] }, { o: nm(o) }),
       choices: [{ k: 'cheer', label: '📣 "당연하지! 네가 이겨!"' }, { k: 'fair', label: '🤝 "둘 다 멋져. 사이좋게 해"' }, { k: 'other', label: `😈 "${nm(o)}가 더 잘하던데?"` }] }; },
     on: (v, k, d) => {
       if (k === 'cheer') { Soc.addFriend(v.id, P, 4, 2); v.confidence = clamp((v.confidence || 0) + 15, 0, 100); return { text: sty(v, '좋았어! 네 응원이면 무조건 이긴다!') }; }
@@ -642,7 +651,7 @@
         return { text: sty(v, `${o.name}? 좋아, 가서 인사해 볼게!`), close: true };
       }
       case 'matchmake': {
-        if (!Soc.canRomance(v.id, o.id)) return { text: sty(v, `${o.name}랑? 에이, 우린 그런 사이 될 수 없어`) };
+        if (!Soc.canRomance(v.id, o.id)) return { text: sty(v, `${o.name}(이)랑? 에이, 우린 그런 사이 될 수 없어`) };
         if (Soc.partnerOf(v.id) && Soc.partnerOf(v.id) !== o.id) return { text: sty(v, `나 ${nm(Soc.partnerOf(v.id))}가 있잖아!`) };
         return setupDate(v, o);
       }
@@ -659,25 +668,25 @@
       }
       case 'reconcile': return startReconcile(v, o);
       case 'bestie': {
-        if (f < 45) return { text: sty(v, `${o.name}랑? 아직 그렇게 친하진 않은데... (친밀도 ${Math.round(f)}/45)`) };
+        if (f < 45) return { text: sty(v, `${o.name}(이)랑? 아직 그렇게 친하진 않은데... (친밀도 ${Math.round(f)}/45)`) };
         Soc.addFriend(v.id, o.id, 20, 15, '절친 맺기'); setBond(v.id, o.id, 'BESTIE');
         Sim.scene({ title: '절친 맺기', actors: { A: v }, steps: [{ go: 'A', to: { actor: o.id, near: 1.1 }, max: 80 }, { face: 'A', at: o.id }, { say: 'A', text: sty(v, `${o.name}! 우리 오늘부터 절친이다!`), t: 2.5 }, { pose: 'A', p: 'cheer', t: 2 }, { emote: 'A', e: '✨' }] });
         return { text: sty(v, '맞아! 걔랑 절친하고 싶었어!'), close: true };
       }
-      case 'rival': { Soc.addFriend(v.id, o.id, 4, 2); setBond(v.id, o.id, 'RIVAL'); r.friend_archetype = 'RIVAL_FRIEND'; return { text: T(v, { loud: ['{o}랑 승부?! 좋아, 불타오른다!'], rough: ['{o}? 상대도 안 되지만 붙어주지'], any: ['{o}랑 경쟁... 재밌겠다!'] }, { o: o.name }) }; }
+      case 'rival': { Soc.addFriend(v.id, o.id, 4, 2); setBond(v.id, o.id, 'RIVAL'); r.friend_archetype = 'RIVAL_FRIEND'; return { text: T(v, { loud: ['{o}(이)랑 승부?! 좋아, 불타오른다!'], rough: ['{o}? 상대도 안 되지만 붙어주지'], any: ['{o}(이)랑 경쟁... 재밌겠다!'] }, { o: o.name }) }; }
       case 'mentor': { const teacher = (has(v, 'SCHOLARLY') || has(v, 'DILIGENT')) ? v : o; Soc.addFriend(v.id, o.id, 8, 8); setBond(v.id, o.id, 'MENTOR'); r.friend_archetype = 'MENTOR'; return { text: teacher === v ? sty(v, `${o.name}한테 내가 아는 걸 다 알려줄게!`) : sty(v, `${o.name}한테 배우면 나도 성장할 수 있겠지?`) }; }
-      case 'sibling': { if (f < 35) return { text: sty(v, `${o.name}랑 의남매...? 아직 어색한데 (친밀도 ${Math.round(f)}/35)`) }; Soc.addFriend(v.id, o.id, 12, 12); setBond(v.id, o.id, 'SIBLING'); return { text: sty(v, `${o.name}가 오늘부터 내 가족이야!`) }; }
+      case 'sibling': { if (f < 35) return { text: sty(v, `${o.name}(이)랑 의남매...? 아직 어색한데 (친밀도 ${Math.round(f)}/35)`) }; Soc.addFriend(v.id, o.id, 12, 12); setBond(v.id, o.id, 'SIBLING'); return { text: sty(v, `${o.name}가 오늘부터 내 가족이야!`) }; }
       case 'breakup': {
         const pt = Soc.partnerOf(v.id); if (!pt || pt === P) return { text: sty(v, '나 지금 사귀는 사람 없는데?') };
         const pr = rel(v.id, pt); Soc.addBoredom && Soc.addBoredom(pr, 35, '플레이어의 말');
-        return { text: pr.boredom > 60 ? sty(v, `...사실 요즘 ${nm(pt)}랑 잘 안 맞긴 했어. 생각해 볼게`) : sty(v, `무슨 소리야! 난 ${nm(pt)} 좋아!`) };
+        return { text: pr.boredom > 60 ? sty(v, `...사실 요즘 ${nm(pt)}(이)랑 잘 안 맞긴 했어. 생각해 볼게`) : sty(v, `무슨 소리야! 난 ${nm(pt)} 좋아!`) };
       }
       case 'marry': {
         const pt = Soc.partnerOf(v.id); if (!pt || pt === P) return { text: sty(v, '결혼할 사람이 있어야 결혼을 하지...') };
         const pr = rel(v.id, pt); if (pr.status === 'MARRIED') return { text: sty(v, '우리 이미 결혼했잖아 ㅋㅋ') };
         Soc.addRomance(v.id, pt, 10, '결혼 부추김'); v.confidence = clamp((v.confidence || 0) + 20, 0, 100);
         if (Soc.marriageReady && Soc.marriageReady(v.id, pt)) { FM.Ev && FM.Ev.proposal ? FM.Ev.proposal(v, byId(pt)) : Soc.engage(v.id, pt); return { text: sty(v, '그래! 오늘 청혼할래!'), close: true }; }
-        return { text: sty(v, `결혼...! 아직 좀 이르지만, ${nm(pt)}랑 더 가까워지면...!`) };
+        return { text: sty(v, `결혼...! 아직 좀 이르지만, ${nm(pt)}(이)랑 더 가까워지면...!`) };
       }
     }
     return { text: '...' };
@@ -689,7 +698,7 @@
     Sim.scene({ title: '화해', actors: { A: v, B: o }, steps: [
       { par: [{ go: 'A', to: { place: 'plaza', dx: -1 } }, { go: 'B', to: { place: 'plaza', dx: 1 } }] }, { face: 'A', at: 'B' }, { face: 'B', at: 'A' },
       { say: 'A', text: sty(v, `${o.name}... 그동안 미안했어`), t: 2.6 }, { say: 'B', text: sty(o, '...나도 미안해'), t: 2.2 }, { par: [{ pose: 'A', p: 'hug', t: 2 }, { pose: 'B', p: 'hug', t: 2 }] }, { fx: 'hearts', at: 'A' },
-    ], onEnd: () => { r.misunderstanding = null; Soc.addFriend(v.id, o.id, 15, 12, '화해'); if (r.bond === 'NEMESIS') r.bond = null; Sim.log('rel', `🕊️ ${v.name}와(과) ${o.name}이(가) 화해했어요`, [v.id, o.id], 2); remember(v, 'reconcile', `${o.name}랑 화해했어`); } });
+    ], onEnd: () => { r.misunderstanding = null; Soc.addFriend(v.id, o.id, 15, 12, '화해'); if (r.bond === 'NEMESIS') r.bond = null; Sim.log('rel', `🕊️ ${v.name}와(과) ${o.name}이(가) 화해했어요`, [v.id, o.id], 2); remember(v, 'reconcile', `${o.name}(이)랑 화해했어`); } });
     return { text: sty(v, `...알았어. ${o.name}한테 가볼게`), close: true };
   }
   // 데이트 약속 (주민 ↔ 주민)
@@ -699,7 +708,7 @@
     let at = (day() - 1) * 1440 + 18 * 60; if (st.time > at - 30) at = st.time + 90;
     st.npcDates.push({ a: v.id, b: o.id, at, place });
     Soc.addRomance(v.id, o.id, 5, '데이트 약속');
-    return { text: sty(v, `${o.name}랑 둘이서...?! ${Math.floor((at % 1440) / 60)}시에 ${{ cafe: '카페', beach: '해변', observatory: '천문대', park: '공원' }[place]}... 떨린다!`), close: true };
+    return { text: sty(v, `${o.name}(이)랑 둘이서...?! ${Math.floor((at % 1440) / 60)}시에 ${{ cafe: '카페', beach: '해변', observatory: '천문대', park: '공원' }[place]}... 떨린다!`), close: true };
   }
 
   // ---------------------------------------------------------
@@ -791,7 +800,7 @@
   function confessDirect(v) {
     const m = mind(v), p = pl(), r = rel(v.id, P);
     if (!Soc.canRomance(v.id, P)) return { text: sty(v, '미안... 우린 그럴 수 없어') };
-    if (Soc.partnerOf(v.id) && Soc.partnerOf(v.id) !== P) return { text: sty(v, `...나 ${nm(Soc.partnerOf(v.id))}랑 사귀고 있어. 미안해`) };
+    if (Soc.partnerOf(v.id) && Soc.partnerOf(v.id) !== P) return { text: sty(v, `...나 ${nm(Soc.partnerOf(v.id))}(이)랑 사귀고 있어. 미안해`) };
     if (m.confessCd > day()) return { text: sty(v, '...아직 생각 중이야. 조금만 기다려 줘') };
     const aff = Soc.affection(v.id, P), rom = Soc.F(v.id, P).romance;
     if (aff >= 60 && rom >= 50) {
@@ -841,13 +850,13 @@
     const pt = Soc.partnerOf(v.id);
     let t = best ? `요즘 제일 친한 건 ${best.o.name}야. ` : '';
     if (bonds.length) t += `${bonds.slice(0, 3).join(', ')}... 뭐 그런 사이지. `;
-    if (worst && worst.f < 20) t += `${worst.o.name}랑은 좀 불편하고. `;
-    if (pt) t += pt === P ? '그리고... 나한텐 네가 있잖아. ' : `아, 그리고 나 ${nm(pt)}랑 사귀어! `;
+    if (worst && worst.f < 20) t += `${worst.o.name}(이)랑은 좀 불편하고. `;
+    if (pt) t += pt === P ? '그리고... 나한텐 네가 있잖아. ' : `아, 그리고 나 ${nm(pt)}(이)랑 사귀어! `;
     else if (crush && trust >= 45) t += `...너한테만 말하는데 ${crush.o.name}가 자꾸 신경 쓰여. `;
     const opts = [];
-    if (worst && worst.f < 30) opts.push({ id: 'indDo', label: `🕊️ "${worst.o.name}랑 화해해 봐"`, arg: 'reconcile|' + worst.o.id });
-    if (crush && !pt) opts.push({ id: 'indDo', label: `💞 "${crush.o.name}랑 데이트 잡아줄게"`, arg: 'matchmake|' + crush.o.id });
-    if (best && !best.r.bond && best.f >= 45) opts.push({ id: 'indDo', label: `👯 "${best.o.name}랑 절친 해!"`, arg: 'bestie|' + best.o.id });
+    if (worst && worst.f < 30) opts.push({ id: 'indDo', label: `🕊️ "${worst.o.name}(이)랑 화해해 봐"`, arg: 'reconcile|' + worst.o.id });
+    if (crush && !pt) opts.push({ id: 'indDo', label: `💞 "${crush.o.name}(이)랑 데이트 잡아줄게"`, arg: 'matchmake|' + crush.o.id });
+    if (best && !best.r.bond && best.f >= 45) opts.push({ id: 'indDo', label: `👯 "${best.o.name}(이)랑 절친 해!"`, arg: 'bestie|' + best.o.id });
     return { text: sty(v, t || '음... 요즘 그냥 그래'), options: opts.concat([{ id: 'wMore', label: '💬 다른 얘기 하자' }, { id: 'menu', label: '📋 다른 행동 하기…' }]) };
   }
 

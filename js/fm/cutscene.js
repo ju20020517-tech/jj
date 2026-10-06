@@ -130,7 +130,7 @@
       { pose: 'A', p: 'glare' }, { pose: 'B', p: 'glare' }, { say: 'A', text: sty(a, '이제 참는 것도 끝이야!') }, { fx: 'shock' },
       { say: 'B', text: sty(b, '그건 내가 할 말이야! 다시는 말 걸지 마!') }, { emo: 'A', e: '💢' }, { emo: 'B', e: '💢' }, { pose: 'A', p: 'stomp' }], outcome: 'sad' }; } },
     { type: 'jealous', re: /질투해요/, make: ids => { const [w, p1, r] = ids.map(who); if (!w || !p1) return null; const c = { A: w, B: p1 }; if (r) c.C = r; return { theme: 'jealous', cast: c, beats: [
-      { say: 'B', text: sty(p1, r ? `${r.name}랑 얘기하는 거 재밌더라~` : '오늘 재밌었어~') }, { emo: 'A', e: '😠' },
+      { say: 'B', text: sty(p1, r ? `${r.name}(이)랑 얘기하는 거 재밌더라~` : '오늘 재밌었어~') }, { emo: 'A', e: '😠' },
       { say: 'A', text: sty(w, '...흥! 나보다 그쪽이 더 좋은가 보지?') }, { fx: 'shock' }, { say: 'B', text: sty(p1, '에? 왜 화났어?!') }, { emo: 'B', e: '❓' }, { pose: 'A', p: 'tantrum' }], outcome: 'tbc' }; } },
     { type: 'baby', re: /태어났어요/, make: ids => { const [a, b] = ids.map(who); if (!a || !b) return null; return { theme: 'baby', cast: { A: a, B: b }, beats: [
       { emo: 'A', e: '😭' }, { say: 'A', text: sty(a, '우리 아기... 너무 작고 소중해...') }, { pose: 'A', p: 'holdBaby' },

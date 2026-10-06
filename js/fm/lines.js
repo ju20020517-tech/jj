@@ -21,6 +21,7 @@
   };
   const styleOf = v => (v && v.keys && v.keys.L3) || 'WARM';
   function sty(v, text) {
+    if (FM.Speech) return FM.Speech.apply(v, text);   // talk3.js 말투 엔진
     const s = styleOf(v);
     return (STYLE[s] || (t => t))(text);
   }
@@ -177,7 +178,7 @@
     poor: ['잔고가 0이야... 며칠간 삼각김밥만 먹어야 해...'],
     hospital: ['콜록... 병원 밥은 너무 싱거워... 와줘서 고마워...'],
     // 짝사랑 / 연애
-    crushAskAbout: ['저기... {t}는 요즘 뭐 좋아한대?', '너 혹시 {t}랑 친해? 그냥... 궁금해서.'],
+    crushAskAbout: ['저기... {t}는 요즘 뭐 좋아한대?', '너 혹시 {t}(이)랑 친해? 그냥... 궁금해서.'],
     crushWatch: ['(멀리서 {t}를 바라보고 있다...)'],
     crushConsult: ['저기... 요즘 {t}를 보면 가슴이 이상하게 쿵쾅거려. 나 {t}를 좋아하는 걸까?', '{p}야... 나 요즘 {t}만 보면 밤에 잠이 안 와. 어떻게 해야 할까?'],
     crushPoemAsk: ['비밀인데... 이 시집, 그 아이에게 전해줄 수 있어?'],
@@ -194,13 +195,13 @@
     jealousAware: ['(뚫어지게 노려본다...)'],
     jealousCold: ['어머, 둘이 참 사이 좋네~?', '{partner}, 잠깐 나 좀 볼래? 할 얘기 있어.'],
     jealousConflict: ['야! {rival}! 너 {partner}한테서 떨어져!', '{rival}, 너 뭐야? 무슨 사이야?'],
-    jealousConsult: ['말도 마! {partner}가 요즘 {rival}랑 맨날 붙어다녀! 나 너무 화나고 질투나!', '{partner}가 {rival}랑 바람을 피우는 것 같아...'],
+    jealousConsult: ['말도 마! {partner}가 요즘 {rival}(이)랑 맨날 붙어다녀! 나 너무 화나고 질투나!', '{partner}가 {rival}(이)랑 바람을 피우는 것 같아...'],
     jealousBold: ['{partner} 옆자리는 내 자리야! 나와 승부하자!'],
     jealousShy: ['내가 부족해서 그래...'],
     jealousTsun: ['너 누구랑 다니든 관심 없거든?!'],
     rivalForPlayer: ['그 녀석 선물보다 내 게 더 마음에 들걸?'],
     // 권태기 / 이별
-    boredConsult: ['나... {partner}랑 만나는 게 요즘 즐겁지 않아. 헤어지는 게 맞을까?'],
+    boredConsult: ['나... {partner}(이)랑 만나는 게 요즘 즐겁지 않아. 헤어지는 게 맞을까?'],
     breakupA: ['우리... 요즘 같이 있어도 예전처럼 즐겁지 않은 것 같아.'],
     breakupB: ['...응. 나도 느끼고 있었어. 서로를 위해 여기서 그만하는 게 좋겠어.'],
     reunionConsult: ['헤어지고 나니까... 그 아이 빈자리가 너무 크게 느껴져. 내가 이기적이었던 걸까?'],
@@ -217,7 +218,7 @@
     objection: ['이 결혼 반대야!'],
     // 친구
     secretTell: ['너한테만 말하는 건데...'],
-    secretKinds: ['사실 나 {t}를 좋아해.', '사실 나 밤마다 몰래 발레 연습을 해.', '사실 나 무서운 영화를 보면 불 켜고 자.', '사실 나 요즘 월급을 다 인형뽑기에 써버렸어...', '사실 나 {t}랑 싸운 게 계속 마음에 걸려.'],
+    secretKinds: ['사실 나 {t}를 좋아해.', '사실 나 밤마다 몰래 발레 연습을 해.', '사실 나 무서운 영화를 보면 불 켜고 자.', '사실 나 요즘 월급을 다 인형뽑기에 써버렸어...', '사실 나 {t}(이)랑 싸운 게 계속 마음에 걸려.'],
     misunderstanding: ['흥! {t}가 내 험담했다며? 말 걸지 마!', '약속 시간에 안 왔잖아! 삐졌어!'],
     apologyThanks: ['...사과 받아줄게. 고마워, 중간에서 애써줘서.'],
     capsuleAsk: ['우리 우정의 증표를 묻자!'],
@@ -235,7 +236,7 @@
     marshmallowBurnt: ['(까맣게 탄 마시멜로를 씹으며 표정이 일그러진다)'],
     waterfallForget: ['잊자... 잊자...'],
     pansori: ['(폭포 아래서 판소리하듯 목청을 다듬는다) 두고 봐라, 노래방 기계!'],
-    wishCoin: ['{t}랑 사귀게 해주세요!'],
+    wishCoin: ['{t}(이)랑 사귀게 해주세요!'],
     bubble: ['비눗방울이다~!'],
     commute: ['출근 출근~ 지하철 놓치면 큰일!'],
     lostHat: ['(분실물 센터에서 괴상한 모자를 주워 쓰고 만족해한다)'],

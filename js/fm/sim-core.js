@@ -546,7 +546,7 @@
   };
   Sim.freeAptRoom = freeAptRoom;
   Sim.freeHome = freeHome;
-  Sim.MAX_VILLAGERS = 30;
+  Sim.MAX_VILLAGERS = 40;
 
   // 성격 조합이 옷차림과 표정에 묻어남
   const STYLE = {
@@ -696,6 +696,12 @@
     return ap && true;
   }
   Sim.moveIn = moveIn;
+  // 고정 주민 집 정하기: 남매(sibling)는 2인용 빌라에 함께 · 형제가 될 주민은 2인용 빌라를 먼저 잡아 둠
+  Sim.castHome = function (v, c) {
+    const cast = (window.ISLE && ISLE.CAST) || [];
+    if (c.sibling) { const sib = S.villagers.find(o => o.castId === c.sibling); if (sib && sib.home) { const n = S.villagers.filter(o => o.home === sib.home).length; if (n < 2 && /^villa/.test(sib.home)) v.home = sib.home; } v.siblings = [c.sibling]; if (sib) sib.siblings = [c.id]; }
+    else if (cast.some(x => x.sibling === c.id)) { const big = Sim.homeOptions().find(o => o.kind === 'villaL' && o.used === 0); if (big) v.home = big.id; }
+  };
 
   // ---------------------------------------------------------
   // 새 게임 / 불러오기
@@ -730,6 +736,7 @@
       if (S.villagers.length >= n) break;
       const v = makeVillager({ id: c.id, name: c.name, keys: Object.assign({}, c.keys), look: JSON.parse(JSON.stringify(c.look)), phrase: c.phrase });
       v.castId = c.id; v.gender = c.gender; v.age = c.age; v.concept = c.concept; v.castJob = c.job; v.signature = c.signature;
+      Sim.castHome(v, c);
       moveIn(v, true);
     }
     while (S.villagers.length < n) moveIn(makeVillager(), true);

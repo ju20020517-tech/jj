@@ -1400,7 +1400,7 @@
       let text;
       if (v.crush) text = `사실 나... ${nm(v.crush.target)}를 좋아해!`;
       else if (v.jealousy && v.jealousy.meter > 20) text = `솔직히 ${nm(v.jealousy.rival)} 좀 얄미워!`;
-      else if (Soc.partnerOf(v.id)) text = `사실 ${nm(Soc.partnerOf(v.id))}랑 요즘 ${Soc.boredomStage(Soc.rel(v.id, Soc.partnerOf(v.id))) === 'STABLE' ? '너무 행복해' : '좀 권태로워'}...`;
+      else if (Soc.partnerOf(v.id)) text = `사실 ${nm(Soc.partnerOf(v.id))}(이)랑 요즘 ${Soc.boredomStage(Soc.rel(v.id, Soc.partnerOf(v.id))) === 'STABLE' ? '너무 행복해' : '좀 권태로워'}...`;
       else text = `사실 나 ${pick(['월급을 다 과자에 써', '밤마다 몰래 춤 연습을 해', '비둘기가 무서워', '노래를 엄청 못 불러'])}.`;
       Sim.say(v, text, 6); Sim.emote(v, '😳', 4);
       st.player.knownSecrets.push({ owner: v.id, text, day: day() });

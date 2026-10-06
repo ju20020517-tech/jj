@@ -136,7 +136,7 @@
     if (pt && x && !x.sceneId && !pt.sceneId) {
       Sim.scene({ title: '바람 들통', major: true, actors: { A: pt, B: x }, steps: [
         { go: 'A', to: { actor: 'B', near: 1.1 }, run: true, max: 60 }, { face: 'A', at: 'B' }, { face: 'B', at: 'A' },
-        { say: 'A', text: sty(pt, `${nm(af.b)}랑... 몰래 만났다며? 어떻게 나한테 이럴 수 있어!`), t: 3 }, { emote: 'A', e: '💢' },
+        { say: 'A', text: sty(pt, `${nm(af.b)}(이)랑... 몰래 만났다며? 어떻게 나한테 이럴 수 있어!`), t: 3 }, { emote: 'A', e: '💢' },
         { say: 'B', text: sty(x, '미, 미안해... 그게...'), t: 2.5 }, { pose: 'A', p: 'cry', t: 2.5 }, { emote: 'B', e: '💧' },
         { say: 'A', text: sty(pt, '우린 끝이야.'), t: 2.5 },
       ], onEnd: () => {
@@ -251,7 +251,7 @@
               if (o.id === af.partner) { expose(af, o.id); return; }
               af.witness = af.witness || []; if (!af.witness.includes(o.id)) af.witness.push(o.id);
               Sim.log('affair', `👀 ${o.name}이(가) ${v.name}와(과) ${z.name}이(가) 몰래 만나는 걸 목격했어요...`, [o.id, v.id, z.id], 1, { secret: true });
-              W.remember(o, 'saw', `${v.name}가 ${z.name}랑 몰래 만나는 걸 봤어`);
+              W.remember(o, 'saw', `${v.name}가 ${z.name}(이)랑 몰래 만나는 걸 봤어`);
               if (has(o, 'GOSSIP') && chance(0.5)) expose(af, o.id);
             }
             if (af.meets >= 6 && chance(0.3)) expose(af, null);
@@ -301,7 +301,7 @@
     on: (v, k, d) => {
       const t = byId(d.t), r = byId(d.rival);
       if (k === 'fight') { rel(v.id, d.rival).bond = 'RIVAL_LOVE'; v.confidence = clamp((v.confidence || 0) + 20, 0, 100); if (t) Soc.addRomance(t.id, v.id, 5); return { text: sty(v, '좋아, 정정당당하게! 지지 않을 거야!') }; }
-      if (k === 'confess') { if (!t || d.t === P) return { text: sty(v, '...그, 그건 좀') }; if (Soc.partnerOf(d.t) && Soc.partnerOf(d.t) !== v.id && TEMPT(t) < 0.25 && rom(d.t, v.id) < 60) return { text: sty(v, `${t.name}는 ${nm(Soc.partnerOf(d.t))}랑 행복해 보여... 역시 안 될 거야`) }; Soc.runConfession(v, t, pick(D.CONFESS_SPOTS).id, { force: true }); return { text: sty(v, '지금 당장 가서 말할게!'), close: true }; }
+      if (k === 'confess') { if (!t || d.t === P) return { text: sty(v, '...그, 그건 좀') }; if (Soc.partnerOf(d.t) && Soc.partnerOf(d.t) !== v.id && TEMPT(t) < 0.25 && rom(d.t, v.id) < 60) return { text: sty(v, `${t.name}는 ${nm(Soc.partnerOf(d.t))}(이)랑 행복해 보여... 역시 안 될 거야`) }; Soc.runConfession(v, t, pick(D.CONFESS_SPOTS).id, { force: true }); return { text: sty(v, '지금 당장 가서 말할게!'), close: true }; }
       if (k === 'sabotage') {
         if (!r) return { text: '...' };
         Soc.addFriend(d.t, d.rival, -8, -8); rel(v.id, d.rival).bond = 'ENEMY';
@@ -328,7 +328,7 @@
   I.suspicion = {
     w: (v, c) => { const af = st().affairs.find(a => !a.over && !a.exposed && a.partner === v.id && a.meets >= 2); return af && c.trust >= 30 ? 5 : 0; },
     say: v => { const af = st().affairs.find(a => !a.over && !a.exposed && a.partner === v.id); return { data: {}, text: sty(v, `요즘 ${nm(af.a)}가 좀 이상해... 연락도 뜸하고. 혹시 뭐 아는 거 있어?`),
-      choices: [{ k: 'truth', label: `😣 "사실... ${nm(af.b)}랑 몰래 만나는 것 같아"` }, { k: 'calm', label: '🙂 "바빠서 그렇겠지, 걱정 마"' }, { k: 'watch', label: '🕵️ "내가 알아봐 줄게"' }] }; },
+      choices: [{ k: 'truth', label: `😣 "사실... ${nm(af.b)}(이)랑 몰래 만나는 것 같아"` }, { k: 'calm', label: '🙂 "바빠서 그렇겠지, 걱정 마"' }, { k: 'watch', label: '🕵️ "내가 알아봐 줄게"' }] }; },
     on: (v, k) => {
       const af = st().affairs.find(a => !a.over && !a.exposed && a.partner === v.id); if (!af) return { text: '...' };
       if (k === 'truth') { Soc.addFriend(v.id, P, 5, 10); expose(af, P); return { text: sty(v, '...그럴 줄 알았어. 가서 확인할게'), close: true }; }
@@ -340,7 +340,7 @@
   I.exTalk = {
     w: (v, c) => { const o = W.others(v).find(o => rel(v.id, o.id).bond === 'EX_LOVER'); return o && c.trust >= 25 ? 3 : 0; },
     say: v => { const o = W.others(v).find(o => rel(v.id, o.id).bond === 'EX_LOVER'), r = rel(v.id, o.id), a = rom(v.id, o.id);
-      return { data: { o: o.id }, text: sty(v, a >= 40 ? `사실 ${o.name}랑 예전에 사귀었었어. ${r.history || ''}... 아직도 가끔 생각나` : `${o.name}? 아, 걔랑은 예전에... 뭐, ${r.history || '지난 일'}이야`),
+      return { data: { o: o.id }, text: sty(v, a >= 40 ? `사실 ${o.name}(이)랑 예전에 사귀었었어. ${r.history || ''}... 아직도 가끔 생각나` : `${o.name}? 아, 걔랑은 예전에... 뭐, ${r.history || '지난 일'}이야`),
         choices: [{ k: 'again', label: '💞 "다시 만나 봐!"' }, { k: 'friend', label: '🤝 "친구로 지내는 건 어때?"' }, { k: 'forget', label: '🧹 "지난 일은 잊어"' }] }; },
     on: (v, k, d) => {
       const o = byId(d.o); if (!o) return { text: '...' };
@@ -374,18 +374,18 @@
   I.oldFriendTalk = {
     w: (v, c) => W.others(v).some(o => rel(v.id, o.id).bond === 'OLD_FRIEND') ? 2 : 0,
     say: v => { const o = W.others(v).find(o => rel(v.id, o.id).bond === 'OLD_FRIEND'), r = rel(v.id, o.id);
-      return { data: { o: o.id }, text: sty(v, `${o.name}랑 나는 ${r.history || '오래된 친구'}야. ${st().met[[v.id, o.id].sort().join('~')] ? '요즘 다시 자주 만나서 좋아!' : '이 섬에 있는 줄 몰랐는데... 보고 싶다'}`),
+      return { data: { o: o.id }, text: sty(v, `${o.name}(이)랑 나는 ${r.history || '오래된 친구'}야. ${st().met[[v.id, o.id].sort().join('~')] ? '요즘 다시 자주 만나서 좋아!' : '이 섬에 있는 줄 몰랐는데... 보고 싶다'}`),
         choices: [{ k: 'meet', label: '📼 "지금 만나러 가 봐!"' }, { k: 'story', label: '😆 "어릴 때 얘기 해줘"' }] }; },
     on: (v, k, d) => {
       const o = byId(d.o); if (!o) return { text: '...' };
       if (k === 'meet') { GOALS.oldFriend.run(v, o); return { text: sty(v, '응! 지금 갈게!'), close: true }; }
       Soc.addFriend(v.id, P, 3, 3);
-      return { text: sty(v, pick([`${o.name}랑 몰래 과수원에서 사과 따다가 혼난 적 있어 ㅋㅋ`, `옛날에 ${o.name}가 내 도시락 다 먹어서 한 달 동안 말 안 했어`, `${o.name}랑 비밀 일기장을 같이 썼었어. 아직 어딘가 있을걸?`])) };
+      return { text: sty(v, pick([`${o.name}(이)랑 몰래 과수원에서 사과 따다가 혼난 적 있어 ㅋㅋ`, `옛날에 ${o.name}가 내 도시락 다 먹어서 한 달 동안 말 안 했어`, `${o.name}(이)랑 비밀 일기장을 같이 썼었어. 아직 어딘가 있을걸?`])) };
     },
   };
   I.cheatP = {
     w: v => v.drama && v.drama.caughtP && S().player.lover === v.id ? 20 : 0,
-    say: v => { const o = v.drama.caughtP; return { data: {}, text: sty(v, `...${nm(o)}랑 무슨 사이야? 다 들었어. 설명해 봐`),
+    say: v => { const o = v.drama.caughtP; return { data: {}, text: sty(v, `...${nm(o)}(이)랑 무슨 사이야? 다 들었어. 설명해 봐`),
       choices: [{ k: 'sorry', label: '🙇 "미안해, 흔들렸어. 다신 안 그럴게"' }, { k: 'deny', label: '🙅 "오해야! 아무 사이 아니야"' }, { k: 'end', label: '💔 "사실... 우리 그만하자"' }] }; },
     on: (v, k) => {
       const r = rel(v.id, P), o = v.drama.caughtP; v.drama.caughtP = null;
@@ -426,7 +426,7 @@
     const a = rom(v.id, o.id), b = rom(o.id, v.id);
     Soc.addRomance(v.id, o.id, 12, '재회 주선'); Soc.addRomance(o.id, v.id, 8, '재회 주선');
     if (a + 12 >= 55 && b + 8 >= 50 && !Soc.partnerOf(v.id) && !Soc.partnerOf(o.id)) { GOALS.ex.run(v, o); return { text: sty(v, '...한 번만 더 용기 내볼게'), close: true }; }
-    return { text: sty(v, `${o.name}랑...? 아직 마음의 준비가... 그래도 생각은 해볼게`) };
+    return { text: sty(v, `${o.name}(이)랑...? 아직 마음의 준비가... 그래도 생각은 해볼게`) };
   }
   Object.assign(W.indExtra, {
     triangle: (v, o) => {
@@ -457,10 +457,10 @@
     },
     exReunion: (v, o) => {
       const r = rel(v.id, o.id);
-      if (!(r.bond === 'EX_LOVER' || r.status === 'EX')) return { text: sty(v, `${o.name}랑 사귄 적 없는데?`) };
+      if (!(r.bond === 'EX_LOVER' || r.status === 'EX')) return { text: sty(v, `${o.name}(이)랑 사귄 적 없는데?`) };
       return exReunion(v, o);
     },
-    oldFriend: (v, o) => { const r = rel(v.id, o.id); if (r.friendship_point < 30) return { text: sty(v, `${o.name}랑은 아직 잘 몰라 (친밀도 ${Math.round(r.friendship_point)}/30)`) }; r.bond = 'OLD_FRIEND'; r.history = r.history || '오래 알고 지낸 동네 친구'; GOALS.oldFriend.run(v, o); return { text: sty(v, '맞아, 우린 오랜 친구지!'), close: true }; },
+    oldFriend: (v, o) => { const r = rel(v.id, o.id); if (r.friendship_point < 30) return { text: sty(v, `${o.name}(이)랑은 아직 잘 몰라 (친밀도 ${Math.round(r.friendship_point)}/30)`) }; r.bond = 'OLD_FRIEND'; r.history = r.history || '오래 알고 지낸 동네 친구'; GOALS.oldFriend.run(v, o); return { text: sty(v, '맞아, 우린 오랜 친구지!'), close: true }; },
   });
 
   // ---------------------------------------------------------

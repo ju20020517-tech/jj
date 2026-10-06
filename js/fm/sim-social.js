@@ -108,6 +108,7 @@
     if (a === b) return true;
     const A = a === P ? S().player : byId(a), B = b === P ? S().player : byId(b);
     if (!A || !B) return false;
+    if ((A.siblings || []).includes(b) || (B.siblings || []).includes(a)) return true;   // 남매
     const pa = (A.child && A.child.parents) || [], pb = (B.child && B.child.parents) || [];
     if (pa.includes(b) || pb.includes(a)) return true;
     if (pa.length && pa.some(x => pb.includes(x))) return true;
@@ -1499,7 +1500,7 @@
     const st = S();
     const r = rel(v.id, P);
     if (v.status.hospital) return L.say(v, 'hospital');
-    if (v.act && v.act.id === 'sleep' || Sim.asleep(v, hour()) && v.loc === v.home) return L.say(v, 'sleepy', {}, true);
+    if (!(v.wokeUntil > st.realT) && (v.act && v.act.id === 'sleep' || Sim.asleep(v, hour()) && v.loc === v.home)) return L.say(v, 'sleepy', {}, true);
     if (r.misunderstanding && r.misunderstanding.until > day()) return L.say(v, 'misunderstanding', { t: nm(r.misunderstanding.by) });
     if (r.status === 'EX' || r.exPlayer) return L.say(v, 'exAwkward', {}, true);
     if (v.balloon) {

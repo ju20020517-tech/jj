@@ -53,7 +53,7 @@
         const imported = [...document.querySelectorAll('.stImp:checked')].map(x => chars.find(c => c.id === x.value)).filter(Boolean).map(c => ({ look: ISLE.normalizeLook(c.look), name: c.name || undefined, phrase: c.phrase }));
         const key = $('#stKey').value;
         FM.G.start({ fresh: true, playerName: $('#stName').value.trim() || '나', playerLook: pc ? ISLE.normalizeLook(pc.look) : ISLE.normalizeLook(Object.assign(ISLE.randomLook(), { species: 'human' })),
-          count: Math.max(4, Math.min(30, +$('#stCount').value || 12)), imported, playerKeys: { L1: key, L2: Sim.u.pick(Object.keys(D.L2)), L3: Sim.u.pick(Object.keys(D.L3)), L4: Sim.u.pick(Object.keys(D.L4)) } });
+          count: Math.max(4, Math.min(40, +$('#stCount').value || 12)), imported, playerKeys: { L1: key, L2: Sim.u.pick(Object.keys(D.L2)), L3: Sim.u.pick(Object.keys(D.L3)), L4: Sim.u.pick(Object.keys(D.L4)) } });
       }, 50);
     };
     if ($('#stContinue')) $('#stContinue').onclick = () => go(false);

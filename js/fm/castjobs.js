@@ -48,6 +48,16 @@
     c28: ['medical', 9, 18, WD, null, '메디컬 센터 24시 약국', 200],
     c29: ['waterfall', 9, 16, [0], ['look_around', 'alone_sit', 'observe_bugs'], '망각의 수련 폭포 숲길', 160],
     c30: ['mall', 11, 20, [2], null, '플래티넘 타워 편집숍', 250],
+    c31: ['alley', 11, 20, [0], ['eat_snack', 'cheer', 'look_around'], '미식 골목 떡볶이 포차', 180],
+    c32: ['busk', 14, 18, [6], ['sing', 'perform', 'cute_pose'], '야외 공연장 (댄스 연습)', 120],
+    c33: ['cathedral', 8, 17, [6], null, '대성당 (관리 집사)', 210],
+    c34: ['onsen', 13, 21, [2], null, '온천 마사지실', 200],
+    c35: ['fishpier', 5, 12, [6], ['fish', 'watch_sea', 'polite_bow'], '낚시 부두 (어선)', 170],
+    c36: ['mall', 8, 17, [6], null, '쇼핑몰 반찬 코너', 190],
+    c37: ['observatory', 21, 26, [2], ['stargaze', 'fortune', 'candle'], '별빛 천문대 (견습)', 130],
+    c38: ['ferry', 7, 16, [5, 6], ['inspect', 'look_around', 'watch_sea'], '페리 엔진실', 210],
+    c39: ['school', 8, 15, WD, null, '섬 초등학교', 200],
+    c40: ['cliff', 10, 16, [0], ['water_flowers', 'sketch', 'smell_flower'], '노을 정원 꽃 가판대', 120],
   };
   // 독립한 아이: 메인 성격 → 직업
   const CAREER = {
@@ -142,6 +152,8 @@
     c21: '요~ 오늘 셋리스트 장난 아니야!', c22: '…뭐야, 일하는 거 구경 왔냐?', c23: '입항 예정 정상. 무슨 일이야?', c24: '이 벽에 고래를 그릴 거야. 하늘에서 헤엄치는 고래!',
     c25: '어어? 사과가 또 굴러간다~!', c26: '승선을 환영합니다. 오늘 바다는 잔잔합니다.', c27: '깜짝 사진 찍었지롱! ㅋㅋ', c28: '아, 어서 오세요… 어디 아프신 건 아니죠?',
     c29: '저기 봐, 물총새야. 소리 내지 말고.', c30: '이 셔츠 오늘 들어온 거야. 너한테 딱인데?',
+    c31: '어서 온나! 떡볶이 한 접시 무 봐라!', c32: '앗, 연습 보는 거야? 부끄러워~!', c33: '어서 오십시오. 성당은 오늘도 깨끗합니다.', c34: '…어깨 뭉쳤네. 누워.', c35: '오늘 고기 잘 낚인다! 허허!',
+    c36: '아따, 밥은 묵었어? 반찬 좀 싸 줄랑께.', c37: '크큭… 오늘 밤 별자리가 불길하군.', c38: '…엔진 소리 좋다. 무슨 일?', c39: '쉿, 지금 수업 중이야! 이따 보자!', c40: '저, 저기… 꽃 사러 오셨어요…?',
   };
   if (Soc) {
     const oOpts = Soc.talkOptions;
@@ -204,6 +216,23 @@
 
   FM.bus.on('villagers', () => { try { ensureAll(); } catch (e) { /* */ } });
   const oLoad = Sim.load;
-  if (oLoad) Sim.load = function () { const r = oLoad.apply(this, arguments); try { ensureAll(); } catch (e) { /* */ } return r; };
+  if (oLoad) Sim.load = function () { const r = oLoad.apply(this, arguments); try { ensureAll(); setTimeout(() => { try { migrateCast(); } catch (e) { /* */ } }, 1500); } catch (e) { /* */ } return r; };
   Job.ensureAll = ensureAll;
+  // 기존 세이브: 새 고정 주민(c31~c40)이 아직 없으면 빈 집으로 이사 옴
+  function migrateCast() {
+    const st = S(); if (!st || !Sim.makeVillager || !Sim.moveIn) return;
+    const ids = new Set(st.villagers.map(v => v.castId || v.id));
+    const arrived = [];
+    for (const c of (window.ISLE && ISLE.CAST) || []) {
+      if (ids.has(c.id)) continue;
+      if (st.villagers.filter(o => !o.child).length >= Sim.MAX_VILLAGERS || !Sim.freeHome()) break;
+      const v = Sim.makeVillager({ id: c.id, name: c.name, keys: Object.assign({}, c.keys), look: JSON.parse(JSON.stringify(c.look)), phrase: c.phrase });
+      v.castId = c.id; v.gender = c.gender; v.age = c.age; v.concept = c.concept; v.castJob = c.job; v.signature = c.signature;
+      if (Sim.castHome) Sim.castHome(v, c);
+      if (Sim.moveIn(v, true)) arrived.push(v.name);
+    }
+    if (arrived.length) { ensureAll(); Sim.log('move', `🏠 새 이웃 ${arrived.length}명이 섬으로 이사 왔어요! (${arrived.join(', ')})`, [], 3); FM.bus.emit('toast', `🏠 새 이웃이 이사 왔어요: ${arrived.join(', ')}`); }
+  }
+  Job.migrateCast = migrateCast;
+  setTimeout(() => { try { migrateCast(); } catch (e) { console.error('cast migrate', e); } }, 3000);
 })();
