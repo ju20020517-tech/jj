@@ -735,7 +735,7 @@
     for (const c of (window.ISLE && ISLE.CAST) || []) {
       if (S.villagers.length >= n) break;
       const v = makeVillager({ id: c.id, name: c.name, keys: Object.assign({}, c.keys), look: JSON.parse(JSON.stringify(c.look)), phrase: c.phrase });
-      v.castId = c.id; v.gender = c.gender; v.age = c.age; v.concept = c.concept; v.castJob = c.job; v.signature = c.signature;
+      v.castId = c.id; v.gender = c.gender; v.age = c.age; v.concept = c.concept; v.castJob = c.job; v.signature = c.signature; v.castRev = 2;
       Sim.castHome(v, c);
       moveIn(v, true);
     }

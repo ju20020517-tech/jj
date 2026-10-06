@@ -48,16 +48,16 @@
     c28: ['medical', 9, 18, WD, null, '메디컬 센터 24시 약국', 200],
     c29: ['waterfall', 9, 16, [0], ['look_around', 'alone_sit', 'observe_bugs'], '망각의 수련 폭포 숲길', 160],
     c30: ['mall', 11, 20, [2], null, '플래티넘 타워 편집숍', 250],
-    c31: ['alley', 11, 20, [0], ['eat_snack', 'cheer', 'look_around'], '미식 골목 떡볶이 포차', 180],
-    c32: ['busk', 14, 18, [6], ['sing', 'perform', 'cute_pose'], '야외 공연장 (댄스 연습)', 120],
+    c31: ['beachbar', 11, 19, [0], ['cheer', 'eat_snack', 'look_around'], '해변 떡볶이 푸드트럭', 180],
+    c32: ['studio', 13, 20, [6], null, '방송국 연습실', 120],
     c33: ['cathedral', 8, 17, [6], null, '대성당 (관리 집사)', 210],
-    c34: ['onsen', 13, 21, [2], null, '온천 마사지실', 200],
-    c35: ['fishpier', 5, 12, [6], ['fish', 'watch_sea', 'polite_bow'], '낚시 부두 (어선)', 170],
-    c36: ['mall', 8, 17, [6], null, '쇼핑몰 반찬 코너', 190],
-    c37: ['observatory', 21, 26, [2], ['stargaze', 'fortune', 'candle'], '별빛 천문대 (견습)', 130],
-    c38: ['ferry', 7, 16, [5, 6], ['inspect', 'look_around', 'watch_sea'], '페리 엔진실', 210],
+    c34: ['onsen', 14, 22, [2], null, '온천 마사지실', 200],
+    c35: ['matsuri', 15, 22, [1], ['eat_snack', 'sing', 'cheer'], '마츠리 광장 타코야키 노점', 170],
+    c36: ['pub', 11, 21, [3], null, '반점 「홍등」', 200],
+    c37: ['matsuri', 17, 23, [0], ['perform', 'show_off', 'cute_pose'], '마츠리 광장 마술 무대', 130],
+    c38: ['metro', 6, 15, [5, 6], ['inspect', 'look_around', 'stretch'], '지하철역 기관실', 230],
     c39: ['school', 8, 15, WD, null, '섬 초등학교', 200],
-    c40: ['cliff', 10, 16, [0], ['water_flowers', 'sketch', 'smell_flower'], '노을 정원 꽃 가판대', 120],
+    c40: ['school', 13, 18, [5, 6], null, '섬 초등학교 미술실', 140],
   };
   // 독립한 아이: 메인 성격 → 직업
   const CAREER = {
@@ -152,8 +152,8 @@
     c21: '요~ 오늘 셋리스트 장난 아니야!', c22: '…뭐야, 일하는 거 구경 왔냐?', c23: '입항 예정 정상. 무슨 일이야?', c24: '이 벽에 고래를 그릴 거야. 하늘에서 헤엄치는 고래!',
     c25: '어어? 사과가 또 굴러간다~!', c26: '승선을 환영합니다. 오늘 바다는 잔잔합니다.', c27: '깜짝 사진 찍었지롱! ㅋㅋ', c28: '아, 어서 오세요… 어디 아프신 건 아니죠?',
     c29: '저기 봐, 물총새야. 소리 내지 말고.', c30: '이 셔츠 오늘 들어온 거야. 너한테 딱인데?',
-    c31: '어서 온나! 떡볶이 한 접시 무 봐라!', c32: '앗, 연습 보는 거야? 부끄러워~!', c33: '어서 오십시오. 성당은 오늘도 깨끗합니다.', c34: '…어깨 뭉쳤네. 누워.', c35: '오늘 고기 잘 낚인다! 허허!',
-    c36: '아따, 밥은 묵었어? 반찬 좀 싸 줄랑께.', c37: '크큭… 오늘 밤 별자리가 불길하군.', c38: '…엔진 소리 좋다. 무슨 일?', c39: '쉿, 지금 수업 중이야! 이따 보자!', c40: '저, 저기… 꽃 사러 오셨어요…?',
+    c31: '자자~ 떡볶이 왔어요 떡볶이! 너는 특별히 하나 더!', c32: '앗, 연습 보러 온 거야? 무대 아니면 부끄러운데…', c33: '어서 오시옵소서, 주인님. 성당은 오늘도 정갈하옵니다.', c34: '하아암… 마사지 받으러 왔어? 누워.', c35: '얼씨구~ 타코야키 갓 나왔어! 여섯 알 받아 가!',
+    c36: '어서 오시오, 소협! 오늘의 특선은 탕수육이오!', c37: '짜잔~! 손님 오셨다! 카드 한 장 골라 봐!', c38: '충성! 열차는 정시 운행 중입니다!', c39: '쉿, 지금 수업 중이야! 이따 보자!', c40: '앗, 미술실까지 왔어? 아이들이 그린 그림 볼래?',
   };
   if (Soc) {
     const oOpts = Soc.talkOptions;
@@ -219,15 +219,32 @@
   if (oLoad) Sim.load = function () { const r = oLoad.apply(this, arguments); try { ensureAll(); setTimeout(() => { try { migrateCast(); } catch (e) { /* */ } }, 1500); } catch (e) { /* */ } return r; };
   Job.ensureAll = ensureAll;
   // 기존 세이브: 새 고정 주민(c31~c40)이 아직 없으면 빈 집으로 이사 옴
+  // 다시 디자인한 새 주민(c31~c40): 예전 세이브의 이름 · 외모 · 성격을 새 설정으로 맞춤
+  const CAST_REV = 2;
+  function syncCast() {
+    const st = S(); if (!st) return;
+    const C = {}; for (const c of (window.ISLE && ISLE.CAST) || []) C[c.id] = c;
+    for (const v of st.villagers) {
+      const c = C[v.castId]; if (!c || !/^c(3[1-9]|40)$/.test(c.id) || v.castRev === CAST_REV) continue;
+      const old = v.name;
+      Object.assign(v, { name: c.name, gender: c.gender, age: c.age, concept: c.concept, castJob: c.job, signature: c.signature, phrase: c.phrase, look: JSON.parse(JSON.stringify(c.look)), keys: Object.assign({}, c.keys), castRev: CAST_REV });
+      if (c.sibling) v.siblings = [c.sibling];
+      if (Sim.derive) try { Sim.derive(v); } catch (e) { /* */ }
+      applyJob(v); FM.bus.emit('outfit', v);
+      if (old !== c.name) Sim.log('move', `✨ ${old}이(가) 이름을 '${c.name}'(으)로 바꾸고 새 출발을 했어요!`, [v.id], 1);
+    }
+  }
+  Job.syncCast = syncCast;
   function migrateCast() {
     const st = S(); if (!st || !Sim.makeVillager || !Sim.moveIn) return;
+    syncCast();
     const ids = new Set(st.villagers.map(v => v.castId || v.id));
     const arrived = [];
     for (const c of (window.ISLE && ISLE.CAST) || []) {
       if (ids.has(c.id)) continue;
       if (st.villagers.filter(o => !o.child).length >= Sim.MAX_VILLAGERS || !Sim.freeHome()) break;
       const v = Sim.makeVillager({ id: c.id, name: c.name, keys: Object.assign({}, c.keys), look: JSON.parse(JSON.stringify(c.look)), phrase: c.phrase });
-      v.castId = c.id; v.gender = c.gender; v.age = c.age; v.concept = c.concept; v.castJob = c.job; v.signature = c.signature;
+      v.castId = c.id; v.gender = c.gender; v.age = c.age; v.concept = c.concept; v.castJob = c.job; v.signature = c.signature; v.castRev = CAST_REV;
       if (Sim.castHome) Sim.castHome(v, c);
       if (Sim.moveIn(v, true)) arrived.push(v.name);
     }

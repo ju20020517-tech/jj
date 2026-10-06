@@ -1,5 +1,5 @@
 /* =========================================================
- *  💬 주민 대화 3.0 — 말투 17종 · 조합형 대사 수천 가지 · 같은 말 반복 금지
+ *  💬 주민 대화 3.0 — 말투 27종 · 조합형 대사 수천 가지 · 같은 말 반복 금지
  *   1) 말투 엔진: 문장 끝에 아무 말이나 붙이던 방식 → 문장 단위로 자연스럽게
  *      (존댓말 변환 · 말머리 · 말꼬리 · 사투리 · 인터넷체 · 중2병 · 아재개그 …)
  *   2) 인사: 시간 · 날씨 · 장소 · 친밀도 · 기분을 섞어서 매번 다르게 (플레이어 이름이 '나'여도 자연스럽게)
@@ -26,11 +26,11 @@
   // 존댓말 변환 (문장 끝 어미만 바꿈 · 이미 존댓말/평서 '다'면 그대로)
   const POLITE_END = [['거야', '거예요'], ['이야', '이에요'], ['할래', '할래요'], ['줄래', '줄래요'], ['래', '래요'], ['거든', '거든요'], ['는데', '는데요'], ['구나', '군요'], ['잖아', '잖아요'],
     ['해', '해요'], ['줘', '주세요'], ['봐', '봐요'], ['어', '어요'], ['아', '아요'], ['워', '워요'], ['와', '와요'], ['져', '져요'], ['쳐', '쳐요'], ['여', '여요'], ['대', '대요'], ['돼', '돼요'], ['게', '게요'], ['걸', '걸요'],
-    ['지', '죠'], ['네', '네요'], ['까', '까요'], ['니', '나요'], ['나', '나요'], ['군', '군요'], ['고', '고요'], ['야', '예요'], ['자', '요'], ['어때', '어때요'], ['괜찮아', '괜찮아요']];
+    ['지', '죠'], ['네', '네요'], ['까', '까요'], ['니', '나요'], ['나', '나요'], ['군', '군요'], ['고', '고요'], ['야', '예요'], ['자', '요'], ['어때', '어때요'], ['괜찮아', '괜찮아요'], ['더라', '더라고요']];
   function toPolite(t) {
-    t = t.replace(/(^|\s)나는 /g, '$1저는 ').replace(/(^|\s)내가 /g, '$1제가 ').replace(/(^|\s)나도 /g, '$1저도 ').replace(/(^|\s)나랑 /g, '$1저랑 ').replace(/(^|\s)내 /g, '$1제 ').replace(/(^|\s)나 /g, '$1저 ');
+    t = t.replace(/(^|\s)나는 /g, '$1저는 ').replace(/(^|\s)내가 /g, '$1제가 ').replace(/(^|\s)나도 /g, '$1저도 ').replace(/(^|\s)나랑 /g, '$1저랑 ').replace(/(^|\s)나한테 /g, '$1저한테 ').replace(/(^|\s)내 /g, '$1제 ').replace(/(^|\s)나 /g, '$1저 ');
     return t.replace(/([가-힣]+)([^가-힣]*?)(?=([.!?~…]+|$)(\s|$))/g, (m, word, mid, _p3, _p4, off, str) => {
-      if (/(요|다|니다|죠|세요)$/.test(word)) return m;
+      if (/(요|다|니다|죠|세요|소서|이오|하오|구려|오|소)$/.test(word)) return m;
       if ((off === 0 || /[.!?~…]\s*$/.test(str.slice(Math.max(0, off - 2), off))) && str.charAt(off + m.length) === '?') return m;   // 한 단어짜리 질문("미래?")은 그대로
       for (const [a, b] of POLITE_END) if (word.endsWith(a) && word.length >= a.length) return word.slice(0, word.length - a.length) + b + mid;
       // 그 밖의 해체 어미(바빠 · 어때 · 귀여워 …): 받침 없는 ㅏ/ㅐ/ㅓ/ㅔ/ㅕ/ㅘ/ㅙ/ㅝ/ㅞ 로 끝나면 '요'
@@ -59,6 +59,16 @@
     chuuni: { name: '중2병', pre: ['크큭…', '봉인된 오른팔이 욱신거린다…', '후후후…', '어둠의 계약자여…'], post: ['…이것이 운명인가.', '(망토를 휘날린다)', '…어둠이 속삭이는군.', '크큭, 너도 각성할 날이 올 거다.'], pr: 0.45, po: 0.45 },
     posh: { name: '귀족 말투', polite: true, pre: ['오호호,', '어머,', '어머나,'], post: ['오호호호!', '우아하지 않나요?', '(부채를 펼친다)', '후훗.'], pr: 0.35, po: 0.35 },
     sporty: { name: '운동부 말투', fx: dot2bang, pre: ['오케이!', '좋았어!', '파이팅!', '자!'], post: ['파이팅!!', '가즈아!', '💪', '한 바퀴 더!'], pr: 0.35, po: 0.35 },
+    vendor: { name: '시장 상인 말투', fx: dot2bang, pre: ['자자~', '어서 와!', '떨이요 떨이!'], post: ['골라 골라!', '하나 더 얹어 줄게!', '오늘만 이 가격!'], pr: 0.35, po: 0.35 },
+    idol: { name: '아이돌 말투', pre: ['여러분~', '안녕하세요, 모모예요!', '하나 둘 셋!'], post: ['사랑해요 ♡', '(윙크)', '(손하트)', '많이 응원해 주세요!'], pr: 0.3, po: 0.4 },
+    butler: { name: '옛 집사 말투', polite: true, pre: ['주인님,', '황송하오나,', '실례하겠사옵니다.'], post: ['분부대로 하겠사옵니다.', '(깊이 고개를 숙인다)', '(흰 장갑을 고쳐 낀다)'], pr: 0.4, po: 0.3 },
+    sleepy: { name: '나른한 말투', fx: t => t.replace(/!+/g, '…').replace(/\.(\s|$)/g, '…$1'), pre: ['하아암…', '음…', '졸려…'], post: ['…쿨.', '(하품)', '…나중에 얘기해.', '(눈을 비빈다)'], pr: 0.35, po: 0.35 },
+    trot: { name: '트로트 흥 말투', pre: ['얼씨구~', '쿵짝쿵짝~', '에헤라디야~'], post: ['♪ 내 나이가 어때서~', '얼씨구 좋다!', '(어깨를 들썩인다)'], pr: 0.35, po: 0.35 },
+    wuxia: { name: '무협 말투', pre: ['허허,', '소협,', '강호의 이치로 보면,'], post: ['…이것이 강호의 도리요!', '(포권을 한다)', '무림이 놀랄 일이오!'], pr: 0.35, po: 0.35 },
+    magician: { name: '마술사 말투', pre: ['짜잔~!', '자, 잘 봐!', '하나, 둘, 셋!'], post: ['트릭은 비밀!', '(모자에서 비둘기가 나온다)', '짜잔!'], pr: 0.35, po: 0.35 },
+    military: { name: '군대 다나까', polite: true, fx: dot2bang, pre: ['충성!', '보고드립니다!', '확인했습니다!'], post: ['이상입니다!', '충성!', '(절도 있게 경례)'], pr: 0.35, po: 0.3 },
+    teacher: { name: '선생님 말투', pre: ['자~ 여러분!', '옳지!', '우와~'], post: ['참 잘했어요!', '(칭찬 도장 꾹)', '다 같이 박수!'], pr: 0.3, po: 0.3 },
+    artist: { name: '감성 화가 말투', pre: ['이 색 좀 봐…', '음… 영감이 와.', '있잖아,'], post: ['…그려야겠다.', '(스케치북을 꺼낸다)', '색이 참 예쁘다…'], pr: 0.3, po: 0.3 },
     sailor: { name: '뱃사람 말투', pre: ['어이,', '흠,', '이봐,'], post: ['…바다가 그렇게 말하더군.', '(먼 바다를 본다)', '파도가 잔잔하군.'], pr: 0.3, po: 0.3 },
   };
   // 고정 주민별 말투 (성격 · 컨셉에 맞춰)
@@ -66,7 +76,7 @@
     c01: 'shy', c02: 'net', c03: 'dreamy', c04: 'polite', c05: 'hyper', c06: 'jeolla', c07: 'cute', c08: 'polite', c09: 'net', c10: 'cool',
     c11: 'warm', c12: 'hyper', c13: 'sporty', c14: 'grandma', c15: 'dreamy', c16: 'sporty', c17: 'dad', c18: 'cool', c19: 'posh', c20: 'shy',
     c21: 'net', c22: 'tsundere', c23: 'formal', c24: 'chuuni', c25: 'gyeongsang', c26: 'sailor', c27: 'hyper', c28: 'polite', c29: 'warm', c30: 'posh',
-    c31: 'gyeongsang', c32: 'cute', c33: 'formal', c34: 'tsundere', c35: 'dad', c36: 'jeolla', c37: 'chuuni', c38: 'cool', c39: 'warm', c40: 'shy',
+    c31: 'vendor', c32: 'idol', c33: 'butler', c34: 'sleepy', c35: 'trot', c36: 'wuxia', c37: 'magician', c38: 'military', c39: 'teacher', c40: 'artist',
   };
   const L3_SPEECH = { WARM: 'warm', FORMAL: 'polite', CYNICAL: 'tsundere', CUTE: 'cute', PRANKSTER: 'net', DREAMY: 'dreamy', PASSIONATE: 'hyper', SHY: 'shy' };
   const speechOf = v => (v && (v.speech || CAST_SPEECH[v.castId] || L3_SPEECH[v.keys && v.keys.L3])) || 'warm';
@@ -284,7 +294,7 @@
     return mk(v, fresh(v, L));
   });
   reg('t3_news', v => (S().log && S().log.length ? 1.2 : 0), v => {
-    const st = S(); const ev = st.log.slice(-25).filter(e => e.imp >= 2 && !(e.who || []).includes(v.id)).pop();
+    const st = S(); const ev = st.log.slice(-25).filter(e => e.imp >= 2 && (e.who || []).length && ['couple', 'breakup', 'wedding', 'jealous', 'friend', 'fight', 'confess', 'baby', 'rel', 'romance', 'medical', 'quirk', 'triangle', 'affair'].includes(e.type) && !(e.who || []).includes(v.id)).pop();
     if (!ev) return mk(v, fresh(v, THOUGHTS));
     const t = W.niceNews ? W.niceNews(ev.text) : String(ev.text).replace(/^[^\s가-힣]+\s*/, '');
     return mk(v, fresh(v, [`들었어? ${t}`, `섬 소식 봤어? ${t} 놀랍지 않아?`, `방금 들은 얘긴데… ${t}`]), ['agree', 'ask', 'tease']);
