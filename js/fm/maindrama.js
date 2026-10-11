@@ -16,7 +16,8 @@
   const totalPersonalEpisodes = () => Object.values(S().story || {}).reduce((n, st) => n + Math.min(5, st.ep || 0), 0);
   const state = () => {
     const s = S();
-    s.mainDrama = s.mainDrama || { completed: [], groupCompleted: [], choice: {}, lastDay: -1 };\n    s.mainDrama.groupCompleted = s.mainDrama.groupCompleted || [];
+    s.mainDrama = s.mainDrama || { completed: [], groupCompleted: [], choice: {}, lastDay: -1 };
+    s.mainDrama.groupCompleted = s.mainDrama.groupCompleted || [];
     return s.mainDrama;
   };
   const unlocks = [
