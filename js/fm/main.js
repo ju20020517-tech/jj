@@ -718,6 +718,7 @@
   let perfLast = performance.now();
   function setPerfHud(on) {
     perfOn = on;
+    if (on) { perfLast = performance.now(); perfFrames = 0; perfElapsed = 0; perfSimMs = 0; perfSceneMs = 0; }
     if (on && !perfHud) {
       perfHud = document.createElement('div');
       perfHud.id = 'fm-perf-hud';
@@ -737,6 +738,7 @@
   function updatePerfHud(now) {
     if (!perfOn || !perfHud) return;
     const elapsed = now - perfLast;
+    perfLast = now;
     perfElapsed += elapsed;
     perfFrames++;
     if (perfElapsed < 500) return;
@@ -751,7 +753,7 @@
       '드로우콜: ' + (info ? info.calls : '-') + '  삼각형: ' + (info ? info.triangles.toLocaleString() : '-'),
       '화면 주민 수: ' + (FM.Chars && FM.Chars.models ? FM.Chars.models.size : '-')
     ].join('\\n');
-    perfFrames = 0; perfElapsed = 0; perfSimMs = 0; perfSceneMs = 0; perfLast = now;
+    perfFrames = 0; perfElapsed = 0; perfSimMs = 0; perfSceneMs = 0;
   }
   let frameNo = 0;
   function frame() {
