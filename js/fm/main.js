@@ -755,10 +755,19 @@
     ].join('\\n');
     perfFrames = 0; perfElapsed = 0; perfSimMs = 0; perfSceneMs = 0;
   }
-  let frameNo = 0;
+  let frameNo = 0, shadowEvery = 2, slowFrames = 0, fastFrames = 0;
+  let lastFrameStart = performance.now();
   function frame() {
     const frameStart = performance.now();
-    if ((++frameNo & 1) === 0 || G.cine) renderer.shadowMap.needsUpdate = true;
+    const frameGap = frameStart - lastFrameStart;
+    lastFrameStart = frameStart;
+    // 프레임이 계속 느리면 그림자 갱신 빈도를 낮추고, 여유가 생기면 복구
+    if (!G.cine && frameGap > 22) { slowFrames++; fastFrames = 0; }
+    else if (!G.cine && frameGap < 18) { fastFrames++; slowFrames = 0; }
+    else { slowFrames = 0; fastFrames = 0; }
+    if (slowFrames >= 8) { shadowEvery = 3; slowFrames = 0; }
+    if (fastFrames >= 90) { shadowEvery = 2; fastFrames = 0; }
+    if ((++frameNo % shadowEvery === 0) || G.cine) renderer.shadowMap.needsUpdate = true;
     // 느린 기기에서도 게임 시간은 제대로 흐르게: 시뮬레이션은 최대 0.25초, 카메라/애니메이션은 0.05초로 제한
     const raw = clock.getDelta();
     const dt = Math.min(0.05, raw);
