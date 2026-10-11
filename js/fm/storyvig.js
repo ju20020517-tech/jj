@@ -20,7 +20,7 @@
   const toast = t => FM.bus.emit('toast', J(t));
   const byCast = id => S().villagers.find(v => v.castId === id || v.id === id);
   const ST = (FM.StoryVig = {});
-  const STORY = {}; for (const r of FM.STORY) STORY[r[0]] = { place: r[1], item: r[2], dream: r[3], worry: r[4], crisis: r[5], lines: r[6] };
+  const STORY = {}; for (const r of FM.STORY) STORY[r[0]] = { place: r[1], item: r[2], dream: r[3], worry: r[4], crisis: r[5], lines: r[6], meta: (FM.STORY_META || {})[r[0]] || null };
   const NEED = [12, 25, 40, 55, 70];
   const TITLES = ['부탁', '숨겨진 고민', '과거의 그림자', '위기', '꿈을 이루다'];
 
@@ -68,7 +68,7 @@
     const past = pastsOf(v)[0];
     const cast = { A: v, B: p };
     if (n === 2 && past && past.other && !past.other.sceneId) cast.C = past.other;
-    const title = `${v.name} 이야기 ${n + 1}화 「${TITLES[n]}」`;
+    const title = `${d.meta ? d.meta.title : v.name + ' 이야기'} · ${TITLES[n]}`;
     let beats;
     if (n === 0) beats = [
       { narr: `(${v.name}이(가) ${d.item}을(를) 들고 다가왔다)`, who: '해설', icon: '📖', shot: ['wide'] },
@@ -109,7 +109,7 @@
       { outcome: 'happy', endText: [`${v.name} 이야기 완결 「${TITLES[4]}」`, `${d.dream} — 이루었다!`] }];
     const c = Object.assign({ theme: n === 3 ? 'fight' : n === 2 ? 'reunion' : n === 4 ? 'party' : 'friend', cast, beats, key: keyOf(cast) + '|story' + n, vig: true, sub: `${v.name} 이야기 ${n + 1}화`, force: true },
       { venue: n === 1 ? { loc: 'island', x: -72, z: -86, place: 'cliff' } : venueOf(d.place) });
-    c.resolve = () => {
+    if (d.meta) {\n      // 연출 메모는 컷신 데이터에 함께 보관하고, 화면에는 장면 자체만 보여 준다.\n      c.directorNotes = { opening: d.meta.opening, palette: d.meta.palette, sound: d.meta.sound };\n      beats.unshift({ shot: ['wide'] });\n    }\n    c.resolve = () => {
       const s = S().story[v.id] || (S().story[v.id] = {});
       s.ep = n + 1; s.day = day();
       Soc.addFriend(v.id, P, n === 4 ? 12 : 6, n === 4 ? 12 : 6, '스토리');
