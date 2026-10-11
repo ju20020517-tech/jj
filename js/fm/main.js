@@ -711,6 +711,8 @@
     }
     FM.Guide.clearWaypointIfNear();
   }
+  // 프레임마다 concat으로 새 배열을 만들지 않고 렌더 엔티티 버퍼를 재사용
+  const renderEnts = [];
   let frameNo = 0;
   function frame() {
     if ((++frameNo & 1) === 0 || G.cine) renderer.shadowMap.needsUpdate = true;
@@ -725,7 +727,12 @@
     const p = st.player;
     const h = Sim.time.hour();
     // 렌더 대상
-    const ents = st.villagers.concat(Ev.staff, st.visitors, [Object.assign(p, { id: 'P', outfit: p.outfit || null, state: p.moving ? 'WALK' : 'IDLE' })]);
+    renderEnts.length = 0;
+    for (const e of st.villagers) renderEnts.push(e);
+    for (const e of Ev.staff) renderEnts.push(e);
+    for (const e of st.visitors) renderEnts.push(e);
+    renderEnts.push(Object.assign(p, { id: 'P', outfit: p.outfit || null, state: p.moving ? 'WALK' : 'IDLE' }));
+    const ents = renderEnts;
     // 드라마 컷신: 실제 장소를 시네마 카메라로
     if (G.cine) { try { cineFrame(dt, st, ents, h); } catch (e) { console.error('cine', e); } FM.UI.frame(dt, G.cine ? G.cine.cam : camera); return; }
     if (G.view === 'island' || (G.view === 'observe' && !G.obs) || G.zoomAnim) {
