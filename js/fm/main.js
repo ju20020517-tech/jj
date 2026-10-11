@@ -713,19 +713,63 @@
   }
   // 프레임마다 concat으로 새 배열을 만들지 않고 렌더 엔티티 버퍼를 재사용
   const renderEnts = [];
+  // F3 성능 진단 HUD: 프레임/시뮬레이션/장면 갱신 시간과 GPU 제출량을 표시
+  let perfHud = null, perfOn = false, perfFrames = 0, perfElapsed = 0, perfSimMs = 0, perfSceneMs = 0;
+  let perfLast = performance.now();
+  function setPerfHud(on) {
+    perfOn = on;
+    if (on && !perfHud) {
+      perfHud = document.createElement('div');
+      perfHud.id = 'fm-perf-hud';
+      Object.assign(perfHud.style, {
+        position: 'fixed', left: '8px', top: '8px', zIndex: '99999',
+        padding: '8px 10px', background: 'rgba(0,0,0,.78)', color: '#b8ffca',
+        font: '12px/1.5 monospace', whiteSpace: 'pre', pointerEvents: 'none',
+        border: '1px solid rgba(184,255,202,.45)', borderRadius: '6px'
+      });
+      document.body.appendChild(perfHud);
+    }
+    if (perfHud) perfHud.style.display = on ? 'block' : 'none';
+  }
+  window.addEventListener('keydown', e => {
+    if (e.code === 'F3' && !e.repeat) { e.preventDefault(); setPerfHud(!perfOn); }
+  });
+  function updatePerfHud(now) {
+    if (!perfOn || !perfHud) return;
+    const elapsed = now - perfLast;
+    perfElapsed += elapsed;
+    perfFrames++;
+    if (perfElapsed < 500) return;
+    const fps = perfFrames * 1000 / perfElapsed;
+    const sim = perfSimMs / perfFrames, scene = perfSceneMs / perfFrames;
+    const info = renderer && renderer.info && renderer.info.render;
+    perfHud.textContent = [
+      '찐구 성능 진단 (F3로 닫기)',
+      'FPS: ' + fps.toFixed(1) + '  프레임: ' + (1000 / Math.max(1, fps)).toFixed(1) + ' ms',
+      '시뮬레이션 평균: ' + sim.toFixed(2) + ' ms',
+      '장면 갱신 평균: ' + scene.toFixed(2) + ' ms',
+      '드로우콜: ' + (info ? info.calls : '-') + '  삼각형: ' + (info ? info.triangles.toLocaleString() : '-'),
+      '화면 주민 수: ' + (FM.Chars && FM.Chars.models ? FM.Chars.models.size : '-')
+    ].join('\\n');
+    perfFrames = 0; perfElapsed = 0; perfSimMs = 0; perfSceneMs = 0; perfLast = now;
+  }
   let frameNo = 0;
   function frame() {
+    const frameStart = performance.now();
     if ((++frameNo & 1) === 0 || G.cine) renderer.shadowMap.needsUpdate = true;
     // 느린 기기에서도 게임 시간은 제대로 흐르게: 시뮬레이션은 최대 0.25초, 카메라/애니메이션은 0.05초로 제한
     const raw = clock.getDelta();
     const dt = Math.min(0.05, raw);
     const st = Sim.get();
+    const simStart = performance.now();
     try { if (!FM.UI.paused()) Sim.tick(Math.min(0.25, raw)); } catch (e) { console.error('tick', e); }
+    perfSimMs += performance.now() - simStart;
     movePlayer(dt);
     followAll(dt);
     updateCamera(dt);
     const p = st.player;
     const h = Sim.time.hour();
+    const sceneStart = performance.now();
     // 렌더 대상
     renderEnts.length = 0;
     for (const e of st.villagers) renderEnts.push(e);
@@ -734,7 +778,7 @@
     renderEnts.push(Object.assign(p, { id: 'P', outfit: p.outfit || null, state: p.moving ? 'WALK' : 'IDLE' }));
     const ents = renderEnts;
     // 드라마 컷신: 실제 장소를 시네마 카메라로
-    if (G.cine) { try { cineFrame(dt, st, ents, h); } catch (e) { console.error('cine', e); } FM.UI.frame(dt, G.cine ? G.cine.cam : camera); return; }
+    if (G.cine) { try { cineFrame(dt, st, ents, h); } catch (e) { console.error('cine', e); } FM.UI.frame(dt, G.cine ? G.cine.cam : camera); perfSceneMs += performance.now() - sceneStart; updatePerfHud(performance.now()); return; }
     if (G.view === 'island' || (G.view === 'observe' && !G.obs) || G.zoomAnim) {
       FM.W.applyTime(h, st.weather.type, camTarget);
       FM.W.update(dt, st, camTarget, camera.position);
@@ -752,6 +796,8 @@
     // BGM
     if ((bgmT -= dt) < 0) { bgmT = 1; FM.UI.pickBgm(); }
     FM.UI.frame(dt, camera);
+    perfSceneMs += performance.now() - sceneStart;
+    updatePerfHud(performance.now());
   }
 
   // ---------------------------------------------------------
