@@ -208,6 +208,10 @@
   FM.Anim = {
     POSES: A,
     apply(c, v, t) {
+      // 일부 포즈(flex · meditate)가 scale에 곱셈을 사용하므로 매번 원래 크기로 복원.
+      // 복원하지 않으면 가구를 이용하는 동안에도 프레임마다 몸 크기가 누적 변형됨.
+      if (!c._animBaseScale) c._animBaseScale = c.body.scale.clone();
+      c.body.scale.copy(c._animBaseScale);
       c.seated = false; c.lying = false;
       if (c.blanket) c.blanket.visible = false;
       if (c.shape) c.shape.rotation.y = 0;
@@ -221,7 +225,12 @@
       if (sh > 0) {
         if (c.lying) {
           // 벤치 · 소파 위 낮잠: 좌석 높이에 맞춰, 좌석 긴 방향으로 눕힘
-          if (!c.lieOn) { c.body.position.y += sh / ((c.rs || 1) * (c.hh || 1)); if (c.shape) c.shape.rotation.y = PI / 2; }
+          if (!c.lieOn) {
+            // lieBase가 설정한 기본 높이에 seatH를 더하면 몸이 좌석 위로 뜰 수 있음.
+            // 좌석 윗면을 기준으로 높이를 다시 계산해 이중 오프셋을 방지.
+            c.body.position.y = bodyYFor(c, sh + 0.01);
+            if (c.shape) c.shape.rotation.y = PI / 2;
+          }
         } else if (!c.seated && !NO_SEAT[p]) sitBase(c, t);
       }
     },
