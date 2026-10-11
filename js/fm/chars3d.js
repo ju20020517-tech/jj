@@ -195,10 +195,17 @@
   Ch.sync = function (entities, viewLoc, sceneObj, dt, opts = {}) {
     const st = FM.Sim.get();
     const seen = new Set();
+    const cullFrom = opts.cullFrom;
+    const cullR = opts.cullR || 90;
+    const cullR2 = cullR * cullR;
     for (const e of entities) {
       const loc = e.loc;
       if (loc !== viewLoc) continue;
-      if (opts.cullFrom && Math.hypot(e.x - opts.cullFrom.x, e.z - opts.cullFrom.z) > (opts.cullR || 90)) continue;
+      // 거리 제곱으로 비교해 매 주민마다 sqrt 계산을 피함
+      if (cullFrom) {
+        const dx = e.x - cullFrom.x, dz = e.z - cullFrom.z;
+        if (dx * dx + dz * dz > cullR2) continue;
+      }
       seen.add(e.id);
       let m = models.get(e.id);
       const key = modelKey(e);
