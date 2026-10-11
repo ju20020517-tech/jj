@@ -109,7 +109,12 @@
       { outcome: 'happy', endText: [`${v.name} 이야기 완결 「${TITLES[4]}」`, `${d.dream} — 이루었다!`] }];
     const c = Object.assign({ theme: n === 3 ? 'fight' : n === 2 ? 'reunion' : n === 4 ? 'party' : 'friend', cast, beats, key: keyOf(cast) + '|story' + n, vig: true, sub: `${v.name} 이야기 ${n + 1}화`, force: true },
       { venue: n === 1 ? { loc: 'island', x: -72, z: -86, place: 'cliff' } : venueOf(d.place) });
-    if (d.meta) {\n      // 연출 메모는 컷신 데이터에 함께 보관하고, 화면에는 장면 자체만 보여 준다.\n      c.directorNotes = { opening: d.meta.opening, palette: d.meta.palette, sound: d.meta.sound };\n      beats.unshift({ shot: ['wide'] });\n    }\n    c.resolve = () => {
+    if (d.meta) {
+      // 연출 메모는 컷신 데이터에 함께 보관하고, 화면에는 장면 자체만 보여 준다.
+      c.directorNotes = { opening: d.meta.opening, palette: d.meta.palette, sound: d.meta.sound };
+      beats.unshift({ shot: ['wide'] });
+    }
+    c.resolve = () => {
       const s = S().story[v.id] || (S().story[v.id] = {});
       s.ep = n + 1; s.day = day();
       Soc.addFriend(v.id, P, n === 4 ? 12 : 6, n === 4 ? 12 : 6, '스토리');
