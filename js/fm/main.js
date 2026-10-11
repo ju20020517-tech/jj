@@ -42,15 +42,78 @@
     camera.aspect = w / h; camera.updateProjectionMatrix();
   }
 
-  // 저장 / 불러오기
+  // 저장 / 불러오기 — 기존 저장 형식은 유지하고, 직전 정상 저장본을 백업
+  const SAVE_BACKUP_KEY = D.SAVE_KEY + '-backup';
+  function parseSave(raw) {
+    if (!raw) return null;
+    try {
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== 'object' || !Array.isArray(data.villagers) ||
+          !data.player || typeof data.player !== 'object') return null;
+      return data;
+    } catch (e) { return null; }
+  }
   G.save = function () {
-    try { const st = Sim.get(); if (!st) return; st.player.lastRealVisit = Date.now(); localStorage.setItem(D.SAVE_KEY, Sim.serialize()); G.savedAt = Date.now(); } catch (e) { console.warn('save failed', e); if (!G._quotaWarned && /quota/i.test(String(e && (e.name + e.message)))) { G._quotaWarned = true; FM.UI.toast('⚠️ 저장 공간이 가득 찼어요. 붙인 사진을 몇 장 떼어 주세요'); } }
+    try {
+      const st = Sim.get();
+      if (!st || !st.player || !Array.isArray(st.villagers)) return false;
+      st.player.lastRealVisit = Date.now();
+      const serialized = Sim.serialize();
+      // 실제로 파싱 가능한 저장 데이터인지 확인한 뒤에만 기록
+      if (!parseSave(serialized)) throw new Error('저장 데이터 검증에 실패했어요.');
+      const previous = localStorage.getItem(D.SAVE_KEY);
+      if (parseSave(previous)) {
+        try { localStorage.setItem(SAVE_BACKUP_KEY, previous); }
+        catch (backupError) { console.warn('save backup failed', backupError); }
+      }
+      localStorage.setItem(D.SAVE_KEY, serialized);
+      G.savedAt = Date.now();
+      G.saveError = null;
+      return true;
+    } catch (e) {
+      G.saveError = e;
+      console.warn('save failed', e);
+      if (!G._saveWarned) {
+        G._saveWarned = true;
+        if (FM.UI && FM.UI.toast) {
+          const quota = /quota|storage/i.test(String(e && (e.name + ' ' + e.message)));
+          FM.UI.toast(quota
+            ? '⚠️ 저장 공간이 부족해요. 사진이나 앨범 데이터를 정리해 주세요.'
+            : '⚠️ 저장에 실패했어요. 브라우저 저장 공간 설정을 확인해 주세요.');
+        }
+      }
+      return false;
+    }
   };
-  G.hasSave = () => { try { return !!localStorage.getItem(D.SAVE_KEY); } catch (e) { return false; } };
+  G.hasSave = () => {
+    try { return !!(parseSave(localStorage.getItem(D.SAVE_KEY)) || parseSave(localStorage.getItem(SAVE_BACKUP_KEY))); }
+    catch (e) { return false; }
+  };
   G.loadSave = function () {
-    try { const j = JSON.parse(localStorage.getItem(D.SAVE_KEY)); if (!j || !j.villagers) return false; Sim.load(j); return true; } catch (e) { console.warn(e); return false; }
+    let primary = null, backup = null;
+    try {
+      primary = parseSave(localStorage.getItem(D.SAVE_KEY));
+      backup = parseSave(localStorage.getItem(SAVE_BACKUP_KEY));
+    } catch (e) { console.warn('save read failed', e); return false; }
+    if (primary) {
+      try { Sim.load(primary); return true; }
+      catch (e) { console.warn('primary save load failed; trying backup', e); }
+    }
+    if (backup) {
+      try {
+        Sim.load(backup);
+        // 복구한 백업을 기본 저장 슬롯에도 되돌려 다음 실행부터 정상 사용
+        try { localStorage.setItem(D.SAVE_KEY, JSON.stringify(backup)); } catch (e) { console.warn('save recovery copy failed', e); }
+        if (FM.UI && FM.UI.toast) FM.UI.toast('🛟 저장 파일에 문제가 있어 이전 저장본으로 복구했어요.');
+        return true;
+      } catch (e) { console.warn('backup save load failed', e); }
+    }
+    return false;
   };
-  G.reset = function () { try { localStorage.removeItem(D.SAVE_KEY); } catch (e) {} location.reload(); };
+  G.reset = function () {
+    try { localStorage.removeItem(D.SAVE_KEY); localStorage.removeItem(SAVE_BACKUP_KEY); } catch (e) {}
+    location.reload();
+  };
 
   G.start = function (opts) {
     if (opts && opts.fresh) {
