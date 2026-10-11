@@ -377,6 +377,10 @@
         if (kind === 'close') { want.pos.set(h2.x + side * 0.7, h2.y + 0.12, h2.z + 3.0); want.look.set(h2.x + side * 0.15, h2.y - 0.12, h2.z); want.speed = 3; }
         else if (kind === 'two') { want.pos.set(h2.x * 0.9 + side * 1.4, h2.y + 0.25, h2.z + 3.9); want.look.set(-h2.x * 0.25, h2.y - 0.25, h2.z); want.speed = 2.4; }
         else if (kind === 'zoom') { want.pos.set(h2.x + side * 0.35, h2.y + 0.06, h2.z + 2.05); want.look.set(h2.x + side * 0.06, h2.y - 0.06, h2.z); want.speed = 8; }
+        // 영화식 숏: 감정을 천천히 밀어 넣는 푸시인, 상대의 어깨 너머, 옆얼굴을 담는 프로필
+        else if (kind === 'push') { want.pos.set(h2.x + side * 0.42, h2.y + 0.08, h2.z + 2.45); want.look.set(h2.x + side * 0.05, h2.y - 0.08, h2.z); want.speed = 0.9; }
+        else if (kind === 'over') { want.pos.set(h2.x + side * 1.25, h2.y + 0.2, h2.z + 3.45); want.look.set(h2.x - side * 0.25, h2.y - 0.15, h2.z); want.speed = 2.0; }
+        else if (kind === 'profile') { want.pos.set(h2.x + side * 2.25, h2.y + 0.08, h2.z + 1.75); want.look.set(h2.x, h2.y - 0.1, h2.z); want.speed = 2.1; }
         else if (kind === 'low') { want.pos.set(h2.x * 0.6 + side * 0.6, h2.y - 0.55, h2.z + 3.2); want.look.set(h2.x * 0.8, h2.y + 0.1, h2.z); want.speed = 2.4; }
         else if (kind === 'lift') { want.pos.set(h2.x + 0.4, h2.y - 0.7, h2.z + 2.2); want.look.set(h2.x, h2.y + 0.6, h2.z); want.speed = 2; }
         else if (kind === 'top') { want.pos.set(h2.x, h2.y + 4.5, h2.z + 2.5); want.look.set(h2.x, h2.y - 0.5, h2.z); want.speed = 2; }
@@ -613,12 +617,20 @@
       el.querySelector('.cs-face').innerHTML = faceHtml;
       el.querySelector('.cs-name').textContent = name;
       const tx = el.querySelector('.cs-text'); tx.textContent = '';
-      let k = 0;
-      typing = setInterval(() => {
+      let k = 0, punctuationHold = 0;
+      const typeChar = () => {
+        if (done || !tx.isConnected) { typing = null; return; }
         k += 1; tx.textContent = full.slice(0, k);
-        if (k % 2 === 0 && full[k - 1] !== ' ') { if (speaker && FM.Voice) FM.Voice.blip(speaker, full[k - 1], pitch || 1); else if (FM.Audio.blip) FM.Audio.blip(pitch || 1); else sfx('blip'); }
-        if (k >= full.length) { clearInterval(typing); typing = null; el.querySelector('.cs-next').classList.add('on'); if (stage) stage.talk(null, false); adv = setTimeout(next, 1300 + full.length * 35); }
-      }, 42);
+        const ch = full[k - 1];
+        if (k % 2 === 0 && ch !== ' ' && !/[，。！？…,.!?]/.test(ch)) { if (speaker && FM.Voice) FM.Voice.blip(speaker, ch, pitch || 1); else if (FM.Audio.blip) FM.Audio.blip(pitch || 1); else sfx('blip'); }
+        punctuationHold = /[！？!?]/.test(ch) ? 230 : /[。…]/.test(ch) ? 190 : /[,，、]/.test(ch) ? 100 : 0;
+        if (k >= full.length) {
+          typing = null; el.querySelector('.cs-next').classList.add('on'); if (stage) stage.talk(null, false);
+          const dramaticHold = (full.match(/[！？!?…]/g) || []).length * 180 + (full.match(/[。]/g) || []).length * 100;
+          adv = setTimeout(next, 1500 + full.length * 28 + dramaticHold);
+        } else typing = setTimeout(typeChar, 34 + punctuationHold);
+      };
+      typing = setTimeout(typeChar, 42);
     };
     // 상호작용 (QTE · 투표 · 선택) — 결과는 c.results 에 저장, 리플레이 때는 저장된 결과로 진행
     const interact = (b) => {
@@ -672,7 +684,14 @@
       if (b.qte || b.vote || b.choice) return interact(b);
       el.classList.toggle('lines', !!b.lines);
       let wait = 1100;
-      if (b.emo) {
+      // 대사 사이의 정적도 하나의 장면으로 취급한다. pause 값은 밀리초.
+      if (b.pause !== undefined) {
+        box.hidden = true; el.classList.remove('lines');
+        if (stage && b.shot) stage.shot(Array.isArray(b.shot) ? b.shot[0] : b.shot, Array.isArray(b.shot) ? b.shot[1] : undefined);
+        if (b.fx === 'flash') flash();
+        wait = Math.max(150, Math.min(9000, Number(b.pause) || 900));
+      }
+      else if (b.emo) {
         if (stage) { stage.emo(b.emo, b.e); stage.shot('close', b.emo); }
         setTimeout(() => { const [x, y] = scr(b.emo); pop(fx, x, y, b.e, 'emo'); }, 250);
         if (/💓|💗|💕|❤️|🥰/.test(b.e)) sfx('heart'); else if (/💢|😠|😡/.test(b.e)) sfx('thud'); else sfx('pop');
