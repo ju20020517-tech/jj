@@ -70,43 +70,95 @@
     if (n === 2 && past && past.other && !past.other.sceneId) cast.C = past.other;
     const title = `${d.meta ? d.meta.title : v.name + ' 이야기'} · ${TITLES[n]}`;
     let beats;
+    const sceneLine = (line, shot='close') => ({ say: 'A', text: sty(v, line), shot });
+    const memoryLine = past && past.memory ? past.memory : `그때 나는 ${d.worry}라는 걸 아무에게도 말하지 못했어.`;
     if (n === 0) beats = [
-      { narr: `(${v.name}이(가) ${d.item}을(를) 들고 다가왔다)`, who: '해설', icon: '📖', shot: ['wide'] },
-      { say: 'A', text: sty(v, L[0]), shot: 'close' }, { pose: 'B', p: 'look', t: 900 },
-      { narr: `(${p.name}은(는) 고개를 끄덕였다. 둘이 함께하니 금방 해결됐다)`, who: '해설', icon: '🤝' },
-      { poses: [['A', 'cheer'], ['B', 'cheer']], t: 1200 }, { say: 'A', text: sty(v, `고마워! 사실 내 꿈은 ${d.dream}이야. …처음 말해 보는 거야.`) },
-      { fx: 'sparkle', at: 'A' }, { outcome: 'happy', endText: [title, `${v.name}의 꿈: ${d.dream}`] }];
+      { filter: 'sepia' },
+      { narr: `(해 질 무렵. ${d.place}에 바람이 스친다. ${d.item} 하나가 바닥에 떨어지고, ${v.name}은 그것을 주우려다 잠시 멈춘다.)`, who:'해설', icon:'🎞️', shot:['wide'] },
+      { show:'A' }, { move:['A',0.6,0.2], t:1100 }, { fx:'glow', at:'A' },
+      sceneLine(L[0], 'close'),
+      { narr:`(${v.name}은 웃어 보이지만 손끝은 작게 떨린다. 말하지 않은 문장이 목 끝에 걸려 있다.)`, who:'해설', icon:'🌬️' },
+      { pose:'A', p:'look', t:900 }, { show:'B' }, { move:['B',1.1,-0.2], t:1000 },
+      { say:'B', text: `무슨 일인지 전부 말하지 않아도 돼. 다만 네가 혼자서 해결해야 하는 일이라고 정해 두진 마.`, shot:'close' },
+      { filter:'' },
+      { say:'A', text: sty(v, `사실은… ${d.dream}이(가) 내 꿈이야. 그런데 입 밖으로 꺼내는 순간, 실패하면 어떡하지 싶어서 겁이 나.`) },
+      { say:'B', text:'꿈을 말한다고 당장 잘해야 하는 건 아니잖아. 오늘은 첫 장면만 같이 시작하자.' },
+      { narr:'(잠깐의 침묵. 멀리서 파도와 섬의 생활 소음이 다시 들려온다.)', who:'해설', icon:'🌊', shot:['wide'] },
+      { poses:[['A','look'],['B','look']], t:1100 },
+      { say:'A', text:sty(v,'…이상하다. 해결된 건 하나도 없는데, 아까보단 덜 무서워.') },
+      { fx:'sparkle', at:'A' }, { outcome:'happy', endText:[title,`첫 장면이 시작됐다 — ${d.dream}`] }
+    ];
     else if (n === 1) beats = [
-      { narr: `(평소와 다르게 ${v.name}의 표정이 어둡다)`, who: '해설', icon: '🌧️', shot: ['wide'] },
-      { pose: 'A', p: 'sadSit', t: 1300 }, { say: 'A', text: sty(v, L[1]), shot: 'close' }, { emo: 'A', e: '😢' },
-      { narr: `(${p.name}은(는) 말없이 옆에 앉아 이야기를 들어 주었다)`, who: '해설', icon: '🫂' },
-      { pose: 'B', p: 'sit', t: 1100 }, { say: 'A', text: sty(v, `…${d.worry}. 이 얘기, 너한테만 하는 거야.`) },
-      { pose: 'A', p: 'wipeTear', t: 1200 }, { say: 'A', text: sty(v, '들어 줘서 고마워. 조금 가벼워졌어.') },
-      { outcome: 'happy', endText: [title, '털어놓는 것만으로도'] }];
+      { filter:'thriller' }, { narr:`(한밤중. 불이 꺼진 ${d.place}. ${v.name}은 ${d.item}을 앞에 두고 한참 움직이지 않는다.)`, who:'해설', icon:'🌒', shot:['wide'] },
+      { show:'A' }, { pose:'A',p:'sadSit',t:1500 }, sceneLine(L[1]),
+      { narr:'(시선은 마주치지 않는다. 말보다 먼저 긴 침묵이 자리를 채운다.)',who:'해설',icon:'…' },
+      { say:'B',text:'괜찮다는 말은 안 해도 돼. 지금 괜찮지 않다는 것부터 말해도 돼.' },
+      { say:'A',text:sty(v,`다들 내가 ${d.dream}만 바라보고 사는 줄 알아. 그런데 사실은 ${d.worry}. 내가 원하는 걸 좋아하는 건지, 실패한 내가 싫은 건지 나도 모르겠어.`),shot:'close' },
+      { emo:'A',e:'😢' }, { pose:'B',p:'sit',t:1300 },
+      { say:'B',text:'내가 답을 대신 정해 주진 않을게. 대신 네가 네 편이 되어야 하는 순간에, 네가 혼자가 아니라는 건 기억해 줘.' },
+      { say:'A',text:sty(v,`그 말이 제일 무서워. 누군가 내 편이 되어 주면, 나도 나를 믿어야 할 것 같잖아.`) },
+      { narr:'(카메라는 두 사람을 멀리서 바라본다. 아무도 서두르지 않는다.)',who:'해설',icon:'🎬',shot:['wide'] },
+      { say:'A',text:sty(v,'오늘은 강한 척 안 해도 되지? 그냥 조금만 여기 있어 줘.') },
+      { say:'B',text:'응. 오늘은 해결하지 말고, 여기 있자.' },
+      { pose:'A',p:'wipeTear',t:1400 },{filter:''},{fx:'glow'},
+      { outcome:'happy',endText:[title,'답을 찾기 전, 마음을 숨기지 않기로 했다.'] }
+    ];
     else if (n === 2) beats = [
-      { filter: 'sepia' }, { narr: `(${v.name}이(가) ${d.item}을(를) 꼭 쥐고 옛날 이야기를 꺼냈다)`, who: '해설', icon: '🕰️', shot: ['wide'] },
-      { say: 'A', text: sty(v, L[2]), shot: 'close' },
-      ...(cast.C ? [{ show: 'C' }, { move: ['C', 1.4, 0.4], t: 1100 }, { filter: '' }, { say: 'C', text: sty(cast.C, past.kind === '원수' || past.kind === '라이벌' ? `…${v.name}. 여기서 또 보네.` : `${v.name}? …오랜만이다.`) },
-        { emo: 'A', e: '😳' }, { say: 'A', text: sty(v, `(${past.kind}) ${past.memory}`) },
-        { say: 'C', text: sty(cast.C, past.kind === '원수' ? '…그 일은, 나도 미안했어.' : past.kind === '전 연인' ? '…잘 지내는 것 같아서 다행이야.' : '그때 생각나네. 우리 참 어렸지.') },
-        { poses: [['A', 'look'], ['C', 'look']], t: 1200 }] : [{ filter: '' }, { say: 'A', text: sty(v, '…이 얘기를 한 건 네가 처음이야.') }]),
-      { fx: 'glow' }, { outcome: 'happy', endText: [title, cast.C ? `${v.name}와(과) ${cast.C.name}의 지난 이야기` : '과거와 마주한 날'] }];
+      { filter:'sepia' }, { narr:`(오래된 기억. ${d.item}의 표면에 남은 흠집을 손가락이 따라간다. 현재의 소리가 멀어지고 과거의 장면이 겹친다.)`,who:'해설',icon:'🕰️',shot:['wide'] },
+      { show:'A' }, { pose:'A',p:'look',t:1200 }, sceneLine(L[2]),
+      { narr:`(회상의 색이 조금씩 바랜다. 기억 속에서 끝내 하지 못했던 말이 현재의 얼굴 위로 겹쳐진다: “${memoryLine}”)`,who:'해설',icon:'📼' },
+      ...(cast.C ? [
+        { filter:'thriller' },{show:'C'},{move:['C',1.4,0.4],t:1200},
+        { say:'C',text:sty(cast.C,`${v.name}… 그때 이후로 네가 이 이야기를 꺼내지 않을 줄 알았어.`),shot:'close' },
+        { emo:'A',e:'😳' },{ say:'A',text:sty(v,`나도 그랬어. 다시 만나면 화부터 날 줄 알았는데… 막상 네 얼굴을 보니까, 내가 얼마나 오래 그날에 멈춰 있었는지 알겠어.`) },
+        { say:'C',text:sty(cast.C,past.kind==='원수'?'변명부터 하고 싶진 않아. 내가 한 일은 내가 책임질게.':past.kind==='전 연인'?'그때의 마음이 거짓이었다고 생각하진 않아. 다만 우린 서로를 잘 몰랐어.':'미안하다는 말 하나로 예전으로 돌아갈 수 없다는 거 알아. 그래도 이번엔 도망치지 않을게.') },
+        { say:'A',text:sty(v,'예전으로 돌아가자는 게 아니야. 그때의 나를 이제 그만 놓아주고 싶은 거야.') },
+        { poses:[['A','look'],['C','look']],t:1400 }
+      ] : [
+        { say:'A',text:sty(v,`그때의 나는 ${d.worry} 때문에 아무 말도 못 했어. 지금 생각하면, 침묵도 하나의 선택이었더라.`) },
+        { say:'B',text:'과거를 바꿀 순 없어도, 그 일을 어떻게 기억할지는 지금 정할 수 있어.' }
+      ]),
+      { filter:'' },{show:'B'},{move:['B',0.9,0.1],t:900},
+      { say:'B',text:'오늘 네가 꺼낸 이야기는 여기서 끝나지 않아. 다음에 또 말하고 싶어지면, 그때도 들어 줄게.' },
+      { fx:'glow' },{narr:'(카메라는 오래된 물건에서 천천히 물러난다. 기억은 그대로지만, 그 기억을 바라보는 사람의 표정은 달라졌다.)',who:'해설',icon:'🌅',shot:['wide']},
+      { outcome:'happy',endText:[title,cast.C?`${v.name}와(과) ${cast.C.name}, 멈춰 있던 시간의 다음 장`:'과거를 지우지 않고도 앞으로 걸을 수 있다.'] }
+    ];
     else if (n === 3) beats = [
-      { filter: 'thriller' }, { narr: `(큰일이다! ${d.crisis}!)`, who: '해설', icon: '⚡', shot: ['wide'] }, { fx: 'shock' },
-      { pose: 'A', p: 'cry', t: 1200 }, { say: 'A', text: sty(v, L[3]), hot: true, shot: 'close' },
-      { filter: '' }, ...(choice === 'solo' ? [
-        { say: 'B', text: J(`${v.name}, 넌 할 수 있어. 내가 옆에서 지켜볼게. 네 힘으로 해 봐!`) }, { emo: 'A', e: '😤' },
-        { pose: 'A', p: 'flex', t: 1300 }, { say: 'A', text: sty(v, '…그래. 내가 해 볼게! 끝까지!') }] : [
-        { say: 'B', text: J('같이 하자! 혼자 끙끙대지 마!') }, { emo: 'A', e: '🥹' },
-        { poses: [['A', 'hammer'], ['B', 'hammer']], t: 1600 }, { say: 'A', text: sty(v, '…너 없었으면 진짜 포기했을 거야.') }]),
-      { fx: 'sparkle', at: 'A' }, { outcome: 'happy', endText: [title, choice === 'solo' ? '스스로 일어선 날' : '함께라서 버틴 날'] }];
+      { filter:'thriller' },{narr:`(갑작스러운 소란. ${d.crisis}. 손에 들려 있던 ${d.item}이 바닥에 떨어진다. 주변의 소리가 먹먹해진다.)`,who:'해설',icon:'⚡',shot:['wide']},
+      {fx:'shock'},{show:'A'},{move:['A',0.5,0.2],t:700},{pose:'A',p:'cry',t:1200},
+      sceneLine(L[3]),{emo:'A',e:'😰'},
+      { say:'A',text:sty(v,`이걸 망치면 끝이야. 모두가 내가 할 수 있다고 믿어 줬는데, 나만 내가 못 할 거라는 걸 알고 있었나 봐.`),hot:true },
+      { narr:'(주변 소리가 사라진다. 카메라는 바닥의 물건, 굳은 손, 흔들리는 눈동자를 차례로 비춘다.)',who:'해설',icon:'🔇',shot:['wide']},
+      { say:'B',text:'나를 봐. 지금 당장 괜찮아질 필요 없어. 하지만 도망칠지, 도움을 청할지, 다시 시작할지는 네가 고를 수 있어.' },
+      { filter:'' },
+      ...(choice==='solo' ? [
+        { say:'A',text:sty(v,'내가 직접 해 볼게. 누가 대신해 주길 기다리는 동안, 내 마음까지 다른 사람에게 맡기고 있었어.') },
+        { say:'B',text:'좋아. 내가 대신하진 않을게. 대신 네가 손을 내밀면 바로 잡을 수 있는 곳에 있을게.' },
+        { pose:'A',p:'flex',t:1300 },{fx:'glow',at:'A'},
+        { say:'A',text:sty(v,'무서워도 시작할 수 있네. 자신감이 생겨서가 아니라, 무서운 채로 한 걸음 내딛는 거구나.') }
+      ] : [
+        { say:'A',text:sty(v,'나 혼자선 안 될 것 같아. 그 말을 하는 게 이렇게 어려운 줄 몰랐어.') },
+        { say:'B',text:'그럼 같이 하자. 내가 모든 걸 해결해 주는 게 아니라, 네가 다시 설 수 있게 옆에서 받쳐 줄게.' },
+        { poses:[['A','hammer'],['B','hammer']],t:1700 },
+        { say:'A',text:sty(v,'나중에 이 순간을 기억하면, 실패한 날이 아니라 도움을 청한 날이라고 기억할래.') }
+      ]),
+      { narr:'(작은 성공 하나. 거창한 음악 대신, 숨을 고르는 소리만 남는다.)',who:'해설',icon:'🎞️',shot:['wide']},
+      { poses:[['A','look'],['B','look']],t:1300 },{fx:'sparkle',at:'A'},
+      { outcome:'happy',endText:[title,choice==='solo'?'스스로 선택해 다시 선 날':'도움을 청하는 용기를 배운 날'] }
+    ];
     else beats = [
-      { narr: `(드디어 그날이 왔다. ${v.name}의 꿈 — ${d.dream})`, who: '해설', icon: '🌟', shot: ['wide'] },
-      { fx: 'fireworks' }, { pose: 'A', p: 'cheer', t: 1300 }, { say: 'A', text: sty(v, L[4]), hot: true, shot: 'close' },
-      { say: 'A', text: sty(v, (S().story[v.id] || {}).route === 'solo' ? '네가 믿어 줘서 혼자 일어설 수 있었어. 고마워.' : '힘들 때마다 네가 옆에 있었잖아. 이건 우리 둘의 꿈이야.') },
-      { poses: [['A', 'hug'], ['B', 'hug']], t: 1700 }, { fx: 'hearts', at: 'A' },
-      { split: ['A', 'B'], caps: [`🌟 ${v.name}`, '🤝 나'], t: 2000 },
-      { outcome: 'happy', endText: [`${v.name} 이야기 완결 「${TITLES[4]}」`, `${d.dream} — 이루었다!`] }];
+      { filter:'sepia' },{narr:`(아침. ${d.place}에 첫 햇살이 들어온다. 어제와 같은 장소지만, 오늘은 누군가가 먼저 문을 열어 둔다.)`,who:'해설',icon:'🌅',shot:['wide']},
+      { narr:`(준비하는 손, 기다리는 사람들, 작은 실수와 다시 시작하는 순간들이 짧은 몽타주처럼 이어진다. 꿈은 한 번의 기적이 아니라 수많은 선택으로 완성된다.)`,who:'해설',icon:'🎞️'},
+      { filter:'' },{fx:'fireworks'},{show:'A'},{pose:'A',p:'cheer',t:1300},
+      sceneLine(L[4]),{say:'A',text:sty(v,`예전에는 ${d.dream}이라는 말을 하는 것만으로도 충분하다고 생각했어. 이제는 알아. 꿈은 누가 박수쳐 줘서 내 것이 되는 게 아니라, 내가 포기하지 않고 살아낸 시간이라서 내 것이 되는 거야.`),hot:true,shot:'close'},
+      { say:'B',text:'오늘 네가 이뤄 낸 건 결과만이 아니야. 무서워도 다시 해 본 너 자신이야.' },
+      { say:'A',text:sty(v,(S().story[v.id]||{}).route==='solo'?'네가 나 대신 해 주지 않아서 고마워. 내 힘으로 해냈다는 걸 이제 믿을 수 있어.':'내가 무너졌을 때 옆에 있어 줘서 고마워. 이 순간을 혼자 차지하고 싶지 않아. 우리 함께 기억하자.') },
+      { narr:'(박수가 잦아든 뒤에도 두 사람은 바로 움직이지 않는다. 기쁜 순간을 서둘러 끝내고 싶지 않아서다.)',who:'해설',icon:'✨',shot:['wide']},
+      { poses:[['A','hug'],['B','hug']],t:1600 },{fx:'hearts',at:'A'},
+      { split:['A','B'],caps:[`🌟 ${v.name}`,'🤝 함께한 시간'],t:2000 },
+      { narr:'(화면이 천천히 어두워진다. 마지막에 남는 것은 성공의 장면이 아니라, 그곳까지 걸어온 사람의 얼굴이다.)',who:'해설',icon:'🎬'},
+      { outcome:'happy',endText:[`${v.name} 이야기 완결 「${TITLES[4]}」`,`${d.dream} — 마침내, 자기 자신의 이름으로.`] }
+    ];
     const c = Object.assign({ theme: n === 3 ? 'fight' : n === 2 ? 'reunion' : n === 4 ? 'party' : 'friend', cast, beats, key: keyOf(cast) + '|story' + n, vig: true, sub: `${v.name} 이야기 ${n + 1}화`, force: true },
       { venue: n === 1 ? { loc: 'island', x: -72, z: -86, place: 'cliff' } : venueOf(d.place) });
     if (d.meta) {
