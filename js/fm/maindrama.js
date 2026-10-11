@@ -16,7 +16,7 @@
   const totalPersonalEpisodes = () => Object.values(S().story || {}).reduce((n, st) => n + Math.min(5, st.ep || 0), 0);
   const state = () => {
     const s = S();
-    s.mainDrama = s.mainDrama || { completed: [], choice: {}, lastDay: -1 };
+    s.mainDrama = s.mainDrama || { completed: [], groupCompleted: [], choice: {}, lastDay: -1 };\n    s.mainDrama.groupCompleted = s.mainDrama.groupCompleted || [];
     return s.mainDrama;
   };
   const unlocks = [
@@ -90,11 +90,45 @@
     if (c) Cut.enqueue(c, true);
     return !!c;
   };
+  const groupThresholds = [2,4,6,8,10,12,14,16,18,20];
+  const nextGroup = () => FM.GROUP_DRAMA.findIndex((g, i) => !state().groupCompleted.includes(g.id) && totalPersonalEpisodes() >= groupThresholds[i]);
+  function groupEpisode(g, choice) {
+    const actors = castFor(g.cast).slice(0, 4);
+    if (!g || !actors.length) return null;
+    const labels = { '협력':'이번엔 누가 더 잘하느냐보다 어떻게 힘을 합칠지가 중요해.', '라이벌과 팀워크':'경쟁은 하되, 서로를 망가뜨리지 않는 방법을 찾아 보자.', '무대와 우정':'실수해도 서로의 무대를 끝까지 지켜 주자.', '생태와 돌봄':'섬을 지키는 일은 이곳에 사는 사람을 지키는 일이기도 해.', '실패와 협력':'혼자 완벽하게 하려 하지 말고, 서로 부족한 곳을 채우자.', '미스터리':'서로 본 것이 달라도, 함께 확인하면 사실에 가까워질 수 있어.', '신뢰':'누군가에게 맡기는 것도 책임의 일부야.', '기억과 표현':'기억을 남길 때는 그 안에 있는 사람의 이름도 남기자.', '돌봄':'늘 남을 챙기는 사람에게도 쉴 자리가 필요해.', '공동체의 선택':'축제는 한 사람의 무대가 아니라 섬 전체가 함께 고르는 이야기야.' };
+    const cast = { A: actors[0], B: actors[1] || actors[0], ...(actors[2] ? { C: actors[2] } : {}), ...(actors[3] ? { D: actors[3] } : {}) };
+    const beats = [
+      { narr: '(축제 준비가 한창인 가운데, 서로 다른 생각을 가진 주민들이 한자리에 모였다)', who:'해설', icon:'🎪', shot:['wide'] },
+      { show:'A' }, { say:'A', text: labels[g.theme] || '우리끼리만 해결하려 하지 말고, 서로 이야기를 들어 보자.' },
+      { show:'B' }, { move:['B',1.2,0.2], t:800 }, { say:'B', text: choice === 'second' ? '잠깐 멈추고 서로의 사정을 먼저 듣자. 급하게 정하면 놓치는 게 있어.' : '좋아, 각자 할 수 있는 일을 나눠서 바로 시작하자!' },
+      ...(actors[2] ? [{ show:'C' }, { say:'C', text:'나도 도울게. 혼자서는 보이지 않던 방법이 떠올랐어.' }] : []),
+      { filter:'' }, { poses: actors.slice(0,3).map((v,i)=>[String.fromCharCode(65+i),'cheer']), t:1000 },
+      { outcome:'happy', endText:['👥 '+g.title, choice === 'second' ? '서로의 이야기를 먼저 듣고 답을 찾았다.' : '힘을 모아 작은 문제를 해결했다.'] }
+    ];
+    const scene={ theme:'friend', cast, beats, key:'groupDrama|'+g.id, vig:true, force:true, sub:g.title, venue:venue(g.location) };
+    scene.resolve=()=>{
+      const st=state(); if(!st.groupCompleted.includes(g.id)) st.groupCompleted.push(g.id);
+      st.choice[g.id]=choice||'first'; st.lastDay=day();
+      for(let i=0;i<actors.length;i++) for(let j=i+1;j<actors.length;j++){
+        Soc.addFriend(actors[i].id,actors[j].id,4,4,'단체 드라마');
+        Soc.addFriend(actors[j].id,actors[i].id,4,4,'단체 드라마');
+      }
+      Sim.log('friend','👥 '+g.title+' — 주민들이 함께한 하루',actors.map(v=>v.id),2,{newsKind:'drama'});
+    };
+    return scene;
+  }
+  MD.groupProgress = () => ({ completed:state().groupCompleted.slice(), total:FM.GROUP_DRAMA.length, next:nextGroup() });
+  MD.startGroup = (index, choice) => { const g=FM.GROUP_DRAMA[index]; const c=g&&groupEpisode(g,choice||'first'); if(c) Cut.enqueue(c,true); return !!c; };
 
   const oldTalk = Soc.playerTalk;
   if (oldTalk) Soc.playerTalk = function(v) {
     const r = oldTalk.apply(this, arguments);
     try {
+      const gi = nextGroup();
+      const gd = gi >= 0 ? FM.GROUP_DRAMA[gi] : null;
+      if (r && r.options && v && gd && gd.cast.includes(v.castId) && totalPersonalEpisodes() >= groupThresholds[gi] && state().lastDay !== day() && !r.options.some(o => o.id === 'groupDramaStart')) {
+        r.options.unshift({ id:'groupDramaStart', label:'👥 '+gd.title });
+      }
       if (r && r.options && v && (v.castId === 'c07' || v.id === (byCast('c07') || {}).id) && MD.ready() && !r.options.some(o => o.id === 'mainDramaStart')) {
         const p = MD.progress();
         const d = FM.MAIN_STORY[p.next];
@@ -106,6 +140,18 @@
   };
   const oldChoose = Soc.playerChoose;
   if (oldChoose) Soc.playerChoose = function(v, id, arg) {
+    if (id === 'groupDramaStart') {
+      const gi = nextGroup(), g = FM.GROUP_DRAMA[gi];
+      if (!g) return { text:'지금은 다 함께 모일 일이 없어.', close:true, options:[] };
+      return { text:g.title+' 이야기를 어떻게 풀어 갈까?', options:[
+        { id:'groupDramaPlay', label:'🤝 각자 역할을 나눠 바로 시작한다', arg:'first' },
+        { id:'groupDramaPlay', label:'🫶 먼저 서로의 이야기를 듣는다', arg:'second' }
+      ]};
+    }
+    if (id === 'groupDramaPlay') {
+      const gi = nextGroup(); if (gi >= 0) MD.startGroup(gi,arg);
+      return { text:'좋아. 모두의 힘을 모아 보자!', close:true, options:[] };
+    }
     if (id === 'mainDramaStart') {
       const ep = MD.progress().next;
       if (ep < 0 || ep >= FM.MAIN_STORY.length) return { text: '지금은 새로 확인할 단서가 없어.', close: true, options: [] };
